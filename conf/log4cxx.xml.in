@@ -1,0 +1,46 @@
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE log4j:configuration SYSTEM \"log4j.dtd\">
+<log4j:configuration debug=\"false\" xmlns:log4j=\"http://jakarta.apache.org/log4j/\">
+	<appender name=\"CONSOLE\" class=\"org.apache.log4j.ConsoleAppender\">
+		<layout class=\"org.apache.log4j.PatternLayout\">
+			<param name=\"ConversionPattern\" value=\"%d{ISO8601} [%t] %-5p %c %x - %m%n\"/>
+		</layout>
+	</appender>
+
+	<appender name=\"ROLLING_FILE\" class=\"org.apache.log4j.rolling.RollingFileAppender\">
+		<param name=\"file\" value=\"$${LOCALSTATEDIR}/log/xconfigd.log\"/>
+		<param name=\"append\" value=\"true\"/>
+		<rollingPolicy class=\"org.apache.log4j.rolling.TimeBasedRollingPolicy\">
+			<param name=\"activeFileName\" value=\"$${LOCALSTATEDIR}/log/xconfigd.log\"/>
+			<param name=\"fileNamePattern\" value=\"$${LOCALSTATEDIR}/log/xconfigd.%d.log.gz\"/>
+		</rollingPolicy>
+
+		<layout class=\"org.apache.log4j.PatternLayout\">
+			<param name=\"ConversionPattern\" value=\"%d{ISO8601} [%t] %-5p %c %x - %m%n\"/>
+		</layout>
+	</appender>
+
+	<appender name=\"SYSLOG\" class=\"org.apache.log4j.SyslogAppender\">
+		<param name=\"SysLogHost\" value=\"localhost\"/>
+		<param name=\"Facility\" value=\"LOCAL1\"/>
+		<param name=\"FacilityPrinting\" value=\"true\"/>
+
+		<layout class=\"org.apache.log4j.PatternLayout\">
+			<param name=\"ConversionPattern\" value=\"[%t] %-5p %c %x - %m%n\"/>
+		</layout>
+	</appender> 
+
+	<appender name=\"ASYNC\" class=\"org.apache.log4j.AsyncAppender\">
+		<appender-ref ref=\"ROLLING_FILE\"/>
+	</appender>
+
+	<logger name=\"xconfigd\" additivity=\"false\">
+		<level value=\"DEBUG\"/>
+		<appender-ref ref=\"ASYNC\"/>
+	</logger>
+
+	<root>
+		<level value=\"DEBUG\"/>
+		<appender-ref ref=\"CONSOLE\"/>
+	</root>
+</log4j:configuration>

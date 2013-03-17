@@ -1,0 +1,83 @@
+#! /bin/bash
+
+QMAKE=`which qmake`
+BUILDDIR=build
+
+show_usage() {
+cat <<EOT
+Usage: $0 [OPTION]...
+
+This script creates necessary configuration files to build/install.
+
+Main options:
+  --prefix=[path]     Base path for build/install.  Default: /usr/local
+  --no-builddir       Disable building in subdirectory
+  --release           Build in release mode
+  --help              This help text.
+
+EOT
+}
+
+qmake_check_v4() {
+	if [ -x "$1" ]; then
+		if echo `$1 -v 2>&1` | grep "Qt version 4\." >/dev/null 2>&1; then
+			return 0
+		else
+			echo "Warning: $1 not for Qt 4"
+		fi
+	fi
+	return 1
+}
+
+relpath=`dirname $0`
+relpath=`(cd "$relpath"; /bin/pwd)`
+curpath=`/bin/pwd`
+substpath=${curpath#${relpath}}
+
+qmake_check_v4 "$QMAKE" || exit 1
+
+declare -a SAVED_ARGS=("$@")
+while [ $# -gt 0 ]; do
+	optarg=`expr "x$1" : 'x[^=]*=\(.*\)'`
+	case "$1" in
+		--prefix=*)
+			PREFIX=$optarg
+			shift
+			;;
+		--no-builddir)
+			NOBUILDDIR=y
+			shift
+			;;
+		--release)
+			CONFIG_ADD="$CONFIG release"
+			CONFIG_SUB="debug"
+			shift
+			;;
+		--help) show_usage; exit 1;;
+		*) shift;;
+#		*) show_usage; exit 1;;
+	esac
+done
+
+if [ "$curpath" == "$relpath" -a "$NOBUILDDIR" != "y" ]; then
+	echo "Building in the '""$BUILDDIR""' subdirectory"
+	test -d $BUILDDIR || mkdir $BUILDDIR || exit 1
+	cd $BUILDDIR
+	exec "../$0" "${SAVED_ARGS[@]}"
+fi
+
+if [ "$substpath" == "$curpath" -o \( "${substpath:0:1}" != "" -a "${substpath:0:1}" != "/" \) ]; then
+	echo "Can't build in a directory which is not a subdirectory of the source directory"
+	exit 1
+fi
+
+if [ -z "$CONFIG_ADD" ]; then
+	CONFIG_ADD="$CONFIG debug"
+	CONFIG_SUB="release"
+fi
+	
+PREFIX=${PREFIX:-/usr/local}
+
+"$QMAKE" -o .qmake.cache.makefile "PREFIX = $PREFIX" "$relpath"/genconfig.pro; rm -f .qmake.cache.makefile;
+"$QMAKE" -o Makefile "CONFIG += $CONFIG_ADD" "CONFIG -= $CONFIG_SUB" "$relpath"/xconfig.pro
+

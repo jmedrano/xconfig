@@ -1,0 +1,13 @@
+Source: xconfig
+Section: misc
+Priority: extra
+Maintainer: Placido Revilla <previlla@tuenti.com>
+Build-Depends: debhelper (>= 8.0.0), build-essential, qt4-qmake, pkg-config, libqt4-dev (>= 4.6.0), libdaemon-dev, liblog4cxx10-dev (>= 0.10.0), g++ (>= 4.5)
+Standards-Version: 3.9.2
+Homepage: http://www.tuenti.com/
+
+Package: xconfigd
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: XConfig daemon
+ Implementation of the daemon for the XConfig configuration system

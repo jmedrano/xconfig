@@ -1,0 +1,42 @@
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: asyncthrift
+Source: http://www.tuenti.com/
+
+Files: *
+Copyright: 2013 (c) Tuenti Technologies S.L.
+License: Tuenti
+
+Files: debian/*
+Copyright: 2013 Placido Revilla <previlla@tuenti.com>
+License: GPL-3.0+
+
+License: GPL-3.0+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+License: Tuenti
+ 2013 (c) Tuenti Technologies S.L.
+ All Rights Reserved.
+ .
+ NOTICE:  All information contained herein is, and remains
+ the property of Tuenti Technologies S.L. and its suppliers,
+ if any.  The intellectual and technical concepts contained
+ herein are proprietary to Tuenti Technologies S.L.
+ and its suppliers and may be covered by U.S. and Foreign Patents,
+ patents in process, and are protected by trade secret or copyright law.
+ Dissemination of this information or reproduction of this material
+ is strictly forbidden unless prior written permission is obtained
+ from Tuenti Technologies S.L.

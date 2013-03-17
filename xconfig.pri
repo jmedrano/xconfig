@@ -1,0 +1,27 @@
+CONFIG += link_pkgconfig nostrip silent
+QT -= gui
+QT +=
+
+release {
+	OPTIMIZE_FLAGS = -O3 -march=native -fomit-frame-pointer -mfpmath=sse
+}
+
+profile {
+	PROFILE_CFLAGS = -pg
+	PROFILE_LFLAGS = -pg
+}
+
+QMAKE_CXXFLAGS += -I$$TOP_BUILDDIR -I$$TOP_SRCDIR -std=gnu++0x -rdynamic $$OPTIMIZE_FLAGS $$PROFILE_CFLAGS $$QMAKE_CXXFLAGS_DEBUG
+QMAKE_CFLAGS += -I$$TOP_BUILDDIR -I$$TOP_SRCDIR $$OPTIMIZE_FLAGS $$PROFILE_CFLAGS $$QMAKE_CFLAGS_DEBUG
+QMAKE_LFLAGS += $$PROFILE_LFLAGS $$QMAKE_LFLAGS_DEBUG
+
+PKGCONFIG += libdaemon liblog4cxx
+
+COMMON_DEPENDENCIES = \
+	$$TOP_BUILDDIR \
+	$$TOP_SRCDIR/include/QtArg \
+	$$TOP_SRCDIR/src/common
+
+DEPENDPATH += $$COMMON_DEPENDENCIES
+INCLUDEPATH += $$COMMON_DEPENDENCIES
+

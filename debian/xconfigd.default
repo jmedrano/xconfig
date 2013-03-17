@@ -1,0 +1,11 @@
+# Defaults for xconfigd initscript
+# sourced by /etc/init.d/xconfigd
+# installed at /etc/default/xconfigd by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+XCONFIGD_CONFIG_DIR="/etc/xconfigd"
+XCONFIGD_USER="root"

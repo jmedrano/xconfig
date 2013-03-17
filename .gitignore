@@ -1,0 +1,16 @@
+build
+Makefile
+.qmake.cache
+target
+config.h
+*.prl
+*.o
+*.a
+moc_*
+debian/xconfigd.debhelper.log
+debian/xconfigd.substvars
+debian/xconfigd.*.debhelper
+debian/xconfigd/
+debian/files
+conf/xconfigd.ini
+conf/log4cxx.xml
