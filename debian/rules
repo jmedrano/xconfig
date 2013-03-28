@@ -8,7 +8,6 @@
 
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
-export DEB_BUILD_OPTIONS="nostrip"
 
 %:
 	dh $@ --parallel
@@ -16,3 +15,9 @@ export DEB_BUILD_OPTIONS="nostrip"
 override_dh_auto_configure:
 	dh_auto_configure -- --release --no-builddir
 
+override_dh_auto_install:
+	dh_auto_install
+	rm -f debian/tmp/usr/lib/libxconfig.so.1.0
+
+override_dh_strip:
+	dh_strip -a --dbg-package=libxconfig-dbg -Nxconfigd

@@ -1,9 +1,8 @@
 TEMPLATE = app
-TARGET = xconfigd
+TARGET = xconfig
 
 include($$TOP_SRCDIR/xconfig.pri)
 
-PKGCONFIG += libdaemon liblog4cxx
 LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig
 
 DESTDIR = $$TOP_BUILDDIR/target/$$BINDIR
@@ -14,10 +13,6 @@ INSTALLS += target
 QMAKE_CLEAN += ${TARGET}
 
 HEADERS += \
-	TApplication.h \
-	TLogger.h \
-	XConfigDaemon.h
 
 SOURCES += \
-	TApplication.cpp \
-	XConfigDaemon.cpp
+	xconfig.cpp
