@@ -7,15 +7,18 @@ include($$TOP_SRCDIR/xconfig.pri)
 CONFIG += create_prl no_install_prl create_pc
 QT -= core
 PKGCONFIG +=
-LIBS +=
+LIBS += -lcmph
 
 INSTALL_HEADERS += \
-	xconfig.h
+	xconfig.h \
+	xconfig_connection.h \
+	xconfig_file.h
 
 HEADERS += \
 	$$INSTALL_HEADERS
 
 SOURCES += \
+	xconfig_connection.cpp \
 	xconfig.cpp
 
 DESTDIR = $$TOP_BUILDDIR/target/$$LIBDIR
