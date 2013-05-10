@@ -128,11 +128,11 @@ std::vector<XConfigNode> XConfig::get_children(const XConfigNode& key)
 	vector<XConfigNode> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
 		XConfigNode child_node = bucket->value._vectorial.child;
-		const XConfigBucket* child = get_bucket(bucket->value._vectorial.child);
-		for (auto ret_iterator = ret.begin(); child && ret_iterator != ret.end(); ++ret_iterator) {
+		const XConfigBucket* child = get_bucket(child_node);
+		for (auto ret_iterator = ret.begin(); ret_iterator != ret.end(); ++ret_iterator) {
 			*ret_iterator = child_node;
-			child_node = child->next;
 			child = get_bucket(child_node);
+			child_node = child->next;
 		}
 	}
 	return ret;
