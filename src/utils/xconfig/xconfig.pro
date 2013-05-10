@@ -3,7 +3,7 @@ TARGET = xconfig
 
 include($$TOP_SRCDIR/xconfig.pri)
 
-LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig
+LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lcmph -lboost_program_options
 
 DESTDIR = $$TOP_BUILDDIR/target/$$BINDIR
 
@@ -16,3 +16,5 @@ HEADERS += \
 
 SOURCES += \
 	xconfig.cpp
+
+INCLUDEPATH += $$TOP_SRCDIR/src/libxconfig
