@@ -19,7 +19,7 @@ public:
 	static const char sequence_separator = '#';
 	static const char escape_character = '\\';
 	static const char* escaped_characters;
-	static const XConfigNode root_node;
+	static const XConfigNode null_node;
 
 	XConfig(std::string path, std::string socket = "");
 	XConfig(XConfigConnection* conn);
@@ -66,16 +66,20 @@ public:
 	double get_float(const XConfigNode& key);
 	int get_count(const XConfigNode& key);
 	std::vector<std::string> get_map_keys(const XConfigNode& key);
+	std::string get_name(const XConfigNode& key);
 
 	// methods for transforming keys into nodes
 	XConfigNode get_node(const XConfigKeyType& key);
 	XConfigNode get_node(const std::vector<std::string>& key);
 	XConfigKeyType get_key(const XConfigNode& node);
-	XConfigKeyType get_key(const std::vector<std::string>& key);
 
 	// methods for tree iteration
 	XConfigNode get_parent(const XConfigNode& key);
 	std::vector<XConfigNode> get_children(const XConfigNode& key);
+
+	// methods for escaping keys
+	static XConfigKeyType escape_key(const std::vector<std::string>& key);
+	static std::string escape_key(const std::string& key);
 
 private:
 	boost::scoped_ptr<XConfigConnection> conn;
@@ -99,6 +103,8 @@ private:
 	// private so only available from XConfig
 	XConfigNode(uint32_t b) : bucket_idx(b) { }
 	operator uint32_t() const { return bucket_idx; }
+public:
+	XConfigNode() : bucket_idx(0) { }
 };
 
 inline bool XConfig::is_scalar(const XConfigNode& key) {
@@ -112,37 +118,37 @@ inline bool XConfig::is_sequence(const XConfigNode& key) {
 }
 
 inline enum XConfigValueType XConfig::get_type(const std::vector<std::string>& key) {
-	return get_type(get_key(key));
+	return get_type(escape_key(key));
 }
 inline struct timespec XConfig::get_mtime(const std::vector<std::string>& key) {
-	return get_mtime(get_key(key));
+	return get_mtime(escape_key(key));
 }
 inline bool XConfig::is_scalar(const std::vector<std::string>& key) {
-	return is_scalar(get_key(key));
+	return is_scalar(escape_key(key));
 }
 inline bool XConfig::is_map(const std::vector<std::string>& key) {
-	return is_map(get_key(key));
+	return is_map(escape_key(key));
 }
 inline bool XConfig::is_sequence(const std::vector<std::string>& key) {
-	return is_sequence(get_key(key));
+	return is_sequence(escape_key(key));
 }
 inline std::string XConfig::get_string(const std::vector<std::string>& key) {
-	return get_string(get_key(key));
+	return get_string(escape_key(key));
 }
 inline bool XConfig::get_bool(const std::vector<std::string>& key) {
-	return get_bool(get_key(key));
+	return get_bool(escape_key(key));
 }
 inline int XConfig::get_int(const std::vector<std::string>& key) {
-	return get_int(get_key(key));
+	return get_int(escape_key(key));
 }
 inline double XConfig::get_float(const std::vector<std::string>& key) {
-	return get_float(get_key(key));
+	return get_float(escape_key(key));
 }
 inline int XConfig::get_count(const std::vector<std::string>& key) {
-	return get_count(get_key(key));
+	return get_count(escape_key(key));
 }
 inline std::vector<std::string> XConfig::get_map_keys(const std::vector<std::string>& key) {
-	return get_map_keys(get_key(key));
+	return get_map_keys(escape_key(key));
 }
 
 inline enum XConfigValueType XConfig::get_type(const XConfigKeyType& key) {

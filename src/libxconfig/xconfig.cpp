@@ -1,11 +1,15 @@
 #include <cmph.h>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "xconfig.h"
 
+using std::string;
+using std::vector;
+
 const char* XConfig::escaped_characters = "/#\\";
-const XConfigNode XConfig::root_node(0);
+const XConfigNode XConfig::null_node;
 
 XConfig::XConfig(XConfigConnection* conn) : conn(conn), hash(0), buckets(0)
 {
@@ -20,8 +24,8 @@ void XConfig::update_connection()
 		const XConfigHeader* header = reinterpret_cast<const XConfigHeader*>(blob);
 		hash = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader);
 		buckets = reinterpret_cast<const XConfigBucket*>(
-			reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size);
-		string_pool = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size + sizeof(XConfigBucket) * header->num_buckets;
+			reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size) - 1;
+		string_pool = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size + sizeof(XConfigBucket) * header->num_buckets - 1;
 	} else {
 		hash = 0;
 		buckets = 0;
@@ -39,10 +43,10 @@ XConfig::~XConfig()
 
 inline const XConfigBucket* XConfig::get_bucket(const XConfigNode& node)
 {
-	// idx is 1-based so that 0 means root node or none for next field
+	// idx is 1-based so that 0 means null node
 	if (!node || !buckets)
 		throw XConfigNotFound();
-	return &buckets[((uint32_t)node) - 1];
+	return &buckets[((uint32_t)node)];
 }
 
 inline std::string XConfig::get_string(uint32_t offset)
@@ -104,16 +108,36 @@ int XConfig::get_count(const XConfigNode& key)
 std::vector<std::string> XConfig::get_map_keys(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type == XConfigTypeMap) {
-		std::vector<std::string> ret(bucket->value._vectorial.size);
+	if (bucket->type != XConfigTypeMap)
+		throw XConfigWrongType();
+	vector<string> ret(bucket->value._vectorial.size);
+	if (bucket->value._vectorial.size > 0) {
 		const XConfigBucket* child = get_bucket(bucket->value._vectorial.child);
 		for (auto ret_iterator = ret.begin(); child && ret_iterator != ret.end(); child = get_bucket(child->next), ++ret_iterator) {
 			*ret_iterator = get_string(child->name);
 		}
-		return ret;
 	}
-	throw XConfigWrongType();
+	return ret;
 }
+
+std::vector<XConfigNode> XConfig::get_children(const XConfigNode& key)
+{
+	const XConfigBucket* bucket = get_bucket(key);
+	if (bucket->type != XConfigTypeMap && bucket->type != XConfigTypeSequence)
+		throw XConfigWrongType();
+	vector<XConfigNode> ret(bucket->value._vectorial.size);
+	if (bucket->value._vectorial.size > 0) {
+		XConfigNode child_node = bucket->value._vectorial.child;
+		const XConfigBucket* child = get_bucket(bucket->value._vectorial.child);
+		for (auto ret_iterator = ret.begin(); child && ret_iterator != ret.end(); ++ret_iterator) {
+			*ret_iterator = child_node;
+			child_node = child->next;
+			child = get_bucket(child_node);
+		}
+	}
+	return ret;
+}
+
 
 XConfigNode XConfig::get_node(const XConfigKeyType& key)
 {
@@ -122,7 +146,7 @@ XConfigNode XConfig::get_node(const XConfigKeyType& key)
 	if(!hash)
 		throw XConfigNotFound();
 
-	// idx is 1-based so that 0 means root node or none for next field
+	// idx is 1-based so that 0 means null node
 	XConfigNode node = cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1;
 
 	if (get_key(node) != key)
@@ -133,15 +157,14 @@ XConfigNode XConfig::get_node(const XConfigKeyType& key)
 
 XConfigNode XConfig::get_node(const std::vector<std::string>& key)
 {
-	return get_node(get_key(key));
+	return get_node(escape_key(key));
 }
 
-static std::string escape_string(const std::string s)
+static std::ostringstream& escape_string(std::ostringstream& ss, const string& s)
 {
-	std::ostringstream ss;
 	size_t p = 0;
 	size_t q = s.find_first_of(XConfig::escaped_characters);
-	while (q != std::string::npos) {
+	while (q != string::npos) {
 		ss << s.substr(p, q);
 		ss << XConfig::escape_character;
 		ss << s[q];
@@ -149,49 +172,79 @@ static std::string escape_string(const std::string s)
 		q = s.find_first_of(XConfig::escaped_characters, p);
 	}
 	ss << s.substr(p);
+	return ss;
+}
+
+std::string XConfig::escape_key(const std::string& key)
+{
+	std::ostringstream ss;
+	escape_string(ss, key);
 	return ss.str();
 }
 
-XConfigKeyType XConfig::get_key(const std::vector<std::string>& key)
+XConfigKeyType XConfig::escape_key(const std::vector<std::string>& key)
 {
 	std::ostringstream ss;
 	for (auto k = key.begin(); k != key.end(); ++k) {
 		if (k != key.begin())
 			ss << map_separator;
-		// escape string
-		size_t p = 0;
-		size_t q = k->find_first_of(escaped_characters);
-		while (q != std::string::npos) {
-			ss << k->substr(p, q);
-			ss << escape_character;
-			ss << (*k)[q];
-			p = q + 1;
-			q = k->find_first_of(escaped_characters, p);
-		}
-		ss << k->substr(p);
+		escape_string(ss, *k);
 	}
 	return ss.str();
 }
 
 XConfigKeyType XConfig::get_key(const XConfigNode & node)
 {
-	std::string ret;	
+	std::ostringstream ss;
+	vector<string> keys;
 	const XConfigBucket* bucket = get_bucket(node);
 	while (bucket->parent) {
 		const XConfigBucket* parent = get_bucket(bucket->parent);
+		string separator;
 		switch (parent->type) {
-			case XConfigTypeMap:
-				ret = map_separator + escape_string(get_string(bucket->name)) + ret;
-				break;
-			case XConfigTypeSequence:
-				ret = sequence_separator + escape_string(get_string(bucket->name)) + ret;
-				break;
-			default:
-				abort();
+		case XConfigTypeMap:
+			keys.push_back(get_string(bucket->name));
+			separator = map_separator;
+			break;
+		case XConfigTypeSequence:
+			keys.push_back(boost::lexical_cast<string>(bucket->name));
+			separator = sequence_separator;
+			break;
+		default:
+			abort();
 		}
+		if (parent->parent)
+			keys.push_back(separator);
 		bucket = parent;
 	}
-	ret = escape_string(get_string(bucket->name)) + ret;
-	return ret;
+	int i = 0;
+	for (auto it = keys.rbegin(); it != keys.rend(); ++it, ++i) {
+		// odd items need to be escaped; even items are just separators
+		if (i % 2)
+			ss << *it;
+		else
+			escape_string(ss, *it);
+	}
+	return ss.str();
+}
+
+std::string XConfig::get_name(const XConfigNode& node)
+{
+	const XConfigBucket* bucket = get_bucket(node);
+	if (bucket->parent) {
+		const XConfigBucket* parent = get_bucket(bucket->parent);
+		switch (parent->type) {
+		case XConfigTypeMap:
+			return get_string(bucket->name);
+			break;
+		case XConfigTypeSequence:
+			return boost::lexical_cast<string>(bucket->name);
+			break;
+		default:
+			throw XConfigWrongType();
+		}
+	}
+	// root node
+	return string();
 }
 

@@ -6,7 +6,7 @@
 
 #include "xconfig_connection.h"
 
-XConfigUnixConnection::XConfigUnixConnection(std::string path, std::string socket) : path(path), socket(socket)
+XConfigUnixConnection::XConfigUnixConnection(std::string path, std::string socket) : path(path), socket(socket), blob(0)
 {
 }
 
@@ -37,7 +37,7 @@ const void* XConfigUnixConnection::get_blob()
 }
 
 
-XConfigFileConnection::XConfigFileConnection(std::string path) : path(path)
+XConfigFileConnection::XConfigFileConnection(std::string path) : path(path), blob(0)
 {
 }
 
