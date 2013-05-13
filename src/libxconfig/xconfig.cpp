@@ -33,8 +33,10 @@ void XConfig::update_connection()
 	}
 }
 
-XConfig::XConfig(std::string path, std::string socket) : XConfig(new XConfigUnixConnection(path, socket))
+XConfig::XConfig(std::string path, std::string socket) : conn(new XConfigUnixConnection(path, socket))
 {
+	conn->connect();
+	update_connection();
 }
 
 XConfig::~XConfig()

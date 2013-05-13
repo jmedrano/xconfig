@@ -95,7 +95,7 @@ private:
 };
 
 class XConfigNode {
-	friend XConfig;
+	friend class XConfig;
 private:
 	// bucket_idx == 0 => root node for parent, none for next field.
 	// bucket_idx == 1 => first bucket
