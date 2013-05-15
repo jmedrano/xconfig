@@ -1,4 +1,5 @@
 #include "XConfigDaemon.h"
+#include "ServerSocket.h"
 
 #include <cmdline.hpp>
 #include <help.hpp>
@@ -14,7 +15,7 @@ const char* XCONFIGD_CONFIG_FILE = "xconfigd.ini";
 
 T_QLOGGER_DEFINE_ROOT(XConfigDaemon);
 
-XConfigDaemon::XConfigDaemon(int& argc, char** argv) : TApplication(argc, argv), config_dir(QDir(PKGSYSCONFDIR))
+XConfigDaemon::XConfigDaemon(int& argc, char** argv) : TApplication(argc, argv), config_dir(QDir(PKGSYSCONFDIR)), server(0)
 {
 }
 
@@ -66,12 +67,17 @@ bool XConfigDaemon::init()
 	if (!reloadConfig())
 		return false;
 
+	server = new ServerSocket(server_path, this);
+	if (!server->start())
+		return false;
+
 	return true;
 }
 
 int XConfigDaemon::run()
 {
 	int res = TApplication::run();
+	server->stop();
 	return res;
 }
 
@@ -100,6 +106,13 @@ bool XConfigDaemon::reloadConfig()
 	TLogger::configure(qPrintable(config_dir.absoluteFilePath(LOG4CXX_CONFIG_FILE)));
 
 	QSettings settings(config_dir.absoluteFilePath(XCONFIGD_CONFIG_FILE), QSettings::IniFormat);
+
+	QString new_server_path = settings.value("General/ServerSocketPath", QString(PKGLOCALSTATEDIR "/server")).toString();
+	if (server_path.isEmpty()) {
+		server_path = new_server_path;
+	} else if (server_path != new_server_path) {
+		TWARN("Cannot change the server socket once the daemon is running");
+	}
 
 	return true;
 }

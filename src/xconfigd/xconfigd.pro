@@ -3,6 +3,7 @@ TARGET = xconfigd
 
 include($$TOP_SRCDIR/xconfig.pri)
 
+QT += network
 PKGCONFIG += libdaemon liblog4cxx
 LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig
 
@@ -14,10 +15,14 @@ INSTALLS += target
 QMAKE_CLEAN += ${TARGET}
 
 HEADERS += \
-	TApplication.h \
 	TLogger.h \
-	XConfigDaemon.h
+	TApplication.h \
+	XConfigDaemon.h \
+	ServerSocket.h \
+	FileLock.h
 
 SOURCES += \
 	TApplication.cpp \
-	XConfigDaemon.cpp
+	XConfigDaemon.cpp \
+	ServerSocket.cpp \
+	FileLock.cpp

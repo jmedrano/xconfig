@@ -6,6 +6,8 @@
 
 #include <QDir>
 
+class ServerSocket;
+
 class XConfigDaemon : public TApplication
 {
 	Q_OBJECT
@@ -28,6 +30,8 @@ protected:
 
 private:
 	QDir config_dir;
+	QString server_path;
+	ServerSocket* server;
 };
 
 #endif // XCONFIGDAEMON_H

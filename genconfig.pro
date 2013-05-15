@@ -35,7 +35,7 @@ LOCALSTATEDIR = $$quotepath(/var)
 SYSCONFDIR = $$quotepath(/etc)
 PKGLIBDIR = $$quotepath(/lib/$$PACKAGE$$VERSION)
 PKGDATADIR = $$quotepath(/share/$$PACKAGE$$VERSION)
-PKGLOCALSTATEDIR = $$quotepath(/var/$$PACKAGE$$VERSION)
+PKGLOCALSTATEDIR = $$quotepath(/var/$$PACKAGE)
 PKGSYSCONFDIR = $$quotepath(/etc/$$PACKAGE)
 
 PREFIX = $$quotepath($$PREFIX)
