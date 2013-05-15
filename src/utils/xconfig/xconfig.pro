@@ -3,7 +3,8 @@ TARGET = xconfig
 
 include($$TOP_SRCDIR/xconfig.pri)
 
-LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lcmph -lboost_program_options
+PKGCONFIG += cmph
+LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lboost_program_options
 
 DESTDIR = $$TOP_BUILDDIR/target/$$BINDIR
 
