@@ -44,7 +44,9 @@ XConfig::~XConfig()
 inline const XConfigBucket* XConfig::get_bucket(const XConfigNode& node)
 {
 	// idx is 1-based so that 0 means null node
-	if (!node || !buckets)
+	if (!buckets)
+		throw XConfigNotConnected();
+	if (!node)
 		throw XConfigNotFound();
 	return &buckets[((uint32_t)node)];
 }
@@ -139,17 +141,32 @@ std::vector<XConfigNode> XConfig::get_children(const XConfigNode& key)
 }
 
 
+XConfigNode XConfig::get_node_no_throw(const XConfigKeyType& key)
+{
+	// idx is 1-based so that 0 means null node
+	XConfigNode node = cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1;
+
+	if (get_key(node) != key)
+		node = null_node;
+
+	return node;
+}
+
+XConfigNode XConfig::get_node_no_throw(const std::vector<std::string>& key)
+{
+	return get_node_no_throw(escape_key(key));
+}
+
 XConfigNode XConfig::get_node(const XConfigKeyType& key)
 {
 	check_connection();
 
 	if(!hash)
-		throw XConfigNotFound();
+		throw XConfigNotConnected();
 
-	// idx is 1-based so that 0 means null node
-	XConfigNode node = cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1;
+	XConfigNode node = get_node_no_throw(key);
 
-	if (get_key(node) != key)
+	if (!node)
 		throw XConfigNotFound();
 
 	return node;

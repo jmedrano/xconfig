@@ -71,6 +71,8 @@ public:
 	// methods for transforming keys into nodes
 	XConfigNode get_node(const XConfigKeyType& key);
 	XConfigNode get_node(const std::vector<std::string>& key);
+	XConfigNode get_node_no_throw(const XConfigKeyType& key);
+	XConfigNode get_node_no_throw(const std::vector<std::string>& key);
 	XConfigKeyType get_key(const XConfigNode& node);
 
 	// methods for tree iteration
@@ -200,6 +202,9 @@ class XConfigWrongType : public std::exception {
 };
 
 class XConfigNotFound : public std::exception {
+};
+
+class XConfigNotConnected : public std::exception {
 };
 
 /**
