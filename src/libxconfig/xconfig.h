@@ -21,8 +21,8 @@ public:
 	static const char* escaped_characters;
 	static const XConfigNode null_node;
 
-	XConfig(std::string path, std::string socket = "");
-	XConfig(XConfigConnection* conn);
+	XConfig();
+	explicit XConfig(XConfigConnection* conn);
 	~XConfig();
 	void connect();
 	void close();

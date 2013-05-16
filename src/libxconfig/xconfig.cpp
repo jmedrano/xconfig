@@ -11,6 +11,10 @@ using std::vector;
 const char* XConfig::escaped_characters = "/#\\";
 const XConfigNode XConfig::null_node;
 
+XConfig::XConfig() : conn(0), hash(0), buckets(0)
+{
+}
+
 XConfig::XConfig(XConfigConnection* conn) : conn(conn), hash(0), buckets(0)
 {
 	conn->connect();
@@ -31,12 +35,6 @@ void XConfig::update_connection()
 		buckets = 0;
 		string_pool = 0;
 	}
-}
-
-XConfig::XConfig(std::string path, std::string socket) : conn(new XConfigUnixConnection(path, socket))
-{
-	conn->connect();
-	update_connection();
 }
 
 XConfig::~XConfig()
