@@ -245,6 +245,14 @@ XConfigKeyType XConfig::get_key(const XConfigNode & node)
 	return ss.str();
 }
 
+XConfigNode XConfig::get_parent(const XConfigNode& node)
+{
+	const XConfigBucket* bucket = get_bucket(node);
+	if (bucket->parent)
+		return bucket->parent;
+	throw XConfigWrongType();
+}
+
 std::string XConfig::get_name(const XConfigNode& node)
 {
 	const XConfigBucket* bucket = get_bucket(node);
