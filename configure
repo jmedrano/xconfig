@@ -37,6 +37,7 @@ substpath=${curpath#${relpath}}
 qmake_check_v4 "$QMAKE" || exit 1
 
 declare -a SAVED_ARGS=("$@")
+declare -a ARGS
 while [ $# -gt 0 ]; do
 	optarg=`expr "x$1" : 'x[^=]*=\(.*\)'`
 	case "$1" in
@@ -54,7 +55,7 @@ while [ $# -gt 0 ]; do
 			shift
 			;;
 		--help) show_usage; exit 1;;
-		*) shift;;
+		*) ARGS+=("$1"); shift;;
 #		*) show_usage; exit 1;;
 	esac
 done
@@ -78,6 +79,6 @@ fi
 	
 PREFIX=${PREFIX:-/usr/local}
 
-"$QMAKE" -o .qmake.cache.makefile "PREFIX = $PREFIX" "$relpath"/genconfig.pro; rm -f .qmake.cache.makefile;
-"$QMAKE" -o Makefile "CONFIG += $CONFIG_ADD" "CONFIG -= $CONFIG_SUB" "$relpath"/xconfig.pro
+"$QMAKE" -o .qmake.cache.makefile "PREFIX = $PREFIX" "$relpath"/genconfig.pro "${ARGS[@]}"; rm -f .qmake.cache.makefile
+"$QMAKE" -o Makefile "CONFIG += $CONFIG_ADD" "CONFIG -= $CONFIG_SUB" "$relpath"/xconfig.pro "${ARGS[@]}"
 
