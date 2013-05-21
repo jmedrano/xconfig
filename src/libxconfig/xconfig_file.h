@@ -28,12 +28,16 @@ struct XConfigBucket {
 	uint32_t mtime_secs;
 	uint32_t mtime_nsecs;
 };
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
 static_assert(sizeof(XConfigBucket) == 32, "sizeof(XConfigBucket) != 32");
+#endif
 
 struct XConfigHeader {
 	uint32_t hash_size;
 	uint32_t num_buckets;
 };
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
 static_assert(sizeof(XConfigHeader) == 8, "sizeof(XConfigHeader) != 8");
+#endif
 
 #endif // _XCONFIG_FILE_H_
