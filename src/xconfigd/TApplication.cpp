@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
+#include <unistd.h>
 
 TApplication::TApplication(int& argc, char** argv) : QCoreApplication(argc, argv), daemon_signal_notifier(0), daemonized(false)
 {
