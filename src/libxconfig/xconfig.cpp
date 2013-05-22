@@ -8,6 +8,8 @@
 using std::string;
 using std::vector;
 
+namespace xconfig {
+
 const char* XConfig::escaped_characters = "/#\\";
 const XConfigNode XConfig::null_node;
 
@@ -70,7 +72,7 @@ struct timespec XConfig::get_mtime(const XConfigNode& key)
 std::string XConfig::get_string(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type == XConfigTypeString)
+	if (bucket->type == XConfigValueType::TYPE_STRING)
 		return get_string(bucket->value._string);
 	throw XConfigWrongType();
 }
@@ -78,7 +80,7 @@ std::string XConfig::get_string(const XConfigNode& key)
 bool XConfig::get_bool(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type == XConfigTypeBoolean)
+	if (bucket->type == XConfigValueType::TYPE_BOOLEAN)
 		return bucket->value._boolean;
 	throw XConfigWrongType();
 }
@@ -86,7 +88,7 @@ bool XConfig::get_bool(const XConfigNode& key)
 int XConfig::get_int(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type == XConfigTypeInteger)
+	if (bucket->type == XConfigValueType::TYPE_INTEGER)
 		return bucket->value._integer;
 	throw XConfigWrongType();
 }
@@ -94,7 +96,7 @@ int XConfig::get_int(const XConfigNode& key)
 double XConfig::get_float(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type == XConfigTypeInteger)
+	if (bucket->type == XConfigValueType::TYPE_FLOAT)
 		return bucket->value._float;
 	throw XConfigWrongType();
 }
@@ -102,7 +104,7 @@ double XConfig::get_float(const XConfigNode& key)
 int XConfig::get_count(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type <= XConfigTypeSequence)
+	if (!xconfig::is_scalar(bucket->type))
 		return bucket->value._vectorial.size;
 	throw XConfigWrongType();
 }
@@ -110,7 +112,7 @@ int XConfig::get_count(const XConfigNode& key)
 std::vector<std::string> XConfig::get_map_keys(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type != XConfigTypeMap)
+	if (bucket->type != XConfigValueType::TYPE_MAP)
 		throw XConfigWrongType();
 	vector<string> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
@@ -125,7 +127,7 @@ std::vector<std::string> XConfig::get_map_keys(const XConfigNode& key)
 std::vector<XConfigNode> XConfig::get_children(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	if (bucket->type != XConfigTypeMap && bucket->type != XConfigTypeSequence)
+	if (xconfig::is_scalar(bucket->type))
 		throw XConfigWrongType();
 	vector<XConfigNode> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
@@ -141,7 +143,7 @@ std::vector<XConfigNode> XConfig::get_children(const XConfigNode& key)
 }
 
 
-XConfigNode XConfig::get_node_no_throw(const XConfigKeyType& key)
+XConfigNode XConfig::get_node_no_throw(const std::string& key)
 {
 	// idx is 1-based so that 0 means null node
 	XConfigNode node = cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1;
@@ -157,7 +159,7 @@ XConfigNode XConfig::get_node_no_throw(const std::vector<std::string>& key)
 	return get_node_no_throw(escape_key(key));
 }
 
-XConfigNode XConfig::get_node(const XConfigKeyType& key)
+XConfigNode XConfig::get_node(const std::string& key)
 {
 	check_connection();
 
@@ -199,7 +201,7 @@ std::string XConfig::escape_key(const std::string& key)
 	return ss.str();
 }
 
-XConfigKeyType XConfig::escape_key(const std::vector<std::string>& key)
+std::string XConfig::escape_key(const std::vector<std::string>& key)
 {
 	std::ostringstream ss;
 	for (auto k = key.begin(); k != key.end(); ++k) {
@@ -210,7 +212,7 @@ XConfigKeyType XConfig::escape_key(const std::vector<std::string>& key)
 	return ss.str();
 }
 
-XConfigKeyType XConfig::get_key(const XConfigNode & node)
+std::string XConfig::get_key(const XConfigNode & node)
 {
 	std::ostringstream ss;
 	vector<string> keys;
@@ -219,11 +221,11 @@ XConfigKeyType XConfig::get_key(const XConfigNode & node)
 		const XConfigBucket* parent = get_bucket(bucket->parent);
 		string separator;
 		switch (parent->type) {
-		case XConfigTypeMap:
+		case XConfigValueType::TYPE_MAP:
 			keys.push_back(get_string(bucket->name));
 			separator = map_separator;
 			break;
-		case XConfigTypeSequence:
+		case XConfigValueType::TYPE_SEQUENCE:
 			keys.push_back(boost::lexical_cast<string>(bucket->name));
 			separator = sequence_separator;
 			break;
@@ -259,10 +261,10 @@ std::string XConfig::get_name(const XConfigNode& node)
 	if (bucket->parent) {
 		const XConfigBucket* parent = get_bucket(bucket->parent);
 		switch (parent->type) {
-		case XConfigTypeMap:
+		case XConfigValueType::TYPE_MAP:
 			return get_string(bucket->name);
 			break;
-		case XConfigTypeSequence:
+		case XConfigValueType::TYPE_SEQUENCE:
 			return boost::lexical_cast<string>(bucket->name);
 			break;
 		default:
@@ -273,3 +275,4 @@ std::string XConfig::get_name(const XConfigNode& node)
 	return string();
 }
 
+} // namespace

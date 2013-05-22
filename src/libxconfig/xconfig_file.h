@@ -1,18 +1,21 @@
 #ifndef _XCONFIG_FILE_H_
 #define _XCONFIG_FILE_H_
 
-enum XConfigValueType {
-	XConfigTypeMap,
-	XConfigTypeSequence,
-	XConfigTypeBoolean,
-	XConfigTypeInteger,
-	XConfigTypeFloat,
-	XConfigTypeString,
+namespace xconfig {
+
+enum XConfigValueType : uint32_t {
+	TYPE_NULL,
+	TYPE_BOOLEAN,
+	TYPE_INTEGER,
+	TYPE_FLOAT,
+	TYPE_STRING,
+	TYPE_MAP,
+	TYPE_SEQUENCE,
 };
 
 struct XConfigBucket {
 	uint32_t name;
-	enum XConfigValueType type;
+	XConfigValueType type;
 	union {
 		bool _boolean;
 		uint64_t _integer;
@@ -39,5 +42,11 @@ struct XConfigHeader {
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 static_assert(sizeof(XConfigHeader) == 8, "sizeof(XConfigHeader) != 8");
 #endif
+
+inline bool is_scalar(XConfigValueType type) {
+	return type < TYPE_MAP;
+}
+
+} // namespace xconfig
 
 #endif // _XCONFIG_FILE_H_

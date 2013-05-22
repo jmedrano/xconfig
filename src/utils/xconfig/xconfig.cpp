@@ -9,6 +9,7 @@
 
 using std::string;
 using boost::lexical_cast;
+using namespace xconfig;
 
 static const int MAX_BUCKETS = 65536;
 static XConfigBucket buckets[MAX_BUCKETS];
@@ -73,7 +74,7 @@ static int yaml_parse_node(yaml_parser_t& parser, const string& prefix, bool is_
 				bucket_idx++;
 				current_bucket->name = name;
 				current_bucket->parent = parent;
-				current_bucket->type = XConfigTypeString;
+				current_bucket->type = XConfigValueType::TYPE_STRING;
 				current_bucket->value._string = string_offset + 1;
 				current_bucket->next = bucket_idx + 1;
 				name = 0;
@@ -91,7 +92,7 @@ static int yaml_parse_node(yaml_parser_t& parser, const string& prefix, bool is_
 			bucket_idx++;
 			current_bucket->name = name;
 			current_bucket->parent = parent;
-			current_bucket->type = XConfigTypeMap;
+			current_bucket->type = XConfigValueType::TYPE_MAP;
 			current_bucket->value._vectorial.child = bucket_idx + 1;
 			current_bucket->value._vectorial.size = yaml_parse_node(parser, next_prefix, false, true);
 			current_bucket->next = bucket_idx + 1;
@@ -109,7 +110,7 @@ static int yaml_parse_node(yaml_parser_t& parser, const string& prefix, bool is_
 			bucket_idx++;
 			current_bucket->name = name;
 			current_bucket->parent = parent;
-			current_bucket->type = XConfigTypeSequence;
+			current_bucket->type = XConfigValueType::TYPE_SEQUENCE;
 			current_bucket->value._vectorial.child = bucket_idx + 1;
 			current_bucket->value._vectorial.size = yaml_parse_node(parser, next_prefix, false, false);
 			current_bucket->next = bucket_idx + 1;
@@ -200,7 +201,7 @@ static void emitter_error(yaml_emitter_t& emitter) {
 static void yaml_dump(XConfig& xc, yaml_emitter_t& emitter, XConfigNode node) {
 	yaml_event_t event;
 	switch(xc.get_type(node)) {
-	case XConfigTypeMap:
+	case XConfigValueType::TYPE_MAP:
 		yaml_mapping_start_event_initialize(&event, NULL, NULL, 1, YAML_BLOCK_MAPPING_STYLE);
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
@@ -219,7 +220,7 @@ static void yaml_dump(XConfig& xc, yaml_emitter_t& emitter, XConfigNode node) {
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
 		break;
-	case XConfigTypeSequence:
+	case XConfigValueType::TYPE_SEQUENCE:
 		yaml_sequence_start_event_initialize(&event, NULL, NULL, 1, YAML_BLOCK_SEQUENCE_STYLE);
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
@@ -233,28 +234,28 @@ static void yaml_dump(XConfig& xc, yaml_emitter_t& emitter, XConfigNode node) {
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
 		break;
-	case XConfigTypeBoolean:
+	case XConfigValueType::TYPE_BOOLEAN:
 		yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_BOOL_TAG,
 			(yaml_char_t*)(xc.get_bool(node) ? "true" : "false"),
 			-1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
 		break;
-	case XConfigTypeInteger:
+	case XConfigValueType::TYPE_INTEGER:
 		yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_INT_TAG,
 			(yaml_char_t*)lexical_cast<string>(xc.get_int(node)).c_str(),
 			-1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
 		break;
-	case XConfigTypeFloat:
+	case XConfigValueType::TYPE_FLOAT:
 		yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_FLOAT_TAG,
 			(yaml_char_t*)lexical_cast<string>(xc.get_float(node)).c_str(),
 			-1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
 		if (!yaml_emitter_emit(&emitter, &event))
 			emitter_error(emitter);
 		break;
-	case XConfigTypeString:
+	case XConfigValueType::TYPE_STRING:
 		yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_STR_TAG,
 			(yaml_char_t*)xc.get_string(node).c_str(), -1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
 		if (!yaml_emitter_emit(&emitter, &event))

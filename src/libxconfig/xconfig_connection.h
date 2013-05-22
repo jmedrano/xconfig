@@ -3,6 +3,8 @@
 
 #include <string>
 
+namespace xconfig {
+
 class XConfigConnection {
 public:
 	virtual ~XConfigConnection() {}
@@ -38,5 +40,7 @@ private:
 	size_t size;
 	void* blob;
 };
+
+} // namespace xconfig
 
 #endif // _XCONFIG_CONNECTION_H_

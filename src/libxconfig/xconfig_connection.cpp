@@ -6,6 +6,8 @@
 
 #include "xconfig_connection.h"
 
+namespace xconfig {
+
 XConfigUnixConnection::XConfigUnixConnection(std::string path, std::string socket) : path(path), socket(socket), blob(0)
 {
 }
@@ -75,4 +77,4 @@ const void* XConfigFileConnection::get_blob()
 	return blob;
 }
 
-
+} // namespace xconfig
