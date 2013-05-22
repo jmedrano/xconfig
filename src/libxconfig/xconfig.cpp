@@ -13,17 +13,13 @@ namespace xconfig {
 const char* XConfig::escaped_characters = "/#\\";
 const XConfigNode XConfig::null_node;
 
-XConfig::XConfig() : conn(0), hash(0), buckets(0)
-{
-}
-
-XConfig::XConfig(XConfigConnection* conn) : conn(conn), hash(0), buckets(0)
+XConfig::XConfig(XConfigConnection* conn, bool auto_reload) : conn(conn), hash(0), buckets(0), auto_reload(auto_reload)
 {
 	conn->connect();
-	update_connection();
+	do_reload();
 }
 
-void XConfig::update_connection()
+void XConfig::do_reload()
 {
 	const void* blob = conn->get_blob();
 	if (blob) {
@@ -161,7 +157,7 @@ XConfigNode XConfig::get_node_no_throw(const std::vector<std::string>& key)
 
 XConfigNode XConfig::get_node(const std::string& key)
 {
-	check_connection();
+	reload();
 
 	if(!hash)
 		throw XConfigNotConnected();

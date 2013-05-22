@@ -21,8 +21,7 @@ public:
 	static const char* escaped_characters;
 	static const XConfigNode null_node;
 
-	XConfig();
-	explicit XConfig(XConfigConnection* conn);
+	explicit XConfig(XConfigConnection* conn, bool auto_reload = true);
 	~XConfig();
 	void connect();
 	void close();
@@ -83,16 +82,17 @@ public:
 	static std::string escape_key(const std::vector<std::string>& key);
 	static std::string escape_key(const std::string& key);
 
+	bool reload();
 private:
 	boost::scoped_ptr<XConfigConnection> conn;
 	const void* hash;
 	const XConfigBucket* buckets;
 	const char* string_pool;
+	bool auto_reload;
 
 	const XConfigBucket* get_bucket(const XConfigNode& key);
 	std::string get_string(uint32_t offset);
-	void check_connection();
-	void update_connection();
+	void do_reload();
 
 };
 
@@ -154,47 +154,47 @@ inline std::vector<std::string> XConfig::get_map_keys(const std::vector<std::str
 }
 
 inline enum XConfigValueType XConfig::get_type(const std::string& key) {
-	check_connection();
+	reload();
 	return get_type(get_node(key));
 }
 inline struct timespec XConfig::get_mtime(const std::string& key) {
-	check_connection();
+	reload();
 	return get_mtime(get_node(key));
 }
 inline bool XConfig::is_scalar(const std::string& key) {
-	check_connection();
+	reload();
 	return is_scalar(get_node(key));
 }
 inline bool XConfig::is_map(const std::string& key) {
-	check_connection();
+	reload();
 	return is_map(get_node(key));
 }
 inline bool XConfig::is_sequence(const std::string& key) {
-	check_connection();
+	reload();
 	return is_sequence(get_node(key));
 }
 inline std::string XConfig::get_string(const std::string& key) {
-	check_connection();
+	reload();
 	return get_string(get_node(key));
 }
 inline bool XConfig::get_bool(const std::string& key) {
-	check_connection();
+	reload();
 	return get_bool(get_node(key));
 }
 inline int XConfig::get_int(const std::string& key) {
-	check_connection();
+	reload();
 	return get_int(get_node(key));
 }
 inline double XConfig::get_float(const std::string& key) {
-	check_connection();
+	reload();
 	return get_float(get_node(key));
 }
 inline int XConfig::get_count(const std::string& key) {
-	check_connection();
+	reload();
 	return get_count(get_node(key));
 }
 inline std::vector<std::string> XConfig::get_map_keys(const std::string& key) {
-	check_connection();
+	reload();
 	return get_map_keys(get_node(key));
 }
 
@@ -209,12 +209,14 @@ class XConfigNotConnected : public std::exception {
 
 /**
  * Check if there is any update from the connection
- * if there is no transaction in progress
- * If an update is detected
+ * returns if an update is detected
  */
-inline void XConfig::check_connection() {
-	if (conn->connect())
-		update_connection();
+inline bool XConfig::reload() {
+	if (auto_reload && conn->connect()) {
+		do_reload();
+		return true;
+	}
+	return false;
 }
 
 } // namespace xconfig
