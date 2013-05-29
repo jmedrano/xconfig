@@ -1,5 +1,5 @@
-#ifndef _XCONFIG_FILE_H_
-#define _XCONFIG_FILE_H_
+#ifndef LIBXCONFIG_XCONFIG_FILE_H_
+#define LIBXCONFIG_XCONFIG_FILE_H_
 
 namespace xconfig {
 
@@ -49,4 +49,4 @@ inline bool is_scalar(XConfigValueType type) {
 
 } // namespace xconfig
 
-#endif // _XCONFIG_FILE_H_
+#endif // LIBXCONFIG_XCONFIG_FILE_H_

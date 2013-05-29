@@ -1,5 +1,5 @@
-#ifndef _XCONFIG_CONNECTION_H_
-#define _XCONFIG_CONNECTION_H_
+#ifndef LIBXCONFIG_XCONFIG_CONNECTION_H_
+#define LIBXCONFIG_XCONFIG_CONNECTION_H_
 
 #include <string>
 
@@ -43,4 +43,4 @@ private:
 
 } // namespace xconfig
 
-#endif // _XCONFIG_CONNECTION_H_
+#endif // LIBXCONFIG_XCONFIG_CONNECTION_H_

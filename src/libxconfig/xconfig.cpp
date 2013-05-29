@@ -1,4 +1,6 @@
 #include <cmph.h>
+#include <string>
+#include <vector>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -27,7 +29,8 @@ void XConfig::do_reload()
 		hash = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader);
 		buckets = reinterpret_cast<const XConfigBucket*>(
 			reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size) - 1;
-		string_pool = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size + sizeof(XConfigBucket) * header->num_buckets - 1;
+		string_pool = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader)
+			+ header->hash_size + sizeof(XConfigBucket) * header->num_buckets - 1;
 	} else {
 		hash = 0;
 		buckets = 0;
@@ -62,7 +65,7 @@ enum XConfigValueType XConfig::get_type(const XConfigNode& key)
 struct timespec XConfig::get_mtime(const XConfigNode& key)
 {
 	const XConfigBucket* bucket = get_bucket(key);
-	return {bucket->mtime_secs, bucket->mtime_nsecs};
+	return {bucket->mtime_secs, bucket->mtime_nsecs}; // NOLINT(readability/braces)
 }
 
 std::string XConfig::get_string(const XConfigNode& key)
@@ -113,7 +116,9 @@ std::vector<std::string> XConfig::get_map_keys(const XConfigNode& key)
 	vector<string> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
 		const XConfigBucket* child = get_bucket(bucket->value._vectorial.child);
-		for (auto ret_iterator = ret.begin(); child && ret_iterator != ret.end(); child = get_bucket(child->next), ++ret_iterator) {
+		for (auto ret_iterator = ret.begin();
+				child && ret_iterator != ret.end();
+				child = get_bucket(child->next), ++ret_iterator) {
 			*ret_iterator = get_string(child->name);
 		}
 	}
@@ -217,16 +222,16 @@ std::string XConfig::get_key(const XConfigNode & node)
 		const XConfigBucket* parent = get_bucket(bucket->parent);
 		string separator;
 		switch (parent->type) {
-		case XConfigValueType::TYPE_MAP:
-			keys.push_back(get_string(bucket->name));
-			separator = map_separator;
-			break;
-		case XConfigValueType::TYPE_SEQUENCE:
-			keys.push_back(boost::lexical_cast<string>(bucket->name));
-			separator = sequence_separator;
-			break;
-		default:
-			abort();
+			case XConfigValueType::TYPE_MAP:
+				keys.push_back(get_string(bucket->name));
+				separator = map_separator;
+				break;
+			case XConfigValueType::TYPE_SEQUENCE:
+				keys.push_back(boost::lexical_cast<string>(bucket->name));
+				separator = sequence_separator;
+				break;
+			default:
+				abort();
 		}
 		if (parent->parent)
 			keys.push_back(separator);
@@ -257,18 +262,18 @@ std::string XConfig::get_name(const XConfigNode& node)
 	if (bucket->parent) {
 		const XConfigBucket* parent = get_bucket(bucket->parent);
 		switch (parent->type) {
-		case XConfigValueType::TYPE_MAP:
-			return get_string(bucket->name);
-			break;
-		case XConfigValueType::TYPE_SEQUENCE:
-			return boost::lexical_cast<string>(bucket->name);
-			break;
-		default:
-			throw XConfigWrongType();
+			case XConfigValueType::TYPE_MAP:
+				return get_string(bucket->name);
+				break;
+			case XConfigValueType::TYPE_SEQUENCE:
+				return boost::lexical_cast<string>(bucket->name);
+				break;
+			default:
+				throw XConfigWrongType();
 		}
 	}
 	// root node
 	return string();
 }
 
-} // namespace
+} // namespace xconfig

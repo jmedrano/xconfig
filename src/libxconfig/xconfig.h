@@ -1,5 +1,5 @@
-#ifndef _XCONFIG_H_
-#define _XCONFIG_H_
+#ifndef LIBXCONFIG_XCONFIG_H_
+#define LIBXCONFIG_XCONFIG_H_
 
 #include <time.h>
 #include <string>
@@ -83,6 +83,7 @@ public:
 	static std::string escape_key(const std::string& key);
 
 	bool reload();
+
 private:
 	boost::scoped_ptr<XConfigConnection> conn;
 	const void* hash;
@@ -93,7 +94,6 @@ private:
 	const XConfigBucket* get_bucket(const XConfigNode& key);
 	std::string get_string(uint32_t offset);
 	void do_reload();
-
 };
 
 class XConfigNode {
@@ -221,4 +221,4 @@ inline bool XConfig::reload() {
 
 } // namespace xconfig
 
-#endif // _XCONFIG_H_
+#endif // LIBXCONFIG_XCONFIG_H_

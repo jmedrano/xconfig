@@ -4,6 +4,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <string>
+
 #include "xconfig_connection.h"
 
 namespace xconfig {
