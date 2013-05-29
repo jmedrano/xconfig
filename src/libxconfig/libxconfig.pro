@@ -10,6 +10,7 @@ PKGCONFIG += cmph
 
 INSTALL_HEADERS += \
 	xconfig.h \
+	xconfig-inl.h \
 	xconfig_connection.h \
 	xconfig_file.h
 
