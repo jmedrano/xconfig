@@ -25,12 +25,12 @@ static int string_offset = 0;
 
 class Dumper {
 public:
-	Dumper(XConfig& xc, bool implicit_yaml_separator) : xc(xc), implicit_yaml_separator(implicit_yaml_separator) {}
+	Dumper(const XConfig& xc, bool implicit_yaml_separator) : xc(xc), implicit_yaml_separator(implicit_yaml_separator) {}
 	void yaml_start();
 	void yaml_dump(const XConfigNode& node);
 	void yaml_end();
 private:
-	XConfig& xc;
+	const XConfig& xc;
 	yaml_emitter_t emitter;
 	yaml_event_t event;
 	bool implicit_yaml_separator;
