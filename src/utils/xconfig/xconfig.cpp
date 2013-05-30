@@ -1,10 +1,19 @@
 #include <xconfig.h>
 #include <xconfig_file.h>
+
 #include <yaml.h>
 #include <cmph.h>
-#include <boost/lexical_cast.hpp>
-#include <boost/program_options.hpp>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <signal.h>
 
+#include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
+#include <boost/program_options.hpp>
 #include <iostream>
 
 using std::string;
@@ -14,7 +23,9 @@ using xconfig::XConfigNode;
 using xconfig::XConfigHeader;
 using xconfig::XConfigBucket;
 using xconfig::XConfigValueType;
+using xconfig::XConfigConnection;
 using xconfig::XConfigFileConnection;
+using xconfig::XConfigUnixConnection;
 
 static const int MAX_BUCKETS = 65536;
 static XConfigBucket buckets[MAX_BUCKETS];
@@ -242,6 +253,112 @@ void Dumper::emitter_error() {
 	abort();
 }
 
+static void server_thread(int conn_fd, int tree_fd) {
+	char buf[1024];
+	int flags = fcntl(conn_fd, F_GETFL, 0);
+	if (flags < 0) {
+		perror("fcntl");
+		return;
+	}
+	flags |= O_NONBLOCK;
+	flags = fcntl(conn_fd, F_SETFL, flags);
+	if (flags < 0) {
+		perror("fcntl");
+		return;
+	}
+	for (;;) {
+		int rc = ::read(conn_fd, buf, sizeof(buf));
+		if (rc == -1 && errno != EAGAIN) {
+			perror("read");
+			return;
+		} else if (rc == 0) {
+			close(conn_fd);
+			return;
+		}
+
+		if (rc > 0) {
+			printf("read %u bytes: %.*s\n", rc, rc, buf);
+		} else {
+			sleep(1);
+		}
+
+		char control[sizeof(struct cmsghdr)+10];
+		struct msghdr msg;
+		struct cmsghdr *cmsg;
+		struct iovec iov;
+		const string response(string(XConfigUnixConnection::PUSH_MSG) + XConfigUnixConnection::TERMINATOR);
+
+		/* Response data */
+		iov.iov_base = const_cast<void*>(reinterpret_cast<const void*>(response.c_str()));
+		iov.iov_len = response.length();
+
+		/* compose the message */
+		memset(&msg, 0, sizeof(msg));
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
+		msg.msg_control = control;
+		msg.msg_controllen = sizeof(control);
+
+		/* send tree_fd */
+		cmsg = CMSG_FIRSTHDR(&msg);
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = SCM_RIGHTS;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(tree_fd));
+		*reinterpret_cast<int *>(CMSG_DATA(cmsg)) = tree_fd;
+
+		msg.msg_controllen = cmsg->cmsg_len;
+
+		if (sendmsg(conn_fd, &msg, 0) < 0) {
+			perror("sendmsg error");
+			close(conn_fd);
+			return;
+		}
+	}
+}
+
+static void serve_file(const string& xc_path, const string& socket) {
+	const int tree_fd = ::open(xc_path.c_str(), O_RDONLY);
+	if (tree_fd < 0) {
+		perror("open error");
+		return;
+	}
+	const int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+	if (fd < 0) {
+		close(tree_fd);
+		perror("socket error");
+		return;
+	}
+	struct sockaddr_un addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, socket.c_str(), sizeof(addr.sun_path) - 1);
+	// remove socket before bind
+	::unlink(socket.c_str());
+	if (::bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+		close(fd);
+		close(tree_fd);
+		perror("bind error");
+		return;
+	}
+	if (listen(fd, 5) < 0) {
+		close(fd);
+		close(tree_fd);
+		perror("listen error");
+		return;
+	}
+	signal(SIGPIPE, SIG_IGN);
+	for (;;) {
+		const int conn_fd = ::accept(fd, NULL, NULL);
+		if (conn_fd < 0) {
+			close(fd);
+			close(tree_fd);
+			perror("accept error");
+			continue;
+		}
+		boost::thread new_thread(server_thread, conn_fd, tree_fd);
+	}
+}
+
 void Dumper::yaml_dump(const XConfigNode& node) {
 	yaml_event_t event;
 	switch(xc.get_type(node)) {
@@ -318,6 +435,9 @@ int main(int argc, char** argv)
 		("generate,g", boost::program_options::value<string>(), "generate xconfig file")
 		("file,f", boost::program_options::value<string>(), "xconfig file")
 		("key,k", boost::program_options::value<string>()->default_value(""), "key node to query")
+		("server,s", "server mode")
+		("socket,t", boost::program_options::value<string>()->default_value(XConfigUnixConnection::DEFAULT_SOCKET), "socket")
+		("path,p", boost::program_options::value<string>()->implicit_value(""), "configuration path")
 		("noind,y", "do not include yaml document indicators");
 
 	boost::program_options::variables_map vm;
@@ -341,16 +461,27 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	string key(vm["key"].as<string>());
 	string path(vm["file"].as<string>());
-	int implicit_yaml_separator = vm.count("noind");
+	string socket(vm["socket"].as<string>());
+	if (vm.count("server")) {
+		serve_file(path, socket);
+	} else {
+		string key(vm["key"].as<string>());
+		int implicit_yaml_separator = vm.count("noind");
 
-	XConfig xc(new XConfigFileConnection(path));
-	Dumper dumper(xc, implicit_yaml_separator);
-	XConfigNode root = xc.get_node(key);
-	dumper.yaml_start();
-	dumper.yaml_dump(root);
-	dumper.yaml_end();
+		XConfigConnection *conn;
+		if (vm.count("path")) {
+			conn = new XConfigUnixConnection(path, socket);
+		} else {
+			conn = new XConfigFileConnection(path);
+		}
+		XConfig xc(conn);
+		Dumper dumper(xc, implicit_yaml_separator);
+		XConfigNode root = xc.get_node(key);
+		dumper.yaml_start();
+		dumper.yaml_dump(root);
+		dumper.yaml_end();
+	}
 
 	return 0;
 }
