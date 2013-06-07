@@ -21,7 +21,7 @@ public:
 	static const char* escaped_characters;
 	static const XConfigNode null_node;
 
-	explicit XConfig(XConfigConnection* conn, bool auto_reload = true);
+	explicit XConfig(const boost::shared_ptr<XConfigConnection>& conn, bool auto_reload = true);
 	~XConfig();
 	void connect();
 	void close();
@@ -109,11 +109,11 @@ public:
 	bool reload();
 
 private:
-	boost::scoped_ptr<XConfigConnection> conn;
+	const boost::shared_ptr<XConfigConnection> conn;
 	const void* hash;
 	const XConfigBucket* buckets;
 	const char* string_pool;
-	bool auto_reload;
+	const bool auto_reload;
 
 	const XConfigBucket* get_bucket(const XConfigNode& key) const;
 	std::string get_string(uint32_t offset) const;

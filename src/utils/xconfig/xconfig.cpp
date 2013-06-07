@@ -24,8 +24,9 @@ using xconfig::XConfigHeader;
 using xconfig::XConfigBucket;
 using xconfig::XConfigValueType;
 using xconfig::XConfigConnection;
-using xconfig::XConfigFileConnection;
-using xconfig::XConfigUnixConnection;
+using xconfig::FileConnection;
+using xconfig::UnixConnection;
+using xconfig::UnixConnectionPool;
 
 static const int MAX_BUCKETS = 65536;
 static XConfigBucket buckets[MAX_BUCKETS];
@@ -286,7 +287,7 @@ static void server_thread(int conn_fd, int tree_fd) {
 		struct msghdr msg;
 		struct cmsghdr *cmsg;
 		struct iovec iov;
-		const string response(string(XConfigUnixConnection::PUSH_MSG) + XConfigUnixConnection::TERMINATOR);
+		const string response(string(UnixConnection::PUSH_MSG) + UnixConnection::TERMINATOR);
 
 		/* Response data */
 		iov.iov_base = const_cast<void*>(reinterpret_cast<const void*>(response.c_str()));
@@ -436,7 +437,7 @@ int main(int argc, char** argv)
 		("file,f", boost::program_options::value<string>(), "xconfig file")
 		("key,k", boost::program_options::value<string>()->default_value(""), "key node to query")
 		("server,s", "server mode")
-		("socket,t", boost::program_options::value<string>()->default_value(XConfigUnixConnection::DEFAULT_SOCKET), "socket")
+		("socket,t", boost::program_options::value<string>()->default_value(UnixConnection::DEFAULT_SOCKET), "socket")
 		("path,p", boost::program_options::value<string>()->implicit_value(""), "configuration path")
 		("noind,y", "do not include yaml document indicators");
 
@@ -469,11 +470,12 @@ int main(int argc, char** argv)
 		string key(vm["key"].as<string>());
 		int implicit_yaml_separator = vm.count("noind");
 
-		XConfigConnection *conn;
+		boost::shared_ptr<XConfigConnection> conn;
+		UnixConnectionPool pool;
 		if (vm.count("path")) {
-			conn = new XConfigUnixConnection(path, socket);
+			conn = pool.get_connection(path, socket);
 		} else {
-			conn = new XConfigFileConnection(path);
+			conn.reset(new FileConnection(path));
 		}
 		XConfig xc(conn);
 		Dumper dumper(xc, implicit_yaml_separator);
@@ -482,6 +484,8 @@ int main(int argc, char** argv)
 		dumper.yaml_dump(root);
 		dumper.yaml_end();
 	}
+
+	//sleep(30);
 
 	return 0;
 }

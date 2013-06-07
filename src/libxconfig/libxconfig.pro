@@ -7,6 +7,7 @@ include($$TOP_SRCDIR/xconfig.pri)
 CONFIG += create_prl no_install_prl create_pc
 QT -= core
 PKGCONFIG += cmph
+LIBS += -ltbb -lboost_thread
 
 INSTALL_HEADERS += \
 	xconfig.h \
