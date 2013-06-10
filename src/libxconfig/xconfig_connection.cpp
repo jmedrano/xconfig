@@ -185,6 +185,16 @@ boost::shared_ptr<LinkedConnection> UnixConnectionPool::get_connection(const std
 	return ret;
 }
 
+void UnixConnectionPool::flush_local() {
+	get_thread_local_map().clear();
+}
+
+boost::unordered_map<UnixConnectionPool::KeyType, UnixConnectionPool::LocalValueType>& UnixConnectionPool::get_thread_local_map() {
+	if (!thread_local_map.get())
+		thread_local_map.reset(new boost::unordered_map<KeyType, LocalValueType>());
+	return *thread_local_map;
+}
+
 shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::get_shared_connection(std::string path, std::string socket)
 {
 	KeyType key(path, socket);
@@ -320,6 +330,31 @@ UnixConnectionPool::LingerProxy::~LingerProxy() {
 		lock_guard<mutex> lock(locked_data->linger_list_mutex);
 		locked_data->linger_list.push_back(std::pair<int, KeyType>(timestamp, key));
 	}
+}
+
+bool UnixConnectionPool::LingerProxy::connect() {
+	boost::shared_ptr<SharedData> locked_data(shared_data.lock());
+	SharedData::HashMap::accessor accessor;
+	bool found = locked_data->hash_map.find(accessor, key);
+	assert(found);
+	XConfigConnection& conn = accessor->second->unix_conn;
+	return conn.connect();
+}
+void UnixConnectionPool::LingerProxy::close() {
+	boost::shared_ptr<SharedData> locked_data(shared_data.lock());
+	SharedData::HashMap::accessor accessor;
+	bool found = locked_data->hash_map.find(accessor, key);
+	assert(found);
+	XConfigConnection& conn = accessor->second->unix_conn;
+	return conn.close();
+}
+boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::get_shared_map() const {
+	boost::shared_ptr<SharedData> locked_data(shared_data.lock());
+	SharedData::HashMap::accessor accessor;
+	bool found = locked_data->hash_map.find(accessor, key);
+	assert(found);
+	XConfigConnection& conn = accessor->second->unix_conn;
+	return conn.get_shared_map();
 }
 
 FileConnection::FileConnection(std::string path) : path(path)

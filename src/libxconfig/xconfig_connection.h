@@ -90,9 +90,7 @@ public:
 	explicit UnixConnectionPool(bool local_thread_cache = false, int timeout = DEFAULT_TIMEOUT);
 	~UnixConnectionPool();
 	boost::shared_ptr<LinkedConnection> get_connection(const std::string& path, std::string socket = "");
-	void flush_local() {
-		get_thread_local_map().clear();
-	}
+	void flush_local();
 
 private:
 	class LingerProxy;
@@ -123,42 +121,17 @@ private:
 	public:
 		LingerProxy(const KeyType& key, const boost::weak_ptr<SharedData>& shared_data);
 		~LingerProxy();
-		virtual bool connect() {
-			boost::shared_ptr<SharedData> locked_data(shared_data.lock());
-			SharedData::HashMap::accessor accessor;
-			bool found = locked_data->hash_map.find(accessor, key);
-			assert(found);
-			XConfigConnection& conn = accessor->second->unix_conn;
-			return conn.connect();
-		}
-		virtual void close() {
-			boost::shared_ptr<SharedData> locked_data(shared_data.lock());
-			SharedData::HashMap::accessor accessor;
-			bool found = locked_data->hash_map.find(accessor, key);
-			assert(found);
-			XConfigConnection& conn = accessor->second->unix_conn;
-			return conn.close();
-		}
-		virtual boost::shared_ptr<const MappedFile> get_shared_map() const {
-			boost::shared_ptr<SharedData> locked_data(shared_data.lock());
-			SharedData::HashMap::accessor accessor;
-			bool found = locked_data->hash_map.find(accessor, key);
-			assert(found);
-			XConfigConnection& conn = accessor->second->unix_conn;
-			return conn.get_shared_map();
-		}
+		virtual bool connect();
+		virtual void close();
+		virtual boost::shared_ptr<const MappedFile> get_shared_map() const;
 
 	private:
 		const KeyType key;
 		const boost::weak_ptr<SharedData> shared_data;
 	};
 
+	boost::unordered_map<KeyType, LocalValueType>& get_thread_local_map();
 	boost::shared_ptr<LingerProxy> get_shared_connection(std::string path, std::string socket);
-	boost::unordered_map<KeyType, LocalValueType>& get_thread_local_map() {
-		if (!thread_local_map.get())
-			thread_local_map.reset(new boost::unordered_map<KeyType, LocalValueType>());
-		return *thread_local_map;
-	}
 
 	static void event_loop(const boost::weak_ptr<SharedData>& shared_data);
 
