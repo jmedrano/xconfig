@@ -13,29 +13,29 @@ using boost::shared_ptr;
 
 namespace xconfig {
 
-const char* XConfig::escaped_characters = "/#\\";
-const XConfigNode XConfig::null_node;
+const char* XConfig::ESCAPED_CHARACTERS = "/#\\";
+const XConfigNode XConfig::NULL_NODE;
 
-XConfig::XConfig(const shared_ptr<XConfigConnection>& conn, bool auto_reload) : conn(conn), hash(0), buckets(0), auto_reload(auto_reload)
+XConfig::XConfig(const shared_ptr<XConfigConnection>& conn, bool autoReload) : conn(conn), hash(0), buckets(0), autoReload(autoReload)
 {
 	conn->connect();
-	do_reload();
+	doReload();
 }
 
-void XConfig::do_reload()
+void XConfig::doReload()
 {
-	const void* blob = conn->get_blob();
+	const void* blob = conn->getBlob();
 	if (blob) {
 		const XConfigHeader* header = reinterpret_cast<const XConfigHeader*>(blob);
 		hash = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader);
 		buckets = reinterpret_cast<const XConfigBucket*>(
-			reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hash_size) - 1;
-		string_pool = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader)
-			+ header->hash_size + sizeof(XConfigBucket) * header->num_buckets - 1;
+			reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader) + header->hashSize) - 1;
+		stringPool = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader)
+			+ header->hashSize + sizeof(XConfigBucket) * header->numBuckets - 1;
 	} else {
 		hash = 0;
 		buckets = 0;
-		string_pool = 0;
+		stringPool = 0;
 	}
 }
 
@@ -43,7 +43,7 @@ XConfig::~XConfig()
 {
 }
 
-inline const XConfigBucket* XConfig::get_bucket(const XConfigNode& node) const
+inline const XConfigBucket* XConfig::getBucket(const XConfigNode& node) const
 {
 	// idx is 1-based so that 0 means null node
 	if (!buckets)
@@ -53,122 +53,122 @@ inline const XConfigBucket* XConfig::get_bucket(const XConfigNode& node) const
 	return &buckets[((uint32_t)node)];
 }
 
-inline std::string XConfig::get_string(uint32_t offset) const
+inline std::string XConfig::getString(uint32_t offset) const
 {
-	return std::string(&string_pool[offset]);
+	return std::string(&stringPool[offset]);
 }
 
-enum XConfigValueType XConfig::get_type(const XConfigNode& key) const
+enum XConfigValueType XConfig::getType(const XConfigNode& key) const
 {
-	return get_bucket(key)->type;
+	return getBucket(key)->type;
 }
 
-struct timespec XConfig::get_mtime(const XConfigNode& key) const
+struct timespec XConfig::getMtime(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
-	return {bucket->mtime_secs, bucket->mtime_nsecs}; // NOLINT(readability/braces)
+	const XConfigBucket* bucket = getBucket(key);
+	return {bucket->mtimeSecs, bucket->mtimeNsecs}; // NOLINT(readability/braces)
 }
 
-std::string XConfig::get_string(const XConfigNode& key) const
+std::string XConfig::getString(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
+	const XConfigBucket* bucket = getBucket(key);
 	if (bucket->type == XConfigValueType::TYPE_STRING)
-		return get_string(bucket->value._string);
+		return getString(bucket->value._string);
 	throw XConfigWrongType();
 }
 
-bool XConfig::get_bool(const XConfigNode& key) const
+bool XConfig::getBool(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
+	const XConfigBucket* bucket = getBucket(key);
 	if (bucket->type == XConfigValueType::TYPE_BOOLEAN)
 		return bucket->value._boolean;
 	throw XConfigWrongType();
 }
 
-int XConfig::get_int(const XConfigNode& key) const
+int XConfig::getInt(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
+	const XConfigBucket* bucket = getBucket(key);
 	if (bucket->type == XConfigValueType::TYPE_INTEGER)
 		return bucket->value._integer;
 	throw XConfigWrongType();
 }
 
-double XConfig::get_float(const XConfigNode& key) const
+double XConfig::getFloat(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
+	const XConfigBucket* bucket = getBucket(key);
 	if (bucket->type == XConfigValueType::TYPE_FLOAT)
 		return bucket->value._float;
 	throw XConfigWrongType();
 }
 
-int XConfig::get_count(const XConfigNode& key) const
+int XConfig::getCount(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
-	if (!xconfig::is_scalar(bucket->type))
+	const XConfigBucket* bucket = getBucket(key);
+	if (!xconfig::isScalar(bucket->type))
 		return bucket->value._vectorial.size;
 	throw XConfigWrongType();
 }
 
-std::vector<std::string> XConfig::get_map_keys(const XConfigNode& key) const
+std::vector<std::string> XConfig::getMapKeys(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
+	const XConfigBucket* bucket = getBucket(key);
 	if (bucket->type != XConfigValueType::TYPE_MAP)
 		throw XConfigWrongType();
 	vector<string> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
-		const XConfigBucket* child = get_bucket(bucket->value._vectorial.child);
-		for (auto ret_iterator = ret.begin();
-				child && ret_iterator != ret.end();
-				child = get_bucket(child->next), ++ret_iterator) {
-			*ret_iterator = get_string(child->name);
+		const XConfigBucket* child = getBucket(bucket->value._vectorial.child);
+		for (auto retIterator = ret.begin();
+				child && retIterator != ret.end();
+				child = getBucket(child->next), ++retIterator) {
+			*retIterator = getString(child->name);
 		}
 	}
 	return ret;
 }
 
-std::vector<XConfigNode> XConfig::get_children(const XConfigNode& key) const
+std::vector<XConfigNode> XConfig::getChildren(const XConfigNode& key) const
 {
-	const XConfigBucket* bucket = get_bucket(key);
-	if (xconfig::is_scalar(bucket->type))
+	const XConfigBucket* bucket = getBucket(key);
+	if (xconfig::isScalar(bucket->type))
 		throw XConfigWrongType();
 	vector<XConfigNode> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
-		XConfigNode child_node = bucket->value._vectorial.child;
-		const XConfigBucket* child = get_bucket(child_node);
-		for (auto ret_iterator = ret.begin(); ret_iterator != ret.end(); ++ret_iterator) {
-			*ret_iterator = child_node;
-			child = get_bucket(child_node);
-			child_node = child->next;
+		XConfigNode childNode = bucket->value._vectorial.child;
+		const XConfigBucket* child = getBucket(childNode);
+		for (auto retIterator = ret.begin(); retIterator != ret.end(); ++retIterator) {
+			*retIterator = childNode;
+			child = getBucket(childNode);
+			childNode = child->next;
 		}
 	}
 	return ret;
 }
 
 
-XConfigNode XConfig::get_node_no_throw(const std::string& key) const
+XConfigNode XConfig::getNodeNoThrow(const std::string& key) const
 {
 	// idx is 1-based so that 0 means null node
 	XConfigNode node = cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1;
 
-	if (get_key(node) != key)
-		node = null_node;
+	if (getKey(node) != key)
+		node = NULL_NODE;
 
 	return node;
 }
 
-XConfigNode XConfig::get_node_no_throw(const std::vector<std::string>& key) const
+XConfigNode XConfig::getNodeNoThrow(const std::vector<std::string>& key) const
 {
-	return get_node_no_throw(escape_key(key));
+	return getNodeNoThrow(escapeKey(key));
 }
 
-XConfigNode XConfig::get_node(const std::string& key)
+XConfigNode XConfig::getNode(const std::string& key)
 {
 	reload();
 
 	if(!hash)
 		throw XConfigNotConnected();
 
-	XConfigNode node = get_node_no_throw(key);
+	XConfigNode node = getNodeNoThrow(key);
 
 	if (!node)
 		throw XConfigNotFound();
@@ -176,60 +176,60 @@ XConfigNode XConfig::get_node(const std::string& key)
 	return node;
 }
 
-XConfigNode XConfig::get_node(const std::vector<std::string>& key)
+XConfigNode XConfig::getNode(const std::vector<std::string>& key)
 {
-	return get_node(escape_key(key));
+	return getNode(escapeKey(key));
 }
 
-static std::ostringstream& escape_string(std::ostringstream& ss, const string& s)
+static std::ostringstream& escapeString(std::ostringstream& ss, const string& s)
 {
 	size_t p = 0;
-	size_t q = s.find_first_of(XConfig::escaped_characters);
+	size_t q = s.find_first_of(XConfig::ESCAPED_CHARACTERS);
 	while (q != string::npos) {
 		ss << s.substr(p, q);
-		ss << XConfig::escape_character;
+		ss << XConfig::ESCAPE_CHARACTER;
 		ss << s[q];
 		p = q + 1;
-		q = s.find_first_of(XConfig::escaped_characters, p);
+		q = s.find_first_of(XConfig::ESCAPED_CHARACTERS, p);
 	}
 	ss << s.substr(p);
 	return ss;
 }
 
-std::string XConfig::escape_key(const std::string& key)
+std::string XConfig::escapeKey(const std::string& key)
 {
 	std::ostringstream ss;
-	escape_string(ss, key);
+	escapeString(ss, key);
 	return ss.str();
 }
 
-std::string XConfig::escape_key(const std::vector<std::string>& key)
+std::string XConfig::escapeKey(const std::vector<std::string>& key)
 {
 	std::ostringstream ss;
 	for (auto k = key.begin(); k != key.end(); ++k) {
 		if (k != key.begin())
-			ss << map_separator;
-		escape_string(ss, *k);
+			ss << MAP_SEPARATOR;
+		escapeString(ss, *k);
 	}
 	return ss.str();
 }
 
-std::string XConfig::get_key(const XConfigNode & node) const
+std::string XConfig::getKey(const XConfigNode & node) const
 {
 	std::ostringstream ss;
 	vector<string> keys;
-	const XConfigBucket* bucket = get_bucket(node);
+	const XConfigBucket* bucket = getBucket(node);
 	while (bucket->parent) {
-		const XConfigBucket* parent = get_bucket(bucket->parent);
+		const XConfigBucket* parent = getBucket(bucket->parent);
 		string separator;
 		switch (parent->type) {
 			case XConfigValueType::TYPE_MAP:
-				keys.push_back(get_string(bucket->name));
-				separator = map_separator;
+				keys.push_back(getString(bucket->name));
+				separator = MAP_SEPARATOR;
 				break;
 			case XConfigValueType::TYPE_SEQUENCE:
 				keys.push_back(boost::lexical_cast<string>(bucket->name));
-				separator = sequence_separator;
+				separator = SEQUENCE_SEPARATOR;
 				break;
 			default:
 				abort();
@@ -244,27 +244,27 @@ std::string XConfig::get_key(const XConfigNode & node) const
 		if (i % 2)
 			ss << *it;
 		else
-			escape_string(ss, *it);
+			escapeString(ss, *it);
 	}
 	return ss.str();
 }
 
-XConfigNode XConfig::get_parent(const XConfigNode& node) const
+XConfigNode XConfig::getParent(const XConfigNode& node) const
 {
-	const XConfigBucket* bucket = get_bucket(node);
+	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->parent)
 		return bucket->parent;
 	throw XConfigWrongType();
 }
 
-std::string XConfig::get_name(const XConfigNode& node) const
+std::string XConfig::getName(const XConfigNode& node) const
 {
-	const XConfigBucket* bucket = get_bucket(node);
+	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->parent) {
-		const XConfigBucket* parent = get_bucket(bucket->parent);
+		const XConfigBucket* parent = getBucket(bucket->parent);
 		switch (parent->type) {
 			case XConfigValueType::TYPE_MAP:
-				return get_string(bucket->name);
+				return getString(bucket->name);
 				break;
 			case XConfigValueType::TYPE_SEQUENCE:
 				return boost::lexical_cast<string>(bucket->name);

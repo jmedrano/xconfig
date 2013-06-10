@@ -46,10 +46,10 @@ void MappedFile::reset(int fd) {
 }
 
 bool LinkedConnection::connect() {
-	auto new_map = conn->get_shared_map();
-	bool ret = new_map != map;
+	auto newMap = conn->getMap();
+	bool ret = newMap != map;
 	if (ret)
-		map = std::move(new_map);
+		map = std::move(newMap);
 	return ret;
 }
 
@@ -59,7 +59,7 @@ void LinkedConnection::close() {
 
 UnixConnection::UnixConnection(std::string path, std::string socket) : path(path),
 		socket(socket.empty() ? DEFAULT_SOCKET: socket),
-		socket_fd(-1)
+		socketFd(-1)
 {
 }
 
@@ -70,33 +70,33 @@ UnixConnection::~UnixConnection()
 
 bool UnixConnection::connect()
 {
-	if (socket_fd < 0) {
+	if (socketFd < 0) {
 		// connect
 		struct sockaddr_un addr;
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
 		strncpy(addr.sun_path, socket.c_str(), sizeof(addr.sun_path)-1);
 
-		socket_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
-		if (socket_fd < 0)
+		socketFd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+		if (socketFd < 0)
 			throw XConfigNotConnected();
-		if (::connect(socket_fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0)
+		if (::connect(socketFd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0)
 			throw XConfigNotConnected();
 	}
 	if (!map) {
 		// send watch msg
 		string msg = string(WATCH_MSG) + SEPARATOR + path + TERMINATOR;
-		int written = ::write(socket_fd, msg.c_str(), msg.length());
+		int written = ::write(socketFd, msg.c_str(), msg.length());
 		if (written != static_cast<int>(msg.length()))
 			throw XConfigNotConnected();
 	}
-	if (socket_fd) {
+	if (socketFd) {
 		// look for push msg
 		char data[1024], control[1024];
 		struct msghdr msg;
 		struct cmsghdr *cmsg;
 		struct iovec iov;
-		int tree_fd = -1;
+		int treeFd = -1;
 
 		// process all pending messages
 		for (;;) {
@@ -109,8 +109,8 @@ bool UnixConnection::connect()
 			msg.msg_controllen = sizeof(control);
 
 			// don't wait for push msg if a tree is already available
-			int msg_flags = map || tree_fd >= 0 ? MSG_CMSG_CLOEXEC | MSG_DONTWAIT : MSG_CMSG_CLOEXEC;
-			if (::recvmsg(socket_fd, &msg, msg_flags) < 0)
+			int msg_flags = map || treeFd >= 0 ? MSG_CMSG_CLOEXEC | MSG_DONTWAIT : MSG_CMSG_CLOEXEC;
+			if (::recvmsg(socketFd, &msg, msg_flags) < 0)
 				break;
 
 			data[iov.iov_len] = '\0';
@@ -118,19 +118,19 @@ bool UnixConnection::connect()
 			cmsg = CMSG_FIRSTHDR(&msg);
 			while (cmsg) {
 				if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
-					if (tree_fd >= 0) {
+					if (treeFd >= 0) {
 						// more than one fd in msg. close every fd but the last one
-						::close(tree_fd);
+						::close(treeFd);
 					}
-					tree_fd = *reinterpret_cast<int *>(CMSG_DATA(cmsg));
+					treeFd = *reinterpret_cast<int *>(CMSG_DATA(cmsg));
 				}
 				cmsg = CMSG_NXTHDR(&msg, cmsg);
 			}
 		}
-		if (tree_fd >= 0) {
+		if (treeFd >= 0) {
 			// tree received. let's mmap it
-			atomic_store(&map, shared_ptr<const MappedFile>(new MappedFile(tree_fd)));
-			::close(tree_fd);
+			atomic_store(&map, shared_ptr<const MappedFile>(new MappedFile(treeFd)));
+			::close(treeFd);
 			return true;
 		}
 	}
@@ -139,139 +139,139 @@ bool UnixConnection::connect()
 
 void UnixConnection::close()
 {
-	if (socket_fd >= 0)
-		::close(socket_fd);
-	socket_fd = -1;
+	if (socketFd >= 0)
+		::close(socketFd);
+	socketFd = -1;
 	atomic_store(&map, shared_ptr<const MappedFile>());
 }
 
-shared_ptr<const MappedFile> UnixConnection::get_shared_map() const
+shared_ptr<const MappedFile> UnixConnection::getMap() const
 {
 	return atomic_load(&map);
 }
 
-int UnixConnection::get_socket_fd() const
+int UnixConnection::getSockedFd() const
 {
-	return socket_fd;
+	return socketFd;
 }
 
-shared_ptr<const MappedFile> FileConnection::get_shared_map() const
+shared_ptr<const MappedFile> FileConnection::getMap() const
 {
 	return map;
 }
 
-UnixConnectionPool::UnixConnectionPool(bool local_thread_cache, int timeout)
-		: shared_data(new SharedData), local_thread_cache(local_thread_cache) {
-	shared_data->timeout = timeout;
-	shared_data->epoll_fd = epoll_create(1);
-	boost::thread thr(event_loop, weak_ptr<SharedData>(shared_data));
+UnixConnectionPool::UnixConnectionPool(bool localThreadCache, int timeout)
+		: sharedData(new SharedData), localThreadCache(localThreadCache) {
+	sharedData->timeout = timeout;
+	sharedData->epollFd = epoll_create(1);
+	boost::thread thr(eventLoop, weak_ptr<SharedData>(sharedData));
 }
 UnixConnectionPool::~UnixConnectionPool() {
 }
 
-boost::shared_ptr<LinkedConnection> UnixConnectionPool::get_connection(const std::string& path, std::string socket) {
+boost::shared_ptr<LinkedConnection> UnixConnectionPool::getConnection(const std::string& path, std::string socket) {
 	boost::shared_ptr<LinkedConnection> ret;
 	if (socket.empty())
 		socket = UnixConnection::DEFAULT_SOCKET;
-	if (local_thread_cache) {
-		auto& it = get_thread_local_map()[KeyType(path, socket)];
+	if (localThreadCache) {
+		auto& it = getThreadLocalMap()[KeyType(path, socket)];
 		if (!it) {
-			it.reset(new LinkedConnection(get_shared_connection(path, socket)));
+			it.reset(new LinkedConnection(getSharedConnection(path, socket)));
 		}
 		ret = it;
 	} else {
-		ret.reset(new LinkedConnection(get_shared_connection(path, socket)));
+		ret.reset(new LinkedConnection(getSharedConnection(path, socket)));
 	}
 	return ret;
 }
 
-void UnixConnectionPool::flush_local() {
-	get_thread_local_map().clear();
+void UnixConnectionPool::flushLocal() {
+	getThreadLocalMap().clear();
 }
 
-boost::unordered_map<UnixConnectionPool::KeyType, UnixConnectionPool::LocalValueType>& UnixConnectionPool::get_thread_local_map() {
-	if (!thread_local_map.get())
-		thread_local_map.reset(new boost::unordered_map<KeyType, LocalValueType>());
-	return *thread_local_map;
+boost::unordered_map<UnixConnectionPool::KeyType, UnixConnectionPool::LocalValueType>& UnixConnectionPool::getThreadLocalMap() {
+	if (!threadLocalMap.get())
+		threadLocalMap.reset(new boost::unordered_map<KeyType, LocalValueType>());
+	return *threadLocalMap;
 }
 
-shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::get_shared_connection(std::string path, std::string socket)
+shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnection(std::string path, std::string socket)
 {
 	KeyType key(path, socket);
 	SharedData::HashMap::accessor accessor;
-	bool inserted = shared_data->hash_map.insert(accessor, key);
+	bool inserted = sharedData->hashMap.insert(accessor, key);
 	if (inserted) {
-		// insert into hash_map
-		accessor->second = make_shared<MapEntry>(key, shared_data->linger_list.end());
-		UnixConnection& conn = accessor->second->unix_conn;
+		// insert into hashMap
+		accessor->second = make_shared<MapEntry>(key, sharedData->lingerList.end());
+		UnixConnection& conn = accessor->second->unixConn;
 
 		// connect
 		conn.connect();
 
-		// insert into fd_map
-		int socket_fd = conn.get_socket_fd();
-		// NOTE: hash_map and fd_map are both locked
-		bool inserted_in_fd_map = shared_data->fd_map.insert(std::pair<const int, KeyType>(socket_fd, key));
-		assert(inserted_in_fd_map);
+		// insert into fdMap
+		int socketFd = conn.getSockedFd();
+		// NOTE: hashMap and fdMap are both locked
+		bool insertedInFdMap = sharedData->fdMap.insert(std::pair<const int, KeyType>(socketFd, key));
+		assert(insertedInFdMap);
 
 		// add socket to epoll
 		struct epoll_event event;
 		memset(&event, 0, sizeof(event));
-		event.data.fd = socket_fd;
+		event.data.fd = socketFd;
 		event.events = EPOLLIN;
-		int ctl_result = epoll_ctl(shared_data->epoll_fd, EPOLL_CTL_ADD, socket_fd, &event);
-		assert(ctl_result >= 0);
+		int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, socketFd, &event);
+		assert(ctlResult >= 0);
 	}
 
-	auto linger_proxy = accessor->second->shared_conn.lock();
-	if (!linger_proxy) {
-		linger_proxy = make_shared<LingerProxy>(key, shared_data);
+	auto lingerProxy = accessor->second->sharedConn.lock();
+	if (!lingerProxy) {
+		lingerProxy = make_shared<LingerProxy>(key, sharedData);
 	}
-	if (accessor->second->linger != shared_data->linger_list.end()) {
-		// NOTE: hash_map and linger_list are both locked
-		lock_guard<mutex> lock(shared_data->linger_list_mutex);
-		shared_data->linger_list.erase(accessor->second->linger);
+	if (accessor->second->linger != sharedData->lingerList.end()) {
+		// NOTE: hashMap and lingerList are both locked
+		lock_guard<mutex> lock(sharedData->lingerListMutex);
+		sharedData->lingerList.erase(accessor->second->linger);
 	}
-	return linger_proxy;
+	return lingerProxy;
 }
 
-void UnixConnectionPool::event_loop(const weak_ptr<SharedData>& shared_data) {
+void UnixConnectionPool::eventLoop(const weak_ptr<SharedData>& sharedData) {
 	// launch event loop on a new thread
-	const int max_events = 10;
-	const int epoll_timeout = 10000;
-	struct epoll_event events[max_events];
+	const int maxEvents = 10;
+	const int epollTimeout = 10000;
+	struct epoll_event events[maxEvents];
 	for (;;) {
-		auto locked_data = shared_data.lock();
-		if (!locked_data)
+		auto lockedData = sharedData.lock();
+		if (!lockedData)
 			break;
-		int num_events = epoll_wait(locked_data->epoll_fd, events, max_events, epoll_timeout);
-		for (int i = 0; i < num_events; i++) {
+		int numEvents = epoll_wait(lockedData->epollFd, events, maxEvents, epollTimeout);
+		for (int i = 0; i < numEvents; i++) {
 			int fd = events[i].data.fd;
 			bool error = (events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP);
-			locked_data->on_read_event(fd, error);
+			lockedData->onReadEvent(fd, error);
 		}
-		locked_data->check_linger_list();
+		lockedData->checkLingerList();
 	}
 }
 
-void UnixConnectionPool::SharedData::on_read_event(int fd, bool error) {
-	SharedData::FdMap::accessor fd_accessor;
-	bool found = fd_map.find(fd_accessor, fd);
+void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
+	SharedData::FdMap::accessor fdAccessor;
+	bool found = fdMap.find(fdAccessor, fd);
 	if (!found || error) {
-		int ctl_result = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, 0);
-		assert(ctl_result >= 0);
+		int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
+		assert(ctlResult >= 0);
 		if (!found)
 			return;
-		fd_map.erase(fd_accessor);
+		fdMap.erase(fdAccessor);
 	}
 
-	KeyType key(fd_accessor->second);
-	fd_accessor.release();
+	KeyType key(fdAccessor->second);
+	fdAccessor.release();
 
 	SharedData::HashMap::accessor accessor;
-	found = hash_map.find(accessor, key);
+	found = hashMap.find(accessor, key);
 	assert(found);
-	UnixConnection& conn = accessor->second->unix_conn;
+	UnixConnection& conn = accessor->second->unixConn;
 	accessor.release();
 
 	// done without locks. no risk since deletes and calls to this method
@@ -281,80 +281,80 @@ void UnixConnectionPool::SharedData::on_read_event(int fd, bool error) {
 	conn.connect();
 
 	if (error) {
-		int socket_fd = conn.get_socket_fd();
-		bool inserted_in_fd_map = fd_map.insert(std::pair<const int, KeyType>(socket_fd, key));
-		assert(inserted_in_fd_map);
+		int socketFd = conn.getSockedFd();
+		bool insertedInFdMap = fdMap.insert(std::pair<const int, KeyType>(socketFd, key));
+		assert(insertedInFdMap);
 	}
 }
 
-void UnixConnectionPool::SharedData::check_linger_list() {
+void UnixConnectionPool::SharedData::checkLingerList() {
 	const int threshold = ::time(NULL) - timeout;
-	// temporary set of items to be deleted after linger_list_mutex is released
-	// this is done to avoid a deadlock having both linger_list_mutex and the hash_map accesor locked
-	std::set<KeyType> keys_to_delete;
+	// temporary set of items to be deleted after lingerListMutex is released
+	// this is done to avoid a deadlock having both lingerListMutex and the hashMap accesor locked
+	std::set<KeyType> keysToDelete;
 	{
-		lock_guard<mutex> lock(linger_list_mutex);
-		auto it = linger_list.begin();
-		for (; it != linger_list.end(); ++it) {
+		lock_guard<mutex> lock(lingerListMutex);
+		auto it = lingerList.begin();
+		for (; it != lingerList.end(); ++it) {
 			// list is sorted in ascendant time order so the rest of the items cannot be expired
 			if (it->first > threshold)
 				break;
 			const KeyType& key = it->second;
-			keys_to_delete.insert(key);
+			keysToDelete.insert(key);
 		}
-		linger_list.erase(linger_list.begin(), it);
+		lingerList.erase(lingerList.begin(), it);
 	}
-	for (auto it = keys_to_delete.begin(); it != keys_to_delete.end(); ++it) {
+	for (auto it = keysToDelete.begin(); it != keysToDelete.end(); ++it) {
 		SharedData::HashMap::accessor accessor;
-		bool found = hash_map.find(accessor, *it);
+		bool found = hashMap.find(accessor, *it);
 		assert(found);
 		// we need to check if the entry has a new usage
-		if (found && accessor->second->shared_conn.expired()) {
-			int fd = accessor->second->unix_conn.get_socket_fd();
-			int ctl_result = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, 0);
-			assert(ctl_result >= 0);
-			fd_map.erase(fd);
-			hash_map.erase(accessor);
+		if (found && accessor->second->sharedConn.expired()) {
+			int fd = accessor->second->unixConn.getSockedFd();
+			int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
+			assert(ctlResult >= 0);
+			fdMap.erase(fd);
+			hashMap.erase(accessor);
 		}
 	}
 }
 
-UnixConnectionPool::LingerProxy::LingerProxy(const KeyType& key, const weak_ptr<SharedData>& shared_data)
-	: key(key), shared_data(shared_data) {
+UnixConnectionPool::LingerProxy::LingerProxy(const KeyType& key, const weak_ptr<SharedData>& sharedData)
+	: key(key), sharedData(sharedData) {
 }
 
 UnixConnectionPool::LingerProxy::~LingerProxy() {
-	shared_ptr<SharedData> locked_data(shared_data.lock());
-	if (locked_data) {
+	shared_ptr<SharedData> lockedData(sharedData.lock());
+	if (lockedData) {
 		int timestamp = ::time(NULL);
-		lock_guard<mutex> lock(locked_data->linger_list_mutex);
-		locked_data->linger_list.push_back(std::pair<int, KeyType>(timestamp, key));
+		lock_guard<mutex> lock(lockedData->lingerListMutex);
+		lockedData->lingerList.push_back(std::pair<int, KeyType>(timestamp, key));
 	}
 }
 
 bool UnixConnectionPool::LingerProxy::connect() {
-	boost::shared_ptr<SharedData> locked_data(shared_data.lock());
+	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
-	bool found = locked_data->hash_map.find(accessor, key);
+	bool found = lockedData->hashMap.find(accessor, key);
 	assert(found);
-	XConfigConnection& conn = accessor->second->unix_conn;
+	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.connect();
 }
 void UnixConnectionPool::LingerProxy::close() {
-	boost::shared_ptr<SharedData> locked_data(shared_data.lock());
+	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
-	bool found = locked_data->hash_map.find(accessor, key);
+	bool found = lockedData->hashMap.find(accessor, key);
 	assert(found);
-	XConfigConnection& conn = accessor->second->unix_conn;
+	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.close();
 }
-boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::get_shared_map() const {
-	boost::shared_ptr<SharedData> locked_data(shared_data.lock());
+boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() const {
+	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
-	bool found = locked_data->hash_map.find(accessor, key);
+	bool found = lockedData->hashMap.find(accessor, key);
 	assert(found);
-	XConfigConnection& conn = accessor->second->unix_conn;
-	return conn.get_shared_map();
+	XConfigConnection& conn = accessor->second->unixConn;
+	return conn.getMap();
 }
 
 FileConnection::FileConnection(std::string path) : path(path)

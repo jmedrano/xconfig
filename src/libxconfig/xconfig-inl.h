@@ -7,162 +7,162 @@
 
 namespace xconfig {
 
-inline bool XConfig::is_scalar(const XConfigNode& key) const {
-	return xconfig::is_scalar(get_type(key));
+inline bool XConfig::isScalar(const XConfigNode& key) const {
+	return xconfig::isScalar(getType(key));
 }
-inline bool XConfig::is_map(const XConfigNode& key) const {
-	return get_type(key) == TYPE_MAP;
+inline bool XConfig::isMap(const XConfigNode& key) const {
+	return getType(key) == TYPE_MAP;
 }
-inline bool XConfig::is_sequence(const XConfigNode& key) const {
-	return get_type(key) == TYPE_SEQUENCE;
-}
-
-inline enum XConfigValueType XConfig::get_type(const std::vector<std::string>& key) const {
-	return get_type(escape_key(key));
-}
-inline struct timespec XConfig::get_mtime(const std::vector<std::string>& key) const {
-	return get_mtime(escape_key(key));
-}
-inline bool XConfig::is_scalar(const std::vector<std::string>& key) const {
-	return is_scalar(escape_key(key));
-}
-inline bool XConfig::is_map(const std::vector<std::string>& key) const {
-	return is_map(escape_key(key));
-}
-inline bool XConfig::is_sequence(const std::vector<std::string>& key) const {
-	return is_sequence(escape_key(key));
-}
-inline std::string XConfig::get_string(const std::vector<std::string>& key) const {
-	return get_string(escape_key(key));
-}
-inline bool XConfig::get_bool(const std::vector<std::string>& key) const {
-	return get_bool(escape_key(key));
-}
-inline int XConfig::get_int(const std::vector<std::string>& key) const {
-	return get_int(escape_key(key));
-}
-inline double XConfig::get_float(const std::vector<std::string>& key) const {
-	return get_float(escape_key(key));
-}
-inline int XConfig::get_count(const std::vector<std::string>& key) const {
-	return get_count(escape_key(key));
-}
-inline std::vector<std::string> XConfig::get_map_keys(const std::vector<std::string>& key) const {
-	return get_map_keys(escape_key(key));
+inline bool XConfig::isSequence(const XConfigNode& key) const {
+	return getType(key) == TYPE_SEQUENCE;
 }
 
-inline enum XConfigValueType XConfig::get_type(const std::vector<std::string>& key) {
-	return get_type(escape_key(key));
+inline enum XConfigValueType XConfig::getType(const std::vector<std::string>& key) const {
+	return getType(escapeKey(key));
 }
-inline struct timespec XConfig::get_mtime(const std::vector<std::string>& key) {
-	return get_mtime(escape_key(key));
+inline struct timespec XConfig::getMtime(const std::vector<std::string>& key) const {
+	return getMtime(escapeKey(key));
 }
-inline bool XConfig::is_scalar(const std::vector<std::string>& key) {
-	return is_scalar(escape_key(key));
+inline bool XConfig::isScalar(const std::vector<std::string>& key) const {
+	return isScalar(escapeKey(key));
 }
-inline bool XConfig::is_map(const std::vector<std::string>& key) {
-	return is_map(escape_key(key));
+inline bool XConfig::isMap(const std::vector<std::string>& key) const {
+	return isMap(escapeKey(key));
 }
-inline bool XConfig::is_sequence(const std::vector<std::string>& key) {
-	return is_sequence(escape_key(key));
+inline bool XConfig::isSequence(const std::vector<std::string>& key) const {
+	return isSequence(escapeKey(key));
 }
-inline std::string XConfig::get_string(const std::vector<std::string>& key) {
-	return get_string(escape_key(key));
+inline std::string XConfig::getString(const std::vector<std::string>& key) const {
+	return getString(escapeKey(key));
 }
-inline bool XConfig::get_bool(const std::vector<std::string>& key) {
-	return get_bool(escape_key(key));
+inline bool XConfig::getBool(const std::vector<std::string>& key) const {
+	return getBool(escapeKey(key));
 }
-inline int XConfig::get_int(const std::vector<std::string>& key) {
-	return get_int(escape_key(key));
+inline int XConfig::getInt(const std::vector<std::string>& key) const {
+	return getInt(escapeKey(key));
 }
-inline double XConfig::get_float(const std::vector<std::string>& key) {
-	return get_float(escape_key(key));
+inline double XConfig::getFloat(const std::vector<std::string>& key) const {
+	return getFloat(escapeKey(key));
 }
-inline int XConfig::get_count(const std::vector<std::string>& key) {
-	return get_count(escape_key(key));
+inline int XConfig::getCount(const std::vector<std::string>& key) const {
+	return getCount(escapeKey(key));
 }
-inline std::vector<std::string> XConfig::get_map_keys(const std::vector<std::string>& key) {
-	return get_map_keys(escape_key(key));
-}
-
-inline enum XConfigValueType XConfig::get_type(const std::string& key) const {
-	return get_type(get_node(key));
-}
-inline struct timespec XConfig::get_mtime(const std::string& key) const {
-	return get_mtime(get_node(key));
-}
-inline bool XConfig::is_scalar(const std::string& key) const {
-	return is_scalar(get_node(key));
-}
-inline bool XConfig::is_map(const std::string& key) const {
-	return is_map(get_node(key));
-}
-inline bool XConfig::is_sequence(const std::string& key) const {
-	return is_sequence(get_node(key));
-}
-inline std::string XConfig::get_string(const std::string& key) const {
-	return get_string(get_node(key));
-}
-inline bool XConfig::get_bool(const std::string& key) const {
-	return get_bool(get_node(key));
-}
-inline int XConfig::get_int(const std::string& key) const {
-	return get_int(get_node(key));
-}
-inline double XConfig::get_float(const std::string& key) const {
-	return get_float(get_node(key));
-}
-inline int XConfig::get_count(const std::string& key) const {
-	return get_count(get_node(key));
-}
-inline std::vector<std::string> XConfig::get_map_keys(const std::string& key) const {
-	return get_map_keys(get_node(key));
+inline std::vector<std::string> XConfig::getMapKeys(const std::vector<std::string>& key) const {
+	return getMapKeys(escapeKey(key));
 }
 
+inline enum XConfigValueType XConfig::getType(const std::vector<std::string>& key) {
+	return getType(escapeKey(key));
+}
+inline struct timespec XConfig::getMtime(const std::vector<std::string>& key) {
+	return getMtime(escapeKey(key));
+}
+inline bool XConfig::isScalar(const std::vector<std::string>& key) {
+	return isScalar(escapeKey(key));
+}
+inline bool XConfig::isMap(const std::vector<std::string>& key) {
+	return isMap(escapeKey(key));
+}
+inline bool XConfig::isSequence(const std::vector<std::string>& key) {
+	return isSequence(escapeKey(key));
+}
+inline std::string XConfig::getString(const std::vector<std::string>& key) {
+	return getString(escapeKey(key));
+}
+inline bool XConfig::getBool(const std::vector<std::string>& key) {
+	return getBool(escapeKey(key));
+}
+inline int XConfig::getInt(const std::vector<std::string>& key) {
+	return getInt(escapeKey(key));
+}
+inline double XConfig::getFloat(const std::vector<std::string>& key) {
+	return getFloat(escapeKey(key));
+}
+inline int XConfig::getCount(const std::vector<std::string>& key) {
+	return getCount(escapeKey(key));
+}
+inline std::vector<std::string> XConfig::getMapKeys(const std::vector<std::string>& key) {
+	return getMapKeys(escapeKey(key));
+}
 
-inline enum XConfigValueType XConfig::get_type(const std::string& key) {
-	reload();
-	return get_type(key);
+inline enum XConfigValueType XConfig::getType(const std::string& key) const {
+	return getType(getNode(key));
 }
-inline struct timespec XConfig::get_mtime(const std::string& key) {
-	reload();
-	return get_mtime(key);
+inline struct timespec XConfig::getMtime(const std::string& key) const {
+	return getMtime(getNode(key));
 }
-inline bool XConfig::is_scalar(const std::string& key) {
-	reload();
-	return is_scalar(key);
+inline bool XConfig::isScalar(const std::string& key) const {
+	return isScalar(getNode(key));
 }
-inline bool XConfig::is_map(const std::string& key) {
-	reload();
-	return is_map(key);
+inline bool XConfig::isMap(const std::string& key) const {
+	return isMap(getNode(key));
 }
-inline bool XConfig::is_sequence(const std::string& key) {
-	reload();
-	return is_sequence(key);
+inline bool XConfig::isSequence(const std::string& key) const {
+	return isSequence(getNode(key));
 }
-inline std::string XConfig::get_string(const std::string& key) {
-	reload();
-	return get_string(key);
+inline std::string XConfig::getString(const std::string& key) const {
+	return getString(getNode(key));
 }
-inline bool XConfig::get_bool(const std::string& key) {
-	reload();
-	return get_bool(key);
+inline bool XConfig::getBool(const std::string& key) const {
+	return getBool(getNode(key));
 }
-inline int XConfig::get_int(const std::string& key) {
-	reload();
-	return get_int(key);
+inline int XConfig::getInt(const std::string& key) const {
+	return getInt(getNode(key));
 }
-inline double XConfig::get_float(const std::string& key) {
-	reload();
-	return get_float(key);
+inline double XConfig::getFloat(const std::string& key) const {
+	return getFloat(getNode(key));
 }
-inline int XConfig::get_count(const std::string& key) {
-	reload();
-	return get_count(key);
+inline int XConfig::getCount(const std::string& key) const {
+	return getCount(getNode(key));
 }
-inline std::vector<std::string> XConfig::get_map_keys(const std::string& key) {
+inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) const {
+	return getMapKeys(getNode(key));
+}
+
+
+inline enum XConfigValueType XConfig::getType(const std::string& key) {
 	reload();
-	return get_map_keys(key);
+	return getType(key);
+}
+inline struct timespec XConfig::getMtime(const std::string& key) {
+	reload();
+	return getMtime(key);
+}
+inline bool XConfig::isScalar(const std::string& key) {
+	reload();
+	return isScalar(key);
+}
+inline bool XConfig::isMap(const std::string& key) {
+	reload();
+	return isMap(key);
+}
+inline bool XConfig::isSequence(const std::string& key) {
+	reload();
+	return isSequence(key);
+}
+inline std::string XConfig::getString(const std::string& key) {
+	reload();
+	return getString(key);
+}
+inline bool XConfig::getBool(const std::string& key) {
+	reload();
+	return getBool(key);
+}
+inline int XConfig::getInt(const std::string& key) {
+	reload();
+	return getInt(key);
+}
+inline double XConfig::getFloat(const std::string& key) {
+	reload();
+	return getFloat(key);
+}
+inline int XConfig::getCount(const std::string& key) {
+	reload();
+	return getCount(key);
+}
+inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) {
+	reload();
+	return getMapKeys(key);
 }
 
 class XConfigWrongType : public std::exception {
@@ -179,8 +179,8 @@ class XConfigNotConnected : public std::exception {
  * returns if an update is detected
  */
 inline bool XConfig::reload() {
-	if (auto_reload && conn->connect()) {
-		do_reload();
+	if (autoReload && conn->connect()) {
+		doReload();
 		return true;
 	}
 	return false;

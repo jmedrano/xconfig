@@ -23,7 +23,7 @@ public:
 		reset();
 	}
 	void reset(int fd = -1);
-	const void* get_blob() const {
+	const void* getBlob() const {
 		return blob;
 	}
 	operator bool() const {
@@ -39,9 +39,9 @@ public:
 	virtual ~XConfigConnection() {}
 	virtual bool connect() = 0;
 	virtual void close() = 0;
-	virtual boost::shared_ptr<const MappedFile> get_shared_map() const = 0;
-	const void* get_blob() const {
-		return get_shared_map()->get_blob();
+	virtual boost::shared_ptr<const MappedFile> getMap() const = 0;
+	const void* getBlob() const {
+		return getMap()->getBlob();
 	}
 };
 
@@ -51,7 +51,7 @@ public:
 	virtual ~LinkedConnection() {}
 	virtual bool connect();
 	virtual void close();
-	virtual boost::shared_ptr<const MappedFile> get_shared_map() const {
+	virtual boost::shared_ptr<const MappedFile> getMap() const {
 		return map;
 	}
 private:
@@ -71,12 +71,12 @@ public:
 	virtual ~UnixConnection();
 	virtual bool connect();
 	virtual void close();
-	boost::shared_ptr<const MappedFile> get_shared_map() const;
-	int get_socket_fd() const;
+	boost::shared_ptr<const MappedFile> getMap() const;
+	int getSockedFd() const;
 private:
 	const std::string path;
 	const std::string socket;
-	int socket_fd;
+	int socketFd;
 	boost::shared_ptr<const MappedFile> map;
 };
 
@@ -87,57 +87,57 @@ public:
 
 	static const int DEFAULT_TIMEOUT = 30;
 
-	explicit UnixConnectionPool(bool local_thread_cache = false, int timeout = DEFAULT_TIMEOUT);
+	explicit UnixConnectionPool(bool localThreadCache = false, int timeout = DEFAULT_TIMEOUT);
 	~UnixConnectionPool();
-	boost::shared_ptr<LinkedConnection> get_connection(const std::string& path, std::string socket = "");
-	void flush_local();
+	boost::shared_ptr<LinkedConnection> getConnection(const std::string& path, std::string socket = "");
+	void flushLocal();
 
 private:
 	class LingerProxy;
 	typedef std::list<std::pair<int, KeyType> > LingerList;
 	struct MapEntry : private boost::noncopyable {
-		UnixConnection unix_conn;
-		boost::weak_ptr<LingerProxy> shared_conn;
+		UnixConnection unixConn;
+		boost::weak_ptr<LingerProxy> sharedConn;
 		LingerList::iterator linger;
 
 		MapEntry(const KeyType& key, const LingerList::iterator& linger)
-			: unix_conn(key.first, key.second), linger(linger) {
+			: unixConn(key.first, key.second), linger(linger) {
 		}
 	};
 	struct SharedData {
 		typedef tbb::concurrent_hash_map<KeyType, boost::shared_ptr<MapEntry> > HashMap;
 		typedef tbb::concurrent_hash_map<int, KeyType> FdMap;
 		int timeout;
-		HashMap hash_map;
-		FdMap fd_map;
-		LingerList linger_list;
-		boost::mutex linger_list_mutex;
-		int epoll_fd;
+		HashMap hashMap;
+		FdMap fdMap;
+		LingerList lingerList;
+		boost::mutex lingerListMutex;
+		int epollFd;
 
-		void check_linger_list();
-		void on_read_event(int fd, bool error);
+		void checkLingerList();
+		void onReadEvent(int fd, bool error);
 	};
 	class LingerProxy : public XConfigConnection {
 	public:
-		LingerProxy(const KeyType& key, const boost::weak_ptr<SharedData>& shared_data);
+		LingerProxy(const KeyType& key, const boost::weak_ptr<SharedData>& sharedData);
 		~LingerProxy();
 		virtual bool connect();
 		virtual void close();
-		virtual boost::shared_ptr<const MappedFile> get_shared_map() const;
+		virtual boost::shared_ptr<const MappedFile> getMap() const;
 
 	private:
 		const KeyType key;
-		const boost::weak_ptr<SharedData> shared_data;
+		const boost::weak_ptr<SharedData> sharedData;
 	};
 
-	boost::unordered_map<KeyType, LocalValueType>& get_thread_local_map();
-	boost::shared_ptr<LingerProxy> get_shared_connection(std::string path, std::string socket);
+	boost::unordered_map<KeyType, LocalValueType>& getThreadLocalMap();
+	boost::shared_ptr<LingerProxy> getSharedConnection(std::string path, std::string socket);
 
-	static void event_loop(const boost::weak_ptr<SharedData>& shared_data);
+	static void eventLoop(const boost::weak_ptr<SharedData>& sharedData);
 
-	boost::thread_specific_ptr<boost::unordered_map<KeyType, LocalValueType> > thread_local_map;
-	boost::shared_ptr<SharedData> shared_data;
-	bool local_thread_cache;
+	boost::thread_specific_ptr<boost::unordered_map<KeyType, LocalValueType> > threadLocalMap;
+	boost::shared_ptr<SharedData> sharedData;
+	bool localThreadCache;
 };
 
 class FileConnection : public XConfigConnection {
@@ -146,7 +146,7 @@ public:
 	virtual ~FileConnection();
 	virtual bool connect();
 	virtual void close();
-	virtual boost::shared_ptr<const MappedFile> get_shared_map() const;
+	virtual boost::shared_ptr<const MappedFile> getMap() const;
 private:
 	const std::string path;
 	boost::shared_ptr<const MappedFile> map;

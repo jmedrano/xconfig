@@ -28,22 +28,22 @@ struct XConfigBucket {
 	} value;
 	uint32_t parent;
 	uint32_t next;
-	uint32_t mtime_secs;
-	uint32_t mtime_nsecs;
+	uint32_t mtimeSecs;
+	uint32_t mtimeNsecs;
 };
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 static_assert(sizeof(XConfigBucket) == 32, "sizeof(XConfigBucket) != 32");
 #endif
 
 struct XConfigHeader {
-	uint32_t hash_size;
-	uint32_t num_buckets;
+	uint32_t hashSize;
+	uint32_t numBuckets;
 };
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 static_assert(sizeof(XConfigHeader) == 8, "sizeof(XConfigHeader) != 8");
 #endif
 
-inline bool is_scalar(XConfigValueType type) {
+inline bool isScalar(XConfigValueType type) {
 	return type < TYPE_MAP;
 }
 
