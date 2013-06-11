@@ -25,8 +25,10 @@ public:
 	~XConfig();
 	void connect();
 	void close();
+	void reload();
 
 	// methods working with keys as unescaped string vectors
+	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
 	enum XConfigValueType getType(const std::vector<std::string>& key) const;
 	enum XConfigValueType getType(const std::vector<std::string>& key);
 	struct timespec getMtime(const std::vector<std::string>& key) const;
@@ -51,6 +53,7 @@ public:
 	std::vector<std::string> getMapKeys(const std::vector<std::string>& key);
 
 	// methods working with keys as escaped strings
+	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
 	enum XConfigValueType getType(const std::string& key) const;
 	enum XConfigValueType getType(const std::string& key);
 	struct timespec getMtime(const std::string& key) const;
@@ -76,37 +79,39 @@ public:
 
 	// methods working with node objects
 	// configuration updates invalidate node objects
-	enum XConfigValueType getType(const XConfigNode& key) const;
-	struct timespec getMtime(const XConfigNode& key) const;
-	bool isScalar(const XConfigNode& key) const;
-	bool isMap(const XConfigNode& key) const;
-	bool isSequence(const XConfigNode& key) const;
-	std::string getString(const XConfigNode& key) const;
-	bool getBool(const XConfigNode& key) const;
-	int getInt(const XConfigNode& key) const;
-	double getFloat(const XConfigNode& key) const;
-	int getCount(const XConfigNode& key) const;
-	std::vector<std::string> getMapKeys(const XConfigNode& key) const;
-	std::string getName(const XConfigNode& key) const;
+	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
+	enum XConfigValueType getType(const XConfigNode& node) const;
+	struct timespec getMtime(const XConfigNode& node) const;
+	bool isScalar(const XConfigNode& node) const;
+	bool isMap(const XConfigNode& node) const;
+	bool isSequence(const XConfigNode& node) const;
+	std::string getString(const XConfigNode& node) const;
+	bool getBool(const XConfigNode& node) const;
+	int getInt(const XConfigNode& node) const;
+	double getFloat(const XConfigNode& node) const;
+	int getCount(const XConfigNode& node) const;
+	std::vector<std::string> getMapKeys(const XConfigNode& node) const;
+	std::string getName(const XConfigNode& node) const;
 
 	// methods for transforming keys into nodes
+	// all these methods could throw XConfigNotConnected or XConfigWrongType
 	XConfigNode getNode(const std::string& key) const;
 	XConfigNode getNode(const std::string& key);
 	XConfigNode getNode(const std::vector<std::string>& key) const;
 	XConfigNode getNode(const std::vector<std::string>& key);
+	// these methods do not throw and return NULL_NODE in case the node is not found
 	XConfigNode getNodeNoThrow(const std::string& key) const;
 	XConfigNode getNodeNoThrow(const std::vector<std::string>& key) const;
 	std::string getKey(const XConfigNode& node) const;
 
 	// methods for tree iteration
-	XConfigNode getParent(const XConfigNode& key) const;
-	std::vector<XConfigNode> getChildren(const XConfigNode& key) const;
+	XConfigNode getParent(const XConfigNode& node) const;
+	// this method could throw XConfigWrongType
+	std::vector<XConfigNode> getChildren(const XConfigNode& node) const;
 
 	// methods for escaping keys
 	static std::string escapeKey(const std::vector<std::string>& key);
 	static std::string escapeKey(const std::string& key);
-
-	bool reload();
 
 private:
 	const boost::shared_ptr<XConfigConnection> conn;
@@ -115,9 +120,9 @@ private:
 	const char* stringPool;
 	const bool autoReload;
 
-	const XConfigBucket* getBucket(const XConfigNode& key) const;
+	const XConfigBucket* getBucket(const XConfigNode& node) const;
 	std::string getString(uint32_t offset) const;
-	void doReload();
+	bool mightReload();
 };
 
 class XConfigNode {
@@ -127,11 +132,25 @@ private:
 	// bucketIdx == 1 => first bucket
 	uint32_t bucketIdx;
 	// private so only available from XConfig
-	XConfigNode(uint32_t b) : bucketIdx(b) { }
-	operator uint32_t() const { return bucketIdx; }
+	explicit XConfigNode(uint32_t b) : bucketIdx(b) { }
+	uint32_t getIdx() const { return bucketIdx; }
 public:
 	XConfigNode() : bucketIdx(0) { }
+	operator bool() const { return bucketIdx; }
 };
+
+class XConfigException : public std::exception {
+};
+
+class XConfigWrongType : public XConfigException {
+};
+
+class XConfigNotFound : public XConfigException {
+};
+
+class XConfigNotConnected : public XConfigException {
+};
+
 
 } // namespace xconfig
 

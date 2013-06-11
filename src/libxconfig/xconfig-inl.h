@@ -121,66 +121,57 @@ inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) cons
 
 
 inline enum XConfigValueType XConfig::getType(const std::string& key) {
-	reload();
+	mightReload();
 	return getType(key);
 }
 inline struct timespec XConfig::getMtime(const std::string& key) {
-	reload();
+	mightReload();
 	return getMtime(key);
 }
 inline bool XConfig::isScalar(const std::string& key) {
-	reload();
+	mightReload();
 	return isScalar(key);
 }
 inline bool XConfig::isMap(const std::string& key) {
-	reload();
+	mightReload();
 	return isMap(key);
 }
 inline bool XConfig::isSequence(const std::string& key) {
-	reload();
+	mightReload();
 	return isSequence(key);
 }
 inline std::string XConfig::getString(const std::string& key) {
-	reload();
+	mightReload();
 	return getString(key);
 }
 inline bool XConfig::getBool(const std::string& key) {
-	reload();
+	mightReload();
 	return getBool(key);
 }
 inline int XConfig::getInt(const std::string& key) {
-	reload();
+	mightReload();
 	return getInt(key);
 }
 inline double XConfig::getFloat(const std::string& key) {
-	reload();
+	mightReload();
 	return getFloat(key);
 }
 inline int XConfig::getCount(const std::string& key) {
-	reload();
+	mightReload();
 	return getCount(key);
 }
 inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) {
-	reload();
+	mightReload();
 	return getMapKeys(key);
 }
-
-class XConfigWrongType : public std::exception {
-};
-
-class XConfigNotFound : public std::exception {
-};
-
-class XConfigNotConnected : public std::exception {
-};
 
 /**
  * Check if there is any update from the connection
  * returns if an update is detected
  */
-inline bool XConfig::reload() {
+inline bool XConfig::mightReload() {
 	if (autoReload && conn->connect()) {
-		doReload();
+		reload();
 		return true;
 	}
 	return false;
