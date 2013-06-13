@@ -19,10 +19,12 @@ HEADERS += \
 	TApplication.h \
 	XConfigDaemon.h \
 	ServerSocket.h \
-	FileLock.h
+	FileLock.h \
+	ConnectionManager.h
 
 SOURCES += \
 	TApplication.cpp \
 	XConfigDaemon.cpp \
 	ServerSocket.cpp \
-	FileLock.cpp
+	FileLock.cpp \
+	ConnectionManager.cpp

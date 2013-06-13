@@ -1,10 +1,12 @@
 #include "XConfigDaemon.h"
 #include "ServerSocket.h"
+#include "ConnectionManager.h"
 
 #include <cmdline.hpp>
 #include <help.hpp>
 
 #include <QSettings>
+#include <QLocalSocket>
 
 #include <signal.h>
 
@@ -68,6 +70,7 @@ bool XConfigDaemon::init()
 		return false;
 
 	server = new ServerSocket(server_path, this);
+	connect(server, SIGNAL(newConnection()), SLOT(new_connection()));
 	if (!server->start())
 		return false;
 
@@ -107,7 +110,7 @@ bool XConfigDaemon::reloadConfig()
 
 	QSettings settings(config_dir.absoluteFilePath(XCONFIGD_CONFIG_FILE), QSettings::IniFormat);
 
-	QString new_server_path = settings.value("General/ServerSocketPath", QString(PKGLOCALSTATEDIR "/server")).toString();
+	QString new_server_path = settings.value("ServerSocketPath", QString(PKGLOCALSTATEDIR "/server")).toString();
 	if (server_path.isEmpty()) {
 		server_path = new_server_path;
 	} else if (server_path != new_server_path) {
@@ -120,6 +123,11 @@ bool XConfigDaemon::reloadConfig()
 const char* TLoggerRoot()
 {
 	return "xconfigd";
+}
+
+void XConfigDaemon::new_connection()
+{
+	new ConnectionManager(server->nextPendingConnection(), this);
 }
 
 int main(int argc, char **argv)

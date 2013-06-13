@@ -28,6 +28,9 @@ protected:
 
 	bool reloadConfig();
 
+protected slots:
+	void new_connection();
+
 private:
 	QDir config_dir;
 	QString server_path;
