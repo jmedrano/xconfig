@@ -160,7 +160,7 @@ shared_ptr<const MappedFile> FileConnection::getMap() const
 	return map;
 }
 
-UnixConnectionPool::UnixConnectionPool(bool localThreadCache, int timeout)
+UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 		: sharedData(new SharedData), localThreadCache(localThreadCache) {
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create(1);

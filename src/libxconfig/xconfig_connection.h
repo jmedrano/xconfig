@@ -87,7 +87,7 @@ public:
 
 	static const int DEFAULT_TIMEOUT = 30;
 
-	explicit UnixConnectionPool(bool localThreadCache = false, int timeout = DEFAULT_TIMEOUT);
+	explicit UnixConnectionPool(int timeout = DEFAULT_TIMEOUT, bool localThreadCache = false);
 	~UnixConnectionPool();
 	boost::shared_ptr<LinkedConnection> getConnection(const std::string& path, std::string socket = "");
 	void flushLocal();
