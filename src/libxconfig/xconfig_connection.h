@@ -23,14 +23,16 @@ public:
 	~MappedFile() {
 		reset();
 	}
-	void reset(int fd = -1);
 	const void* getBlob() const {
 		return blob;
 	}
 	operator bool() const {
 		return blob;
 	}
+
 private:
+	void reset(int fd = -1);
+
 	size_t size;
 	void* blob;
 };
@@ -41,9 +43,6 @@ public:
 	virtual bool connect() = 0;
 	virtual void close() = 0;
 	virtual boost::shared_ptr<const MappedFile> getMap() const = 0;
-	const void* getBlob() const {
-		return getMap()->getBlob();
-	}
 };
 
 class LinkedConnection : public XConfigConnection {

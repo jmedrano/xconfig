@@ -4,7 +4,6 @@
 #include <time.h>
 #include <string>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 
 #include "xconfig_file.h"
 #include "xconfig_connection.h"
@@ -23,9 +22,8 @@ public:
 
 	explicit XConfig(const boost::shared_ptr<XConfigConnection>& conn, bool autoReload = true);
 	~XConfig();
-	void connect();
+	bool reload();
 	void close();
-	void reload();
 
 	// methods working with keys as unescaped string vectors
 	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
@@ -115,6 +113,7 @@ public:
 
 private:
 	const boost::shared_ptr<XConfigConnection> conn;
+	boost::shared_ptr<const MappedFile> map;
 	const void* hash;
 	const XConfigBucket* buckets;
 	const char* stringPool;
@@ -122,7 +121,8 @@ private:
 
 	const XConfigBucket* getBucket(const XConfigNode& node) const;
 	std::string getString(uint32_t offset) const;
-	bool mightReload();
+	void mightReload();
+	void applyReload();
 };
 
 class XConfigNode {

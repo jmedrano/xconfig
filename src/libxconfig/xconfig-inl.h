@@ -167,14 +167,10 @@ inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) {
 
 /**
  * Check if there is any update from the connection
- * returns if an update is detected
  */
-inline bool XConfig::mightReload() {
-	if (autoReload && conn->connect()) {
-		reload();
-		return true;
-	}
-	return false;
+inline void XConfig::mightReload() {
+	if (autoReload && conn->connect())
+		applyReload();
 }
 
 } // namespace xconfig

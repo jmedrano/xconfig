@@ -19,12 +19,30 @@ const XConfigNode XConfig::NULL_NODE;
 XConfig::XConfig(const shared_ptr<XConfigConnection>& conn, bool autoReload) : conn(conn), hash(0), buckets(0), autoReload(autoReload)
 {
 	conn->connect();
-	reload();
+	applyReload();
 }
 
-void XConfig::reload()
+bool XConfig::reload() {
+	if (conn->connect()) {
+		applyReload();
+		return true;
+	}
+	return false;
+}
+
+void XConfig::close()
 {
-	const void* blob = conn->getBlob();
+	map.reset();
+	conn->close();
+	hash = 0;
+	buckets = 0;
+	stringPool = 0;
+}
+
+void XConfig::applyReload()
+{
+	map = conn->getMap();
+	const void* blob = map->getBlob();
 	if (blob) {
 		const XConfigHeader* header = reinterpret_cast<const XConfigHeader*>(blob);
 		hash = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader);
