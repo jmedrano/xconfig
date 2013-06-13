@@ -305,7 +305,7 @@ static void serverThread(int connFd, int treeFd) {
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(treeFd));
-		*reinterpret_cast<int *>(CMSG_DATA(cmsg)) = treeFd;
+		memcpy(reinterpret_cast<void *>(CMSG_DATA(cmsg)), &treeFd, sizeof(treeFd));
 
 		msg.msg_controllen = cmsg->cmsg_len;
 

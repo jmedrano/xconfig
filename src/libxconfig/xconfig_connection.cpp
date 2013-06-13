@@ -122,7 +122,7 @@ bool UnixConnection::connect()
 						// more than one fd in msg. close every fd but the last one
 						::close(treeFd);
 					}
-					treeFd = *reinterpret_cast<int *>(CMSG_DATA(cmsg));
+					memcpy(&treeFd, reinterpret_cast<void *>(CMSG_DATA(cmsg)), sizeof(treeFd));
 				}
 				cmsg = CMSG_NXTHDR(&msg, cmsg);
 			}
@@ -202,7 +202,7 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 	bool inserted = sharedData->hashMap.insert(accessor, key);
 	if (inserted) {
 		// insert into hashMap
-		accessor->second = make_shared<MapEntry>(key, sharedData->lingerList.end());
+		accessor->second = boost::make_shared<MapEntry>(key, sharedData->lingerList.end());
 		UnixConnection& conn = accessor->second->unixConn;
 
 		// connect
@@ -225,7 +225,7 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 
 	auto lingerProxy = accessor->second->sharedConn.lock();
 	if (!lingerProxy) {
-		lingerProxy = make_shared<LingerProxy>(key, sharedData);
+		lingerProxy = boost::make_shared<LingerProxy>(key, sharedData);
 	}
 	if (accessor->second->linger != sharedData->lingerList.end()) {
 		// NOTE: hashMap and lingerList are both locked

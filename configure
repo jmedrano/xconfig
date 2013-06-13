@@ -55,6 +55,7 @@ while [ $# -gt 0 ]; do
 			shift
 			;;
 		--help) show_usage; exit 1;;
+		--*) shift;;
 		*) ARGS+=("$1"); shift;;
 #		*) show_usage; exit 1;;
 	esac
