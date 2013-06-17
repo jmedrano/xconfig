@@ -77,7 +77,7 @@ bool UnixConnection::connect()
 		addr.sun_family = AF_UNIX;
 		strncpy(addr.sun_path, socket.c_str(), sizeof(addr.sun_path)-1);
 
-		socketFd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+		socketFd = ::socket(AF_UNIX, SOCK_SEQPACKET, 0);
 		if (socketFd < 0)
 			throw XConfigNotConnected();
 		if (::connect(socketFd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0)

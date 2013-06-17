@@ -323,7 +323,7 @@ static void serveFile(const string& xcPath, const string& socket) {
 		perror("open error");
 		return;
 	}
-	const int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+	const int fd = ::socket(AF_UNIX, SOCK_SEQPACKET, 0);
 	if (fd < 0) {
 		close(treeFd);
 		perror("socket error");
