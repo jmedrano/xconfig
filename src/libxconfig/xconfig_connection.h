@@ -8,8 +8,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/tss.hpp>
+#include <boost/thread.hpp>
 #include <tbb/concurrent_hash_map.h>
 
 namespace xconfig {
@@ -138,6 +137,7 @@ private:
 	boost::thread_specific_ptr<boost::unordered_map<KeyType, LocalValueType> > threadLocalMap;
 	boost::shared_ptr<SharedData> sharedData;
 	bool localThreadCache;
+	boost::thread eventLoopThread;
 };
 
 class FileConnection : public XConfigConnection {

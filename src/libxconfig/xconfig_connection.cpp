@@ -164,9 +164,11 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 		: sharedData(new SharedData), localThreadCache(localThreadCache) {
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create(1);
-	boost::thread thr(eventLoop, weak_ptr<SharedData>(sharedData));
+	eventLoopThread = boost::thread(eventLoop, weak_ptr<SharedData>(sharedData));
 }
 UnixConnectionPool::~UnixConnectionPool() {
+	sharedData.reset();
+	eventLoopThread.join();
 }
 
 boost::shared_ptr<LinkedConnection> UnixConnectionPool::getConnection(const std::string& path, std::string socket) {
