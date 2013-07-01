@@ -164,10 +164,24 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 		: sharedData(new SharedData), localThreadCache(localThreadCache) {
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create(1);
+	int closingPipe[2];
+	pipe(closingPipe);
+	sharedData->closingPipe = closingPipe[1];
+
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+	event.data.fd = closingPipe[0];
+	event.events = EPOLLIN;
+	int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, closingPipe[0], &event);
+	assert(ctlResult >= 0);
+
 	eventLoopThread = boost::thread(eventLoop, weak_ptr<SharedData>(sharedData));
 }
 UnixConnectionPool::~UnixConnectionPool() {
+	int closingPipe = sharedData->closingPipe;
 	sharedData.reset();
+	char c = 0;
+	::write(closingPipe, &c, sizeof(c));
 	eventLoopThread.join();
 }
 
@@ -245,8 +259,13 @@ void UnixConnectionPool::eventLoop(const weak_ptr<SharedData>& sharedData) {
 	for (;;) {
 		auto lockedData = sharedData.lock();
 		if (!lockedData)
+				break;
+		int epollFd = lockedData->epollFd;
+		lockedData.reset();
+		int numEvents = epoll_wait(epollFd, events, maxEvents, epollTimeout);
+		lockedData = sharedData.lock();
+		if (!lockedData)
 			break;
-		int numEvents = epoll_wait(lockedData->epollFd, events, maxEvents, epollTimeout);
 		for (int i = 0; i < numEvents; i++) {
 			int fd = events[i].data.fd;
 			bool error = (events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP);

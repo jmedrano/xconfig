@@ -112,6 +112,7 @@ private:
 		LingerList lingerList;
 		boost::mutex lingerListMutex;
 		int epollFd;
+		int closingPipe;
 
 		void checkLingerList();
 		void onReadEvent(int fd, bool error);
