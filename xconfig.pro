@@ -1,6 +1,5 @@
 TEMPLATE = subdirs
-#SUBDIRS = conf src/libxconfig src/utils src/xconfigd src/php-xconfig
-SUBDIRS = conf src/libxconfig src/utils src/xconfigd
+SUBDIRS = conf src/libxconfig src/utils src/xconfigd src/php-xconfig
 
 src-utils.depends = sub-src-libxconfig
 src-xconfigd.depends = sub-src-libxconfig
