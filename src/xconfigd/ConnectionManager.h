@@ -6,20 +6,16 @@
 #include <QFlags>
 #include <QPointer>
 #include <QLocalSocket>
+#include <QSocketNotifier>
 
-class QIODevice;
+#include <boost/shared_ptr.hpp>
+
+class ConfigurationTreeManager;
 
 class ConnectionManager : public QObject {
 	Q_OBJECT
 
 public:
-	enum State {
-		STATE_INVALID = -1,
-		STATE_IDLE = 0,
-		STATE_RECEIVING_HANDSHAKE,
-		STATE_RECEIVING_LINE
-	};
-
 	enum Capability {
 		CAP_NONE = 0,
 		CAP_FD_PASS = 1 << 0
@@ -27,23 +23,28 @@ public:
 	Q_DECLARE_FLAGS(Capabilities, Capability);
 
 public:
-	ConnectionManager(QIODevice* connection, QObject* parent = 0);
+	ConnectionManager(int connectionFd, QObject* parent = 0);
 	~ConnectionManager();
 
 private:
-	bool got_line(const char *line, size_t len);
-	bool got_handshake(const char *handshake, size_t len);
 	void abort();
+	void sendDatagram(const char* buf, size_t len, int fd = -1);
+	void receiveDatagram(const char* buf, size_t len);
+	void receiveWatch(const char* buf, size_t len);
+	bool receiveHandshake(const char *buf, size_t len);
+	void sendHi();
+	void sendPush(QString path, int fd);
 	
 private slots:
-	void connection_ready_read();
-	void connection_error(QLocalSocket::LocalSocketError error);
+	void connectionReadyRead();
+	void connectionError(QLocalSocket::LocalSocketError error);
+	void onNewTreeAvailable();
 
 private:
-	QPointer<QIODevice> connection;
-	State state;
+	int connectionFd;
+	boost::shared_ptr<ConfigurationTreeManager> treeManager;
+	QSocketNotifier* notifier;
 	QByteArray buffer;
-	int buffer_pos;
 	Capabilities capabilities;
 };
 
