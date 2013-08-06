@@ -5,7 +5,7 @@ include($$TOP_SRCDIR/xconfig.pri)
 
 QT += network
 PKGCONFIG += libdaemon liblog4cxx
-LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig
+LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lcmph
 
 DESTDIR = $$TOP_BUILDDIR/target/$$BINDIR
 
@@ -20,11 +20,20 @@ HEADERS += \
 	XConfigDaemon.h \
 	ServerSocket.h \
 	FileLock.h \
-	ConnectionManager.h
+	ConnectionManager.h \
+	ConfigurationTree.h \
+	YamlParser.h \
+	ConfigurationMerger.h
 
 SOURCES += \
 	TApplication.cpp \
 	XConfigDaemon.cpp \
 	ServerSocket.cpp \
 	FileLock.cpp \
-	ConnectionManager.cpp
+	ConnectionManager.cpp \
+	ConfigurationTree.cpp \
+	ConfigurationPool.cpp \
+	YamlParser.cpp \
+	ConfigurationMerger.cpp
+
+INCLUDEPATH += $$TOP_SRCDIR/src/libxconfig
