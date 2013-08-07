@@ -1,5 +1,6 @@
 #include "ConfigurationTree.h"
 #include "ConfigurationMerger.h"
+#include "ConfigurationPool.h"
 #include "YamlParser.h"
 
 #include <unistd.h>
@@ -22,7 +23,8 @@ void ConfigurationTreeManager::openTree() {
 try {
 printf("openTree\n");
 
-	loadAllFiles();
+	auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
+	loadAllFiles(referenceHolder);
 printf("after loadAllFiles\n");
 
 } catch (const std::exception& e) {
@@ -30,7 +32,7 @@ printf("after loadAllFiles\n");
 }
 }
 
-ConfigurationTreeManager::ConfigurationTreeManager(QString path) {
+ConfigurationTreeManager::ConfigurationTreeManager(QString path) : path(path) {
 printf("ConfigurationTreeManager\n");
 
 	iNotifyFd = inotify_init();
@@ -47,8 +49,11 @@ printf("ConfigurationTreeManager\n");
 
 	hardTimer = new QTimer(this);
 	softTimer = new QTimer(this);
+	lingerTimer = new QTimer(this);
 	connect(hardTimer, SIGNAL(timeout()), SLOT(onHardCheck()));
 	connect(softTimer, SIGNAL(timeout()), SLOT(onSoftCheck()));
+	connect(lingerTimer, SIGNAL(timeout()), SLOT(onLingerTimeout()));
+	// TODO get from config
 	hardTimer->start(10000);
 
 	QtConcurrent::run(this, &ConfigurationTreeManager::openTree);
@@ -59,7 +64,7 @@ ConfigurationTreeManager::~ConfigurationTreeManager() {
 	iNotifier->deleteLater();
 	// TODO move to when deleteLater is done
 	::close(iNotifyFd);
-	for (auto it = files.begin(); it != files.end(); ++it) {
+	for (auto it = filesMap.begin(); it != filesMap.end(); ++it) {
 		delete *it;
 	}
 }
@@ -85,7 +90,9 @@ void ConfigurationTreeManager::onINotify() {
 	}
 }
 
-void ConfigurationTreeManager::loadAllFiles() {
+void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder) {
+	Q_UNUSED(referenceHolder);
+	QMutexLocker locker(&mutex);
 
 	struct timespec a,b;
 printf("loadAllFiles start\n");
@@ -104,9 +111,9 @@ clock_gettime(CLOCK_MONOTONIC, &a);
 		for (auto f = filesInDir.begin(); f != filesInDir.end(); ++f) {
 			std::string fileName = f->absoluteFilePath().toStdString();
 			fileNamesInDir.insert(fileName);
-			auto file = files.find(fileName);
-			if (file == files.end()) {
-				file = files.insert(fileName, new YamlParser(fileName));
+			auto file = filesMap.find(fileName);
+			if (file == filesMap.end()) {
+				file = filesMap.insert(fileName, new YamlParser(fileName));
 				somethingChanged = true;
 			}
 			somethingChanged |= (*file)->parse();
@@ -121,14 +128,14 @@ printf("loadAllFiles override: %s\n", fileName.c_str());
 
 	}
 	// Check for removed files
-	if (size_t(files.count()) > fileNamesInDir.size()) {
+	if (size_t(filesMap.count()) > fileNamesInDir.size()) {
 printf("Checking for removed files\n");
-		for (auto f = files.begin(); f != files.end();) {
+		for (auto f = filesMap.begin(); f != filesMap.end();) {
 			if (fileNamesInDir.find(f.key()) == fileNamesInDir.end()) {
 printf("removed file: %s\n", f.key().c_str());
 				somethingChanged = true;
 				delete *f;
-				f = files.erase(f);
+				f = filesMap.erase(f);
 			} else {
 printf("not removed file: %s\n", f.key().c_str());
 				++f;
@@ -142,34 +149,79 @@ printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec)
 fflush(stdout);
 
 	if (somethingChanged) {
-		printf("merger start\n");
-		ConfigurationMerger merger(baseFiles, overrideFiles);
-		merger.merge();
-
-		clock_gettime(CLOCK_MONOTONIC, &b);
-		printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-		printf("merge end\n");
-
-		auto mergeResult = merger.dump();
-
-		clock_gettime(CLOCK_MONOTONIC, &b);
-		printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-		printf("loadAllFiles end\n");
-
-		boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(QString(mergeResult.first.c_str()), mergeResult.second));
-
-		emit newTreeAvailable();
+		printf("something changed\n");
+		merge();
 	} else {
 		printf("nothing changed\n");
 	}
 }
 
+void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, QList<QString> files) {
+	Q_UNUSED(referenceHolder);
+	QMutexLocker locker(&mutex);
+
+	bool somethingChanged = false;
+	for (auto fileName = files.begin(); fileName != files.end(); ++fileName) {
+			auto file = filesMap.find(fileName->toStdString());
+			if (file != filesMap.end())
+				somethingChanged |= (*file)->parse();
+	}
+
+	if (somethingChanged) {
+		printf("something changed\n");
+		merge();
+	} else {
+		printf("nothing changed\n");
+	}
+}
+
+void ConfigurationTreeManager::merge() {
+	struct timespec a,b;
+	clock_gettime(CLOCK_MONOTONIC, &a);
+	printf("merger start\n");
+	ConfigurationMerger merger(baseFiles, overrideFiles);
+	merger.merge();
+
+	clock_gettime(CLOCK_MONOTONIC, &b);
+	printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
+	printf("merge end\n");
+
+	auto mergeResult = merger.dump();
+
+	clock_gettime(CLOCK_MONOTONIC, &b);
+	printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
+	printf("loadAllFiles end\n");
+
+	boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(QString(mergeResult.first.c_str()), mergeResult.second));
+
+	emit newTreeAvailable();
+}
+
 void ConfigurationTreeManager::onHardCheck() {
 	printf("onHardCheck\n");
 	if (!hardCheckFuture.isStarted() || hardCheckFuture.isFinished()) {
-		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles);
+		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
+		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles, referenceHolder);
 	}
 }
 
 void ConfigurationTreeManager::onSoftCheck() {
+	printf("onSoftCheck\n");
+	if (!softCheckFuture.isStarted() || softCheckFuture.isFinished()) {
+		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
+		softCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles);
+		dirtyFiles.clear();
+	}
+}
+
+void ConfigurationTreeManager::onLingerTimeout() {
+	printf("onLingerTimeout\n");
+	lingerReference.reset();
+}
+
+void ConfigurationTreeManager::touch() {
+	if (!lingerReference)
+		lingerReference = ConfigurationPool::getInstance().getConfigurationManager(path);
+	// TODO get from config
+	lingerTimer->start(20000);
 }

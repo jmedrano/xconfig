@@ -10,6 +10,7 @@
 #include <QMap>
 #include <QStringList>
 #include <QFuture>
+#include <QMutex>
 
 class YamlParser;
 
@@ -36,6 +37,7 @@ public:
 	boost::shared_ptr<const ConfigurationTree> getConfigurationTree() {
 		return tree;
 	}
+	void touch();
 
 	void openTree();
 
@@ -46,10 +48,14 @@ private Q_SLOTS:
 	void onINotify();
 	void onSoftCheck();
 	void onHardCheck();
+	void onLingerTimeout();
 
 private:
-	void loadAllFiles();
+	void loadAllFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder);
+	void loadFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, QList<QString> files);
+	void merge();
 
+	QString path;
 	QStringList paths;
 	QList<YamlParser*> baseFiles;
 	QList<YamlParser*> overrideFiles;
@@ -59,9 +65,14 @@ private:
 	QSocketNotifier* iNotifier;
 	QTimer* hardTimer;
 	QTimer* softTimer;
+	QTimer* lingerTimer;
+	boost::shared_ptr<ConfigurationTreeManager> lingerReference;
 	QFuture<void> hardCheckFuture;
+	QFuture<void> softCheckFuture;
 	QMap<int, QByteArray> iWatchers;
-	QMap<std::string, YamlParser*> files;
+	QMap<std::string, YamlParser*> filesMap;
+	QList<QString> dirtyFiles;
+	QMutex mutex;
 	char iNotifyBuffer[1024];
 };
 

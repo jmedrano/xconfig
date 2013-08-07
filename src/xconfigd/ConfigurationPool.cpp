@@ -18,7 +18,6 @@ boost::shared_ptr<ConfigurationTreeManager> ConfigurationPool::getConfigurationM
 		ret = accessor->second.lock();
 	}
 	if (!ret) {
-		//ret = boost::make_shared<ConfigurationTreeManager>(path);
 		ret = boost::shared_ptr<ConfigurationTreeManager>(new ConfigurationTreeManager(path), deleteLaterConfigurationTreeManager);
 		accessor->second = ret;
 	}

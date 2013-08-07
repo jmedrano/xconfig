@@ -30,6 +30,9 @@ ConnectionManager::ConnectionManager(int connectionFd, QObject* parent) : QObjec
 
 ConnectionManager::~ConnectionManager()
 {
+	if (treeManager) {
+		treeManager->touch();
+	}
 	if (connectionFd > 0) {
 		::close(connectionFd);
 	}
@@ -128,6 +131,7 @@ printf("before getConfigurationManager\n");
 printf("after getConfigurationManager\n");
 
 	if (treeManager) {
+		treeManager->touch();
 		connect(treeManager.get(), SIGNAL(newTreeAvailable()), SLOT(onNewTreeAvailable()));
 		onNewTreeAvailable();
 	}
