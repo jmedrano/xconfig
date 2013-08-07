@@ -380,6 +380,26 @@ PHP_METHOD(XConfig, getNode)
 	}
 }
 
+PHP_METHOD(XConfig, escapeString)
+{
+	zval *z_key;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
+		RETURN_NULL();
+	}
+	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	if (node) {
+		object_init_ex(return_value, xconfignode_ce);
+
+		xconfignode_object *node_obj = (xconfignode_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+		node_obj->xconfig = obj->xconfig;
+		node_obj->xconfignode = node;
+	} else {
+		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, "Key not found");	
+	}
+}
+
 PHP_METHOD(XConfigNode, getParent)
 {
 	xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -434,6 +454,7 @@ function_entry xconfig_methods[] = {
 	PHP_ME(XConfig, getCount, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getMapKeys, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getNode, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(XConfig, escapeString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	{NULL, NULL, NULL}
 };
 
