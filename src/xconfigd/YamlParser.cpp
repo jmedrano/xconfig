@@ -336,5 +336,8 @@ xconfig::XConfigBucket* YamlParser::insertBucket(const std::string& key)
 	keys.push_back(strdup(key.c_str()));
 	buckets.resize(buckets.size()+1);
 	bucketIdx++;
-	return &buckets.back();
+	XConfigBucket* bucket = &buckets.back();
+	bucket->mtimeSecs = mtime.tv_sec;
+	bucket->mtimeNsecs = mtime.tv_nsec;
+	return bucket;
 }
