@@ -6,7 +6,7 @@
 #include <sys/un.h>
 
 
-ServerSocket::ServerSocket(const QString& name, QObject *parent) : socket_name(name), socket_lock(0), socketNotifier(NULL)
+ServerSocket::ServerSocket(const QString& name, QObject *parent) : QObject(parent), socket_name(name), socket_lock(0), socketNotifier(NULL)
 {
 }
 

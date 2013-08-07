@@ -21,30 +21,16 @@
 void ConfigurationTreeManager::openTree() {
 try {
 printf("openTree\n");
-	QString path("/home/jmedrano/xconfig/build/patata.xc");
-	int treeFd = ::open(path.toLatin1().data(), O_RDONLY);
 
 	loadAllFiles();
 printf("after loadAllFiles\n");
 
-	sleep(10);
-printf("after sleep\n");
-
-//	boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(path, treeFd));
-
-//printf("emit NewTreeAvailable\n");
-
-//	emit newTreeAvailable();
 } catch (const std::exception& e) {
 	abort();
 }
 }
 
 ConfigurationTreeManager::ConfigurationTreeManager(QString path) {
-printf("ConfigurationTreeManager\n");
-	//QString path("/home/jmedrano/xconfig/build/patata.xc");
-	//int treeFd = ::open(path.toLatin1().data(), O_RDONLY);
-	//tree.reset(new ConfigurationTree(path, treeFd));
 printf("ConfigurationTreeManager\n");
 
 	iNotifyFd = inotify_init();
@@ -159,10 +145,7 @@ clock_gettime(CLOCK_MONOTONIC, &b);
 printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
 printf("loadAllFiles end\n");
 
-	QString path("/home/jmedrano/xconfig/build/patata.xc");
-	int treeFd = ::open(path.toLatin1().data(), O_RDONLY);
 	boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(QString(mergeResult.first.c_str()), mergeResult.second));
-	//boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(path, treeFd));
 
 	emit newTreeAvailable();
 }

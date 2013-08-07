@@ -91,9 +91,7 @@ const char* ConfigurationMerger::getKey(size_t blobId, size_t nodeId) {
 
 xconfig::XConfigBucket* ConfigurationMerger::getBucket(size_t blobId, size_t nodeId)
 {
-	size_t canonicNodeId;
-	size_t canonicBlobId;
-	canonicalIds(&blobId, &canonicNodeId, blobId, nodeId);
+	canonicalIds(&blobId, &nodeId);
 	nodeId = decodeNodeId(nodeId);
 
 	assert(nodeId > 0);
@@ -296,7 +294,7 @@ std::pair<string, int> ConfigurationMerger::dump()
 	// First Blob is #1
 	dumpNode(composeNodeId(1, 1), true);
 
-	for (int i=0; i<destKeys.size(); i++) {
+	for (size_t i=0; i<destKeys.size(); i++) {
 		printf("destKeys[%d]=%s %p\n", i, destKeys[i], destKeys[i]);
 	}
 	cmph_io_adapter_t *source = cmph_io_vector_adapter(&destKeys[0], destKeys.size());
@@ -321,7 +319,7 @@ printf("hash_serialization=%p\n", hash_serialization);
 
 printf("hashSize=%d numBuckets=%d bucketSize=%d stringPoolSize=%d\n", hashSize, numBuckets, sizeof(XConfigBucket) * numBuckets, stringPoolSize);
 printf("destStringPool [");
-for (int i = 0; i < stringPoolSize; i++) {
+for (size_t i = 0; i < stringPoolSize; i++) {
 	printf("%c", destStringPool[i] > 0 ? destStringPool[i] : '\n');
 }
 printf("]\n");
@@ -374,7 +372,7 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 	printf("dump destBuckets[%d] [%s] inMap=%d", destBuckets.size(), key, inMap);
 
 	destBuckets.push_back(*currentBucket);
-	XConfigBucket* destBucket = destBucket = &destBuckets.back();
+	XConfigBucket* destBucket = &destBuckets.back();
 	destKeys.push_back(const_cast<char*>(key));
 
 	switch (currentBucket->type) {
@@ -382,14 +380,13 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 			isMap = true;
 			// fall-through
 		case xconfig::TYPE_SEQUENCE: {
-			//destBucket->value._vectorial.child = destBuckets.size();
 			destBucket->value._vectorial.child = destBuckets.size() + 1;
 
 			printf(" vect size=%d, child=%d isMap=%d\n", destBucket->value._vectorial.size, destBucket->value._vectorial.child, isMap);
 
 			size_t childId = currentBucket->value._vectorial.child;
 			size_t parentDestId = nodeId ? destBucket->value._vectorial.child - 1 : 0;
-			int n;
+			size_t n;
 			for (n = 0; n < currentBucket->value._vectorial.size && childId; n++) {
 				printf("#%d/%d ", n, currentBucket->value._vectorial.size);
 				XConfigBucket* childBucket = getBucket(blobId, childId);
