@@ -13,7 +13,7 @@ class YamlParser {
 public:
 	YamlParser(std::string path);
 	~YamlParser();
-	void parse();
+	bool parse();
 	size_t getTotalSize() const;
 	const xconfig::XConfigHeader& getHeader() const;
 	const xconfig::XConfigBucket* getBuckets() const;

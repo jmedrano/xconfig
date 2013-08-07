@@ -45,6 +45,12 @@ printf("ConfigurationTreeManager\n");
 	iNotifier = new QSocketNotifier(iNotifyFd, QSocketNotifier::Read, this);
 	connect(iNotifier, SIGNAL(activated(int)), SLOT(onINotify()));
 
+	hardTimer = new QTimer(this);
+	softTimer = new QTimer(this);
+	connect(hardTimer, SIGNAL(timeout()), SLOT(onHardCheck()));
+	connect(softTimer, SIGNAL(timeout()), SLOT(onSoftCheck()));
+	hardTimer->start(10000);
+
 	QtConcurrent::run(this, &ConfigurationTreeManager::openTree);
 }
 
@@ -88,6 +94,8 @@ clock_gettime(CLOCK_MONOTONIC, &a);
 	baseFiles.clear();
 	overrideFiles.clear();
 
+	bool somethingChanged = false;
+
 	int numPaths = 0;
 	std::set<std::string> fileNamesInDir;
 	for (auto it = paths.begin(); it != paths.end(); ++it, ++numPaths) {
@@ -99,8 +107,9 @@ clock_gettime(CLOCK_MONOTONIC, &a);
 			auto file = files.find(fileName);
 			if (file == files.end()) {
 				file = files.insert(fileName, new YamlParser(fileName));
+				somethingChanged = true;
 			}
-			(*file)->parse();
+			somethingChanged |= (*file)->parse();
 			if (numPaths < firstOverride) {
 printf("loadAllFiles base: %s\n", fileName.c_str());
 				baseFiles << *file;
@@ -117,6 +126,7 @@ printf("Checking for removed files\n");
 		for (auto f = files.begin(); f != files.end();) {
 			if (fileNamesInDir.find(f.key()) == fileNamesInDir.end()) {
 printf("removed file: %s\n", f.key().c_str());
+				somethingChanged = true;
 				delete *f;
 				f = files.erase(f);
 			} else {
@@ -131,22 +141,35 @@ clock_gettime(CLOCK_MONOTONIC, &b);
 printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
 fflush(stdout);
 
-printf("merger start\n");
-	ConfigurationMerger merger(baseFiles, overrideFiles);
-	merger.merge();
+	if (somethingChanged) {
+		printf("merger start\n");
+		ConfigurationMerger merger(baseFiles, overrideFiles);
+		merger.merge();
 
-clock_gettime(CLOCK_MONOTONIC, &b);
-printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-printf("merge end\n");
+		clock_gettime(CLOCK_MONOTONIC, &b);
+		printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
+		printf("merge end\n");
 
-	auto mergeResult = merger.dump();
+		auto mergeResult = merger.dump();
 
-clock_gettime(CLOCK_MONOTONIC, &b);
-printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-printf("loadAllFiles end\n");
+		clock_gettime(CLOCK_MONOTONIC, &b);
+		printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
+		printf("loadAllFiles end\n");
 
-	boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(QString(mergeResult.first.c_str()), mergeResult.second));
+		boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(QString(mergeResult.first.c_str()), mergeResult.second));
 
-	emit newTreeAvailable();
+		emit newTreeAvailable();
+	} else {
+		printf("nothing changed\n");
+	}
 }
 
+void ConfigurationTreeManager::onHardCheck() {
+	printf("onHardCheck\n");
+	if (!hardCheckFuture.isStarted() || hardCheckFuture.isFinished()) {
+		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles);
+	}
+}
+
+void ConfigurationTreeManager::onSoftCheck() {
+}

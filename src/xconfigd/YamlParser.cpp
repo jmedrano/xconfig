@@ -19,7 +19,7 @@ using xconfig::XConfigHeader;
 using xconfig::XConfigBucket;
 using xconfig::XConfigValueType;
 
-YamlParser::YamlParser(string path) : path(path), mtime{0, 0}
+YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), mtime{0, 0}
 {
 }
 
@@ -256,7 +256,7 @@ printf("maxItems reached\n");
 	return numBuckets;
 }
 
-void YamlParser::parse() {
+bool YamlParser::parse() {
 	int fd = ::open(path.c_str(), O_RDONLY);
 	{
 		// check if mtime changed
@@ -264,14 +264,16 @@ void YamlParser::parse() {
 		fstat(fd, &st);
 		if (st.st_mtime == mtime.tv_sec && st.st_mtim.tv_nsec == mtime.tv_nsec) {
 			::close(fd);
-			return;
+			return false;
 		}
 		mtime = {st.st_mtime, st.st_mtim.tv_nsec};
 	}
 
 	FILE *file;
 	parser = new yaml_parser_t;
-	//buckets.clean();
+	buckets.clear();
+	keys.clear();
+	stringPool.clear();
 	buckets.reserve(RESERVE_BUCKETS);
 	keys.reserve(RESERVE_BUCKETS);
 	stringPool.reserve(RESERVE_STRINGPOOL);
@@ -329,6 +331,7 @@ printf("hash_serialization=%p\n", hash_serialization);
 	assert(bucketIdx == buckets.size());
 	assert(keys.size() == buckets.size());
 
+	return true;
 }
 
 xconfig::XConfigBucket* YamlParser::insertBucket(const std::string& key)

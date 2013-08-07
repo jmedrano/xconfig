@@ -5,9 +5,11 @@
 
 #include <QObject>
 #include <QSocketNotifier>
+#include <QTimer>
 #include <QByteArray>
 #include <QMap>
 #include <QStringList>
+#include <QFuture>
 
 class YamlParser;
 
@@ -42,6 +44,8 @@ Q_SIGNALS:
 
 private Q_SLOTS:
 	void onINotify();
+	void onSoftCheck();
+	void onHardCheck();
 
 private:
 	void loadAllFiles();
@@ -53,6 +57,9 @@ private:
 	boost::shared_ptr<const ConfigurationTree> tree;
 	int iNotifyFd;
 	QSocketNotifier* iNotifier;
+	QTimer* hardTimer;
+	QTimer* softTimer;
+	QFuture<void> hardCheckFuture;
 	QMap<int, QByteArray> iWatchers;
 	QMap<std::string, YamlParser*> files;
 	char iNotifyBuffer[1024];
