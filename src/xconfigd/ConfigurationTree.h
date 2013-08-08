@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QByteArray>
 #include <QMap>
+#include <QSet>
 #include <QStringList>
 #include <QFuture>
 #include <QMutex>
@@ -71,7 +72,7 @@ private:
 	QFuture<void> softCheckFuture;
 	QMap<int, QByteArray> iWatchers;
 	QMap<std::string, YamlParser*> filesMap;
-	QList<QString> dirtyFiles;
+	QSet<QString> dirtyFiles;
 	QMutex mutex;
 	char iNotifyBuffer[1024];
 };

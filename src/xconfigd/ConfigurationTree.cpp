@@ -40,9 +40,10 @@ printf("ConfigurationTreeManager\n");
 	auto base = paths.takeFirst().split(';');
 	paths = base + paths;
 	firstOverride = base.count();
-	for (auto it = paths.begin(); it != paths.end(); ++it) {
-		int watcher = inotify_add_watch(iNotifyFd, path.toLatin1().data(), IN_MODIFY);
-		iWatchers.insert(watcher, path.toLatin1());
+	for (auto dirName = paths.begin(); dirName != paths.end(); ++dirName) {
+		int watcher = inotify_add_watch(iNotifyFd, dirName->toLatin1().data(), IN_MODIFY | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE);
+printf("inotify_add_watch %s\n", dirName->toLatin1().data());
+		iWatchers.insert(watcher, dirName->toLatin1());
 	}
 	iNotifier = new QSocketNotifier(iNotifyFd, QSocketNotifier::Read, this);
 	connect(iNotifier, SIGNAL(activated(int)), SLOT(onINotify()));
@@ -74,19 +75,35 @@ void ConfigurationTreeManager::onINotify() {
 	struct inotify_event event;
 	event.len = 0;
 	int nread = read(iNotifyFd, iNotifyBuffer, sizeof(iNotifyBuffer));
+	bool somethingChanged = false;
 	for (size_t pos = 0; nread - pos > sizeof(event); pos += sizeof(event) + event.len) {
 		memcpy(&event, iNotifyBuffer + pos, sizeof(event));
-		QByteArray path = iWatchers[event.wd];
+		QByteArray dirName = iWatchers[event.wd];
 
-		assert(path.length());
-		assert(event.mask == IN_MODIFY);
+		assert(dirName.length());
 
-		printf("read from inotify %d %s\n", event.mask, path.data());
+		printf("read from inotify %d %s\n", event.mask, dirName.data());
 		if (event.len) {
 			printf("event.name %s\n", iNotifyBuffer + sizeof(event));
+			// filter out files with leading . (rsync)
+			if (iNotifyBuffer[sizeof(event)] == '.') {
+				// TODO filter out non .yaml files
+				continue;
+			}
+			QString fileName = dirName + '/' + QString(&iNotifyBuffer[sizeof(event)]);
+			printf("modified fileName=[%s]\n", fileName.toLatin1().data());
+			dirtyFiles << fileName;
+			somethingChanged = true;
+		} else {
+			// event on dir itself
+			// adding dir to dirtyFiles will force a hard check
+			dirtyFiles << dirName;
 		}
 
-		QtConcurrent::run(this, &ConfigurationTreeManager::openTree);
+	}
+	if (somethingChanged) {
+		// TODO get from config
+		softTimer->start(100);
 	}
 }
 
@@ -158,18 +175,41 @@ fflush(stdout);
 
 void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, QList<QString> files) {
 	Q_UNUSED(referenceHolder);
-	QMutexLocker locker(&mutex);
+	bool areDirsModified = false;
+	// locked block
+	{
+		QMutexLocker locker(&mutex);
 
-	bool somethingChanged = false;
-	for (auto fileName = files.begin(); fileName != files.end(); ++fileName) {
-			auto file = filesMap.find(fileName->toStdString());
-			if (file != filesMap.end())
-				somethingChanged |= (*file)->parse();
+		bool areFilesModified = false;
+		for (auto fileName = files.begin(); fileName != files.end(); ++fileName) {
+				auto file = filesMap.find(fileName->toStdString());
+				if (file == filesMap.end()) {
+					printf("new file %s\n", fileName->toLatin1().data());
+					areDirsModified = true;
+					break;
+					// TODO new file
+				} else {
+					// TODO could have been deleted
+					try {
+						bool isModified = (*file)->parse();
+						printf("modified file %s = %d\n", fileName->toLatin1().data(), isModified);
+						areFilesModified |= isModified;
+					} catch (... /* FileNotFound */) {
+						printf("deleted file %s\n", fileName->toLatin1().data());
+						areDirsModified = true;
+					}
+				}
+		}
+		if (areFilesModified && ! areDirsModified) {
+			printf("soft merge\n");
+			merge();
+			return;
+		}
 	}
 
-	if (somethingChanged) {
-		printf("something changed\n");
-		merge();
+	if (areDirsModified) {
+		printf("dirs modified\n");
+		loadAllFiles(referenceHolder);
 	} else {
 		printf("nothing changed\n");
 	}
@@ -209,8 +249,9 @@ void ConfigurationTreeManager::onSoftCheck() {
 	printf("onSoftCheck\n");
 	if (!softCheckFuture.isStarted() || softCheckFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
-		softCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles);
+		softCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles.toList());
 		dirtyFiles.clear();
+		softTimer->stop();
 	}
 }
 
