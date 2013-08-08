@@ -11,6 +11,12 @@ enum XConfigValueType : uint32_t {
 	TYPE_STRING,
 	TYPE_MAP,
 	TYPE_SEQUENCE,
+
+	// virtual types
+	// they can't be in a dumped file
+	// they're temporary items only used within the daemon
+	TYPE_EXPANDREF,
+	TYPE_DELETE,
 };
 
 struct XConfigBucket {

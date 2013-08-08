@@ -362,6 +362,7 @@ static void serveFile(const string& xcPath, const string& socket) {
 
 void Dumper::yamlDump(const XConfigNode& node) {
 	yaml_event_t event;
+	int tag_implicit = 0;
 	switch(xc.getType(node)) {
 		case XConfigValueType::TYPE_MAP: {
 			yaml_mapping_start_event_initialize(&event, NULL, NULL, 1, YAML_BLOCK_MAPPING_STYLE);
@@ -394,30 +395,38 @@ void Dumper::yamlDump(const XConfigNode& node) {
 				emitterError();
 			break;
 		}
+		case XConfigValueType::TYPE_NULL:
+			yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_NULL_TAG,
+				(yaml_char_t*)"null",
+				-1, tag_implicit, tag_implicit, YAML_PLAIN_SCALAR_STYLE);
+			if (!yaml_emitter_emit(&emitter, &event))
+				emitterError();
+			break;
 		case XConfigValueType::TYPE_BOOLEAN:
 			yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_BOOL_TAG,
 				(yaml_char_t*)(xc.getBool(node) ? "true" : "false"),
-				-1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
+				-1, tag_implicit, tag_implicit, YAML_PLAIN_SCALAR_STYLE);
 			if (!yaml_emitter_emit(&emitter, &event))
 				emitterError();
 			break;
 		case XConfigValueType::TYPE_INTEGER:
 			yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_INT_TAG,
 				(yaml_char_t*)lexical_cast<string>(xc.getInt(node)).c_str(),
-				-1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
+				-1, tag_implicit, tag_implicit, YAML_PLAIN_SCALAR_STYLE);
 			if (!yaml_emitter_emit(&emitter, &event))
 				emitterError();
 			break;
 		case XConfigValueType::TYPE_FLOAT:
 			yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_FLOAT_TAG,
 				(yaml_char_t*)lexical_cast<string>(xc.getFloat(node)).c_str(),
-				-1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
+				-1, tag_implicit, tag_implicit, YAML_PLAIN_SCALAR_STYLE);
 			if (!yaml_emitter_emit(&emitter, &event))
 				emitterError();
 			break;
 		case XConfigValueType::TYPE_STRING:
 			yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_STR_TAG,
-				(yaml_char_t*)xc.getString(node).c_str(), -1, 1, 1, YAML_PLAIN_SCALAR_STYLE);
+				(yaml_char_t*)xc.getString(node).c_str(),
+				-1, tag_implicit, tag_implicit, YAML_PLAIN_SCALAR_STYLE);
 			if (!yaml_emitter_emit(&emitter, &event))
 				emitterError();
 			break;
