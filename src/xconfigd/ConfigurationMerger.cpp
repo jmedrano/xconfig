@@ -164,29 +164,30 @@ printf("WAT\n");
 	}
 }
 
-void ConfigurationMerger::erase(size_t destBlob, size_t destNodeId) {
-	destNodeId = composeNodeId(destBlob, destNodeId);
-	XConfigBucket* destBucket = getBucket(destBlob, destNodeId);
-	size_t parentId = destBucket->parent;
-	XConfigBucket* parentBucket = getBucket(destBlob, parentId);
+void ConfigurationMerger::erase(size_t parentBlobId, size_t parentNodeId, size_t destBlobId, size_t destNodeId) {
+printf("erase parent=[%s] dest=[%s]\n", getKey(parentBlobId, parentNodeId), getKey(destBlobId, destNodeId));
+	canonicalIds(&destBlobId, &destNodeId);
+	XConfigBucket* destBucket = getBucket(destBlobId, destNodeId);
+	XConfigBucket* parentBucket = getBucket(parentBlobId, parentNodeId);
 
-	size_t childId = composeNodeId(destBlob, parentBucket->value._vectorial.child);
+	size_t nextId = destBucket->next ? composeNodeId(destBlobId, destBucket->next) : 0;
+
+	size_t childId;
+	canonicalIds(&destBlobId, &childId, destBlobId, parentBucket->value._vectorial.child);
 	if (childId == destNodeId) {
-printf("erase first child\n");
-		parentBucket->value._vectorial.child = destBucket->next;
+printf("replace first of %d child\n", parentBucket->value._vectorial.size);
+		parentBucket->value._vectorial.child = nextId;
 	} else {
 		size_t n = 0;
 		for (n = 0; n < parentBucket->value._vectorial.size && childId; n++) {
-			XConfigBucket* childBucket = getBucket(destBlob, childId);
-			if (composeNodeId(destBlob, childBucket->next) == destNodeId) {
-printf("erase %dth child\n", n + 1);
-				childBucket->next = destBucket->next;
+			XConfigBucket* childBucket = getBucket(destBlobId, childId);
+			if (composeNodeId(destBlobId, childBucket->next) == destNodeId) {
+printf("replace %dth of %d child\n", n + 1, parentBucket->value._vectorial.size);
+				childBucket->next = nextId;
 				break;
 			}
 			childId = childBucket->next;
-			if (decodeBlobId(childId)) {
-				destBlob = decodeBlobId(childId);
-			}
+			canonicalIds(&destBlobId, &childId);
 		}
 		if (!childId || n >= parentBucket->value._vectorial.size) {
 printf("WAT\n");
@@ -261,7 +262,10 @@ printf("end iterate children %d\n", currentBucket->value._vectorial.size);
 		} else {
 			if (blobId > firstOverride) {
 printf("replace %ld %ld %ld\n", nodeInDestination, blobId, nodeId);
-				replace(decodeBlobId(parentInDestination), parentInDestination, destBlobId, nodeInDestination, blobId, nodeId);
+				if (currentBucket->type == xconfig::TYPE_DELETE)
+					erase(decodeBlobId(parentInDestination), parentInDestination, destBlobId, nodeInDestination);
+				else
+					replace(decodeBlobId(parentInDestination), parentInDestination, destBlobId, nodeInDestination, blobId, nodeId);
 			} else {
 				// warn: conflict found
 				printf("conflict in base file for [%s]\n", getKey(blobId, nodeId));
@@ -271,7 +275,8 @@ printf("replace %ld %ld %ld\n", nodeInDestination, blobId, nodeId);
 		// add to destination as child of parentInDestination
 printf(" parentInDestination %ld\n", parentInDestination);
 printf("insert %ld %ld %ld %ld\n", parentBlobId, parentInDestination, blobId, nodeId);
-		insert(parentBlobId, parentInDestination, blobId, nodeId);
+		if (!currentBucket->type == xconfig::TYPE_DELETE)
+			insert(parentBlobId, parentInDestination, blobId, nodeId);
 	}
 printf("mergeNode exit\n");
 }
