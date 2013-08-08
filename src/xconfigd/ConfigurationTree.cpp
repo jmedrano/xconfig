@@ -41,9 +41,13 @@ printf("ConfigurationTreeManager\n");
 	paths = base + paths;
 	firstOverride = base.count();
 	for (auto dirName = paths.begin(); dirName != paths.end(); ++dirName) {
-		int watcher = inotify_add_watch(iNotifyFd, dirName->toLatin1().data(), IN_MODIFY | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE);
-printf("inotify_add_watch %s\n", dirName->toLatin1().data());
-		iWatchers.insert(watcher, dirName->toLatin1());
+		while (dirName->at(dirName->size()-1) == '/') {
+			dirName->chop(1);
+		}
+		auto dirByteArray = dirName->toLocal8Bit();
+		int watcher = inotify_add_watch(iNotifyFd, dirByteArray.data(), IN_MODIFY | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE);
+printf("inotify_add_watch %s\n", dirByteArray.data());
+		iWatchers.insert(watcher, dirByteArray);
 	}
 	iNotifier = new QSocketNotifier(iNotifyFd, QSocketNotifier::Read, this);
 	connect(iNotifier, SIGNAL(activated(int)), SLOT(onINotify()));
