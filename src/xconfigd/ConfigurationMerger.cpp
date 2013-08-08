@@ -154,7 +154,7 @@ printf("replace %dth of %d child\n", n + 1, parentBucket->value._vectorial.size)
 				break;
 			}
 			childId = childBucket->next;
-			canonicalIds(&destBlobId, &childId, destBlobId, parentBucket->value._vectorial.child);
+			canonicalIds(&destBlobId, &childId);
 		}
 		if (!childId || n >= parentBucket->value._vectorial.size) {
 printf("WAT\n");
