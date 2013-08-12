@@ -138,19 +138,24 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 		auto filesInDir = dir.entryInfoList();
 		for (auto f = filesInDir.begin(); f != filesInDir.end(); ++f) {
 			std::string fileName = f->absoluteFilePath().toStdString();
-			fileNamesInDir.insert(fileName);
 			auto file = filesMap.find(fileName);
 			if (file == filesMap.end()) {
 				file = filesMap.insert(fileName, new YamlParser(fileName));
 				somethingChanged = true;
 			}
-			somethingChanged |= (*file)->parse();
-			if (numPaths < firstOverride) {
-				TTRACE("loadAllFiles base: %s", fileName.c_str());
-				baseFiles << *file;
-			} else {
-				TTRACE("loadAllFiles override: %s", fileName.c_str());
-				overrideFiles << *file;
+			try {
+				somethingChanged |= (*file)->parse();
+				if (numPaths < firstOverride) {
+					TTRACE("loadAllFiles base: %s", fileName.c_str());
+					baseFiles << *file;
+				} else {
+					TTRACE("loadAllFiles override: %s", fileName.c_str());
+					overrideFiles << *file;
+				}
+				fileNamesInDir.insert(fileName);
+			} catch (const YamlNotFoundException &e) {
+				TDEBUG("deleted file %s", fileName.c_str());
+				somethingChanged = true;
 			}
 		}
 
@@ -204,8 +209,8 @@ void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeMana
 						bool isModified = (*file)->parse();
 						TDEBUG("modified file %s = %d", fileName->toLatin1().data(), isModified);
 						areFilesModified |= isModified;
-					} catch (... /* FileNotFound */) {
-						TDEBUG("deleted file %s", fileName->toLatin1().data());
+					} catch (const YamlNotFoundException &e) {
+						TDEBUG("deleted file %s", fileName->toLocal8Bit().data());
 						areDirsModified = true;
 					}
 				}

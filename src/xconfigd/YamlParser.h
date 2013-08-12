@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <exception>
 
 #include "TLogger.h"
 
@@ -49,6 +50,9 @@ private:
 	void inferScalarType(xconfig::XConfigBucket* bucket, const char* value, const char* tag);
 	void parserError(const yaml_parser_t* parser);
 
+};
+
+class YamlNotFoundException: public std::exception {
 };
 
 #endif

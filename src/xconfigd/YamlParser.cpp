@@ -372,8 +372,7 @@ bool YamlParser::parse() {
 	int fd = ::open(path.c_str(), O_RDONLY);
 	if (fd < 0) {
 		TTRACE("can't open %s", path.c_str());
-		// TODO throw FileNotFound
-		return false;
+		throw YamlNotFoundException();
 	}
 	{
 		// check if mtime changed
