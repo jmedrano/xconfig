@@ -1,6 +1,8 @@
 #ifndef CONFIGURATION_TREE_H_
 #define CONFIGURATION_TREE_H_
 
+#include "TLogger.h"
+
 #include <boost/shared_ptr.hpp>
 
 #include <QObject>
@@ -20,7 +22,6 @@ public:
 	ConfigurationTree(QString path, int fd) : path(path), fd(fd) {
 	}
 	~ConfigurationTree() {
-printf("~ConfigurationTree\n");
 		::close(fd);
 	}
 
@@ -30,6 +31,7 @@ printf("~ConfigurationTree\n");
 
 class ConfigurationTreeManager : public QObject {
 	Q_OBJECT
+	T_LOGGER_DECLARE(ConfigurationTreeManager);
 
 public:
 	ConfigurationTreeManager(QString path);

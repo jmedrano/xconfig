@@ -10,7 +10,10 @@
 #include <vector>
 #include <set>
 
+#include "TLogger.h"
+
 class YamlParser {
+	T_LOGGER_DECLARE(YamlParser);
 public:
 	YamlParser(std::string path);
 	~YamlParser();
@@ -44,6 +47,7 @@ private:
 	int yamlParseNode(const std::string& prefix, bool isDocumentRoot, bool isMapping, int maxItems = -1);
 	xconfig::XConfigBucket* insertBucket(const std::string& key);
 	void inferScalarType(xconfig::XConfigBucket* bucket, const char* value, const char* tag);
+	void parserError(const yaml_parser_t* parser);
 
 };
 

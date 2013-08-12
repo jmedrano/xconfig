@@ -2,11 +2,13 @@
 #define YAML_CONFIGURATION_MERGER_H
 
 #include "YamlParser.h"
+#include "TLogger.h"
 
 #include <xconfig_file.h>
 #include <QList>
 
 class ConfigurationMerger {
+	T_LOGGER_DECLARE(ConfigurationMerger);
 public:
 	ConfigurationMerger(QList<YamlParser*> baseFiles, QList<YamlParser*> overrideFiles);
 	~ConfigurationMerger();

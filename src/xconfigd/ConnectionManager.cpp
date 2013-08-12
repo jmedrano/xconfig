@@ -16,6 +16,8 @@ static const int MAX_DGRAM = 1024;
 static const char* HANDSHAKE_EXPECTED = "CAPABILITIES (";
 static const int HANDSHAKE_EXPECTED_LEN = strlen(HANDSHAKE_EXPECTED);
 
+T_QLOGGER_DEFINE(ConnectionManager);
+
 ConnectionManager::ConnectionManager(int connectionFd, QObject* parent) : QObject(parent), connectionFd(connectionFd)
 {
 	notifier = new QSocketNotifier(connectionFd, QSocketNotifier::Read, this);
@@ -42,7 +44,7 @@ void ConnectionManager::connectionReadyRead()
 {
 	struct msghdr msg;
 	struct iovec iov;
-	printf("ConnectionManager::connectionReadyRead\n");
+	TTRACE("ConnectionManager::connectionReadyRead");
 
 	/* Response data */
 	iov.iov_base = buffer.data();
@@ -60,7 +62,7 @@ void ConnectionManager::connectionReadyRead()
 			return;
 		} else if (nread < 0) {
 			if (errno != EAGAIN) {
-				perror("recvmsg error");
+				TWARN("recvmsg error %s", strerror(errno));
 				//close(connFd);
 				abort();
 			}
@@ -75,30 +77,30 @@ void ConnectionManager::connectionReadyRead()
 void ConnectionManager::connectionError(QLocalSocket::LocalSocketError error)
 {
 	Q_UNUSED(error);
-	printf("error\n");
+	TWARN("error");
 	abort();
 }
 
 bool ConnectionManager::receiveHandshake(const char *buf, size_t len)
 {
-	printf("got handshake: '%s'\n", buf);
+	TTRACE("got handshake: '%s'", buf);
 	if (strncmp(buf, HANDSHAKE_EXPECTED, HANDSHAKE_EXPECTED_LEN) != 0)
 		return false;
 	const char *haystack = buf + strlen(HANDSHAKE_EXPECTED);
 	const char *needle;
-//	printf("%s\n", haystack);
+//	TTRACE("%s", haystack);
 	while ((needle = strpbrk(haystack, ",)")) != NULL) {
 		bool found = false;
 		if ((needle - haystack) == 0 && *needle == ')')
 			break;
 		for (unsigned int i = 0; i < (sizeof(CAPABILITIES) / sizeof(CAPABILITIES[0])); i++) {
-//			printf("%d %d\n", needle-haystack, CAPABILITIES[i].len);
+//			TTRACE("%d %d", needle-haystack, CAPABILITIES[i].len);
 			if ((size_t)(needle - haystack) == CAPABILITIES[i].len && strncmp(CAPABILITIES[i].name, haystack, qMin((size_t)(needle - haystack), strlen(CAPABILITIES[i].name))) == 0) {
 				if (capabilities & CAPABILITIES[i].capability)
 					return false;
 				capabilities |= CAPABILITIES[i].capability;
 				found = true;
-//				printf("cap found\n");
+//				TTRACE("cap found");
 				break;
 			}
 		}
@@ -109,7 +111,7 @@ bool ConnectionManager::receiveHandshake(const char *buf, size_t len)
 		haystack = needle + 1;
 	}
 
-//	printf("%d => %d\n", len, (size_t)(needle - buf + 1));
+//	TTRACE("%d => %d", len, (size_t)(needle - buf + 1));
 	if (!needle || *needle != ')' || (len != (size_t)(needle - buf + 1)))
 		return false;
 	return true;
@@ -117,7 +119,7 @@ bool ConnectionManager::receiveHandshake(const char *buf, size_t len)
 
 void ConnectionManager::receiveWatch(const char *buf, size_t len)
 {
-	printf("got watch\n");
+	TTRACE("got watch");
 
 	if (treeManager) {
 		disconnect(treeManager.get(), 0, 0, 0);
@@ -126,9 +128,9 @@ void ConnectionManager::receiveWatch(const char *buf, size_t len)
 	// TODO improve this
 	QString path(QByteArray(buf + 6, len - 6 - 2));
 
-printf("before getConfigurationManager\n");
+	TTRACE("before getConfigurationManager");
 	treeManager = ConfigurationPool::getInstance().getConfigurationManager(path);
-printf("after getConfigurationManager\n");
+	TTRACE("after getConfigurationManager");
 
 	if (treeManager) {
 		treeManager->touch();
@@ -139,25 +141,25 @@ printf("after getConfigurationManager\n");
 
 void ConnectionManager::onNewTreeAvailable()
 {
-printf("onNewTreeAvailable\n");
+	TTRACE("onNewTreeAvailable");
 	assert(treeManager);
 	auto tree = treeManager->getConfigurationTree();
 	if (tree) {
-printf("got path %s\n", tree->path.toLatin1().data());
+		TTRACE("got path %s", tree->path.toLatin1().data());
 		sendPush(tree->path, tree->fd);
 	}
 }
 
 void ConnectionManager::abort()
 {
-	printf("abort\n");
+	TDEBUG("abort");
 
 	notifier->setEnabled(false);
 	::close(connectionFd);
 	connectionFd = -1;
 	if (treeManager) {
 		disconnect(treeManager.get(), 0, 0, 0);
-printf("disconnected");
+		TDEBUG("disconnected");
 		treeManager.reset();
 	}
 	deleteLater();
@@ -192,7 +194,7 @@ void ConnectionManager::sendDatagram(const char* buf, size_t len, int controlFd)
 	}
 
 	if (sendmsg(connectionFd, &msg, MSG_DONTWAIT) < 0) {
-		perror("sendmsg error");
+		TWARN("sendmsg error %s", strerror(errno));
 		abort();
 		//close(connFd);
 		return;
@@ -206,7 +208,7 @@ void ConnectionManager::receiveDatagram(const char* buf, size_t len)
 	} else if (memcmp(buf, "CAPABILITIES ", 6) == 0) {
 		receiveHandshake(buf, len);
 	} else {
-		printf("WAT\n");
+		TWARN("WAT");
 	}
 }
 
@@ -222,7 +224,7 @@ void ConnectionManager::sendHi()
 		if (i != (sizeof(CAPABILITIES) / sizeof(CAPABILITIES[0])) - 1)
 			handshake.append(",");
 	}
-	handshake.append(")\n");
+	handshake.append(")");
 
 	sendDatagram(handshake.data(), handshake.length());
 }
@@ -230,11 +232,11 @@ void ConnectionManager::sendHi()
 void ConnectionManager::sendPush(QString path, int fd)
 {
 	QByteArray push;
-printf("send push\n");
+	TTRACE("send push");
 
 	push.append("PUSH ");
 	push.append(path);
-	push.append("\n");
+	push.append("");
 
 	sendDatagram(push.data(), push.length(), fd);
 }

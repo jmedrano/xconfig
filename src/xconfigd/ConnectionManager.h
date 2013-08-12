@@ -1,6 +1,8 @@
 #ifndef CONNECTIONMANAGER_H_
 #define CONNECTIONMANAGER_H_
 
+#include "TLogger.h"
+
 #include <QObject>
 #include <QByteArray>
 #include <QFlags>
@@ -14,6 +16,7 @@ class ConfigurationTreeManager;
 
 class ConnectionManager : public QObject {
 	Q_OBJECT
+	T_LOGGER_DECLARE(ConfigurationTreeManager);
 
 public:
 	enum Capability {

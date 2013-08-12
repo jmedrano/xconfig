@@ -20,6 +20,8 @@ using xconfig::XConfigHeader;
 using xconfig::XConfigBucket;
 using xconfig::XConfigValueType;
 
+T_LOGGER_DEFINE(YamlParser, "YamlParser");
+
 YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), mtime{0, 0}
 {
 }
@@ -55,20 +57,20 @@ const std::set<size_t>& YamlParser::getNodeIdsToBeExpanded() const {
 	return nodeIdsToBeExpanded;
 }
 
-static void parserError(const yaml_parser_t* parser) {
+void YamlParser::parserError(const yaml_parser_t* parser) {
 	switch (parser->error) {
 		case YAML_MEMORY_ERROR:
-			fprintf(stderr, "Memory error: Not enough memory for emitting\n");
+			TERROR("Memory error: Not enough memory for emitting");
 			break;
 		case YAML_WRITER_ERROR:
-			fprintf(stderr, "Writer error: %s\n", parser->problem);
+			TERROR("Writer error: %s", parser->problem);
 			break;
 		case YAML_EMITTER_ERROR:
-			fprintf(stderr, "Emitter error: %s\n", parser->problem);
+			TERROR("Emitter error: %s", parser->problem);
 			break;
 		default:
 			/* Couldn't happen. */
-			fprintf(stderr, "Internal error: %s\n", parser->problem);
+			TERROR("Internal error: %s", parser->problem);
 			break;
 	}
 	abort();
@@ -104,11 +106,10 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 			bucket->type = xconfig::TYPE_DELETE;
 			return;
 		} else {
-			printf("unknown tag [%s]\n", tag);
+			TINFO("unknown tag [%s]", tag);
 		}
 	} catch (boost::bad_lexical_cast) {
-		// TODO log error
-		printf("type error\n");
+		TWARN("type error");
 	}
 
 	// infer type
@@ -119,7 +120,7 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 			try {
 				long int_val = lexical_cast<long>(value);
 				if (lexical_cast<string>(int_val) == value) {
-					printf("inferred int\n");
+					TTRACE("inferred int");
 					bucket->type = xconfig::TYPE_INTEGER;
 					bucket->value._integer = int_val;
 					return;
@@ -129,7 +130,7 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 				try {
 					double float_val = lexical_cast<double>(value);
 					if (lexical_cast<string>(float_val) == value) {
-						printf("inferred float\n");
+						TTRACE("inferred float");
 						bucket->type = xconfig::TYPE_FLOAT;
 						bucket->value._float = float_val;
 						return;
@@ -142,7 +143,7 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 			try {
 				double float_val = lexical_cast<double>(value);
 				if (lexical_cast<string>(float_val) == value) {
-					printf("inferred float\n");
+					TTRACE("inferred float");
 					bucket->type = xconfig::TYPE_FLOAT;
 					bucket->value._float = float_val;
 					return;
@@ -180,7 +181,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 	XConfigBucket* currentBucket;
 	string nextPrefix;
 	int parent = isDocumentRoot ? 0 : bucketIdx;
-//printf("yamlParseNode prefix[%s] parent=%d isMapping=%d isDocumentRoot=%d maxItems=%d\n", prefix.c_str(), parent, isMapping, isDocumentRoot, maxItems);
+	TTRACE("yamlParseNode prefix[%s] parent=%d isMapping=%d isDocumentRoot=%d maxItems=%d", prefix.c_str(), parent, isMapping, isDocumentRoot, maxItems);
 	for (int n=0; maxItems < 0 || n < maxItems; n++) {
 		if (!yaml_parser_parse(parser, &event))
 			parserError(parser);
@@ -203,39 +204,34 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 			// TODO this is ugly
 			nextPrefix = prefix;
 		}
-//printf("nextPrefix=[%s] prefix=[%s] isMapping=%d nextNodeIsKey=%d, isDocumentRoot=%d\n", nextPrefix.c_str(), prefix.c_str(), isMapping, nextNodeIsKey, isDocumentRoot);
+		TTRACE("nextPrefix=[%s] prefix=[%s] isMapping=%d nextNodeIsKey=%d, isDocumentRoot=%d", nextPrefix.c_str(), prefix.c_str(), isMapping, nextNodeIsKey, isDocumentRoot);
 		switch (event.type) {
 			case YAML_SCALAR_EVENT:
-assert(stringOffset == stringPool.size());
-//printf("YAML_SCALAR_EVENT: stringPool.size()=%ld\n", stringPool.size());;
-printf("YAML_SCALAR_EVENT: name: [%s]\n", event.data.scalar.value);
-printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
-//printf("YAML_SCALAR_EVENT: stringPool.size()=%ld\n", stringPool.size());;
+				assert(stringOffset == stringPool.size());
+				TTRACE("YAML_SCALAR_EVENT: name: [%s]", event.data.scalar.value);
+				TTRACE("YAML_SCALAR_EVENT: tag: [%s]", event.data.scalar.tag);
 				if (nextNodeIsKey) {
 					stringPool.insert(stringPool.end(), (char*)event.data.scalar.value, (char*)event.data.scalar.value + event.data.scalar.length + 1);
 					name = stringOffset + 1;
 					stringOffset += event.data.scalar.length + 1;
 				} else {
 					lastSibling = bucketIdx;
-//printf("insert scalar bucket bucketIdx=%ld, buckets.size()=%d, key=[%s], value=[%s]\n", bucketIdx, buckets.size(), nextPrefix.c_str(), &stringPool[stringOffset]);
+					TTRACE("insert scalar bucket bucketIdx=%ld, buckets.size()=%ld, key=[%s], value=[%s]", bucketIdx, buckets.size(), nextPrefix.c_str(), &stringPool[stringOffset]);
 					currentBucket = insertBucket(nextPrefix);
 					currentBucket->name = name;
 					currentBucket->parent = parent;
-					// TODO infer type
 					inferScalarType(currentBucket, (char*)event.data.scalar.value, (char*)event.data.scalar.tag);
-					//currentBucket->type = XConfigValueType::TYPE_STRING;
-					//currentBucket->value._string = stringOffset + 1;
 					currentBucket->next = bucketIdx + 1;
 					name = 0;
 				}
 				break;
 			case YAML_MAPPING_START_EVENT:
 				if (nextNodeIsKey) {
-					fprintf(stderr, "complex keys not supported\n");
+					TWARN("complex keys not supported");
 					abort();
 				}
 				lastSibling = bucketIdx;
-//printf("insert map bucket bucketIdx=%ld, buckets.size()=%d\n", bucketIdx, buckets.size());
+				TTRACE("insert map bucket bucketIdx=%ld, buckets.size()=%ld", bucketIdx, buckets.size());
 				currentBucket = insertBucket(nextPrefix);
 				currentBucket->name = name;
 				currentBucket->parent = parent;
@@ -243,7 +239,7 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 				currentBucket->value._vectorial.child = bucketIdx + 1;
 				currentBucket->value._vectorial.size = yamlParseNode(nextPrefix, false, true);
 				currentBucket->next = bucketIdx + 1;
-//printf("insert map bucket child=%ld, size=%d, next=%ld\n", currentBucket->value._vectorial.child, currentBucket->value._vectorial.size, currentBucket->next);
+				TTRACE("insert map bucket child=%d, size=%d, next=%d", currentBucket->value._vectorial.child, currentBucket->value._vectorial.size, currentBucket->next);
 				if (currentBucket->value._vectorial.size == 0)
 					currentBucket->value._vectorial.child = 0;
 				break;
@@ -253,7 +249,7 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 					string overrideKey;
 					size_t previousName = 0;
 					name = 0;
-				//printf("override start\n");
+					TTRACE("override start");
 					for(bool searchingKeys=true; searchingKeys;) {
 						yaml_event_delete(&event);
 						if (!yaml_parser_parse(parser, &event))
@@ -261,26 +257,26 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 						switch (event.type) {
 							case YAML_SCALAR_EVENT:
 								assert(stringOffset == stringPool.size());
-								//printf("YAML_SCALAR_EVENT: stringPool.size()=%ld\n", stringPool.size());;
+								TTRACE("YAML_SCALAR_EVENT: stringPool.size()=%ld", stringPool.size());;
 								stringPool.insert(stringPool.end(), (char*)event.data.scalar.value, (char*)event.data.scalar.value + event.data.scalar.length + 1);
-								//printf("YAML_SCALAR_EVENT: name: [%s] %ld\n", &stringPool[stringOffset], event.data.scalar.length);
-								//printf("YAML_SCALAR_EVENT: stringPool.size()=%ld\n", stringPool.size());;
+								TTRACE("YAML_SCALAR_EVENT: name: [%s] %ld", &stringPool[stringOffset], event.data.scalar.length);
+								TTRACE("YAML_SCALAR_EVENT: stringPool.size()=%ld", stringPool.size());;
 								previousName = name;
 								name = stringOffset + 1;
 								stringOffset += event.data.scalar.length + 1;
 								break;
 							case YAML_SEQUENCE_END_EVENT:
 								searchingKeys = false;
-								//printf("override end keys\n");
+								TTRACE("override end keys");
 								continue;
 							default:
-								fprintf(stderr, "Unexpected event\n");
+								TERROR("Unexpected event");
 								abort();
 						}
 						if (previousName) {
 							// there was another key on the previous iteration
 							// insert a map node for it
-							//printf("override map key=[%s] name=[%s]\n", overrideKey.c_str(), &stringPool[previousName - 1]);
+							TTRACE("override map key=[%s] name=[%s]", overrideKey.c_str(), &stringPool[previousName - 1]);
 							currentBucket = insertBucket(overrideKey);
 							currentBucket->type = xconfig::TYPE_MAP;
 							currentBucket->name = previousName;
@@ -295,11 +291,11 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 							firstBucketId = bucketIdx;
 					}
 					if (overrideKey.empty()) {
-						fprintf(stderr, "Empty override key\n");
+						TWARN("Empty override key");
 						abort();
 					}
 					// parse value
-					//printf("override value key=[%s] name=[%s]\n", overrideKey.c_str(), &stringPool[name - 1]);
+					TTRACE("override value key=[%s] name=[%s]", overrideKey.c_str(), &stringPool[name - 1]);
 					size_t valueIdx = bucketIdx;
 					yamlParseNode(overrideKey, true, false, 1);
 					currentBucket = &buckets[valueIdx];
@@ -314,7 +310,7 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 					buckets[firstBucketId].next = bucketIdx + 1;
 
 					nextNodeIsKey = false; // it'll be flipped to true on outer loop
-					//printf("override end\n");
+					TTRACE("override end");
 					break;
 				}
 				lastSibling = bucketIdx;
@@ -324,11 +320,11 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 				if (event.data.sequence_start.tag == NULL) {
 					currentBucket->type = XConfigValueType::TYPE_SEQUENCE;
 				} else if (strcmp((char*)event.data.sequence_start.tag, "!expandref") == 0) {
-					printf("expandref\n");
+					TTRACE("expandref");
 					currentBucket->type = XConfigValueType::TYPE_EXPANDREF;
 					nodeIdsToBeExpanded.insert(bucketIdx);
 				} else if (strcmp((char*)event.data.sequence_start.tag, "!expandstring") == 0) {
-					printf("expandstring\n");
+					TTRACE("expandstring");
 					currentBucket->type = XConfigValueType::TYPE_EXPANDSTRING;
 					nodeIdsToBeExpanded.insert(bucketIdx);
 				} else {
@@ -344,13 +340,13 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 				yaml_event_delete(&event);
 				return yamlParseNode("", true, false);
 			case YAML_MAPPING_END_EVENT:
-//printf("YAML_MAPPING_END_EVENT\n");
+				TTRACE("YAML_MAPPING_END_EVENT");
 				if (numBuckets > 0)
 					buckets[lastSibling].next = 0;
 				yaml_event_delete(&event);
 				return numBuckets;
 			case YAML_SEQUENCE_END_EVENT:
-//printf("YAML_SEQUENCE_END_EVENT\n");
+				TTRACE("YAML_SEQUENCE_END_EVENT");
 				if (numBuckets > 0)
 					buckets[lastSibling].next = 0;
 				yaml_event_delete(&event);
@@ -368,14 +364,14 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 			nextNodeIsKey = !nextNodeIsKey;
 		yaml_event_delete(&event);
 	}
-//printf("maxItems reached\n");
+	TTRACE("maxItems reached");
 	return numBuckets;
 }
 
 bool YamlParser::parse() {
 	int fd = ::open(path.c_str(), O_RDONLY);
 	if (fd < 0) {
-		printf("can't open %s\n", path.c_str());
+		TTRACE("can't open %s", path.c_str());
 		// TODO throw FileNotFound
 		return false;
 	}
@@ -416,19 +412,20 @@ bool YamlParser::parse() {
 	fclose(file);
 	::close(fd);
 
-//printf("keys.size()=%ld\n", keys.size());
-int nkey = 0;
-for	(auto key = keys.begin(); key != keys.end(); ++key) {
-	//printf(" keys[%d]=[%s]\n", nkey, *key);
-	nkey++;
-}
+	TTRACE("keys.size()=%ld", keys.size());
+	int nkey = 0;
+	for	(auto key = keys.begin(); key != keys.end(); ++key) {
+		TTRACE(" keys[%d]=[%s]", nkey, *key);
+		nkey++;
+	}
+	// TODO cmph hash is not used
 	cmph_io_adapter_t *source = cmph_io_vector_adapter(&keys[0], keys.size());
-//printf("source=%p\n", source);
+	TTRACE("source=%p", source);
 	cmph_config_t *config = cmph_config_new(source);
 	cmph_config_set_algo(config, CMPH_CHM);
-//printf("config=%p\n", config);
+	TTRACE("config=%p", config);
 	cmph_t *hash_serialization = cmph_new(config);
-//printf("hash_serialization=%p\n", hash_serialization);
+	TTRACE("hash_serialization=%p", hash_serialization);
 	cmph_config_destroy(config);
 
 	size_t hashSize = cmph_packed_size(hash_serialization);
@@ -442,7 +439,6 @@ for	(auto key = keys.begin(); key != keys.end(); ++key) {
 	header.numBuckets = numBuckets;
 	offset += sizeof(header);
 	assert(offset < totalSize);
-//	cmph_pack(hash_serialization, blob + offset);
 	offset += hashSize;
 	assert(offset < totalSize);
 

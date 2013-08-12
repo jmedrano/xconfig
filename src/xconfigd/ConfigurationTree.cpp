@@ -19,21 +19,23 @@
 
 #include <set>
 
+T_QLOGGER_DEFINE(ConfigurationTreeManager);
+
 void ConfigurationTreeManager::openTree() {
-try {
-printf("openTree\n");
+	try {
+		TTRACE("openTree");
 
-	auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
-	loadAllFiles(referenceHolder);
-printf("after loadAllFiles\n");
+		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
+		loadAllFiles(referenceHolder);
+		TTRACE("after loadAllFiles");
 
-} catch (const std::exception& e) {
-	abort();
-}
+	} catch (const std::exception& e) {
+		abort();
+	}
 }
 
 ConfigurationTreeManager::ConfigurationTreeManager(QString path) : path(path) {
-printf("ConfigurationTreeManager\n");
+	TTRACE("ConfigurationTreeManager");
 
 	iNotifyFd = inotify_init();
 	paths = path.split(':');
@@ -46,7 +48,7 @@ printf("ConfigurationTreeManager\n");
 		}
 		auto dirByteArray = dirName->toLocal8Bit();
 		int watcher = inotify_add_watch(iNotifyFd, dirByteArray.data(), IN_MODIFY | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE);
-printf("inotify_add_watch %s\n", dirByteArray.data());
+		TTRACE("inotify_add_watch %s", dirByteArray.data());
 		iWatchers.insert(watcher, dirByteArray);
 	}
 	iNotifier = new QSocketNotifier(iNotifyFd, QSocketNotifier::Read, this);
@@ -65,9 +67,8 @@ printf("inotify_add_watch %s\n", dirByteArray.data());
 }
 
 ConfigurationTreeManager::~ConfigurationTreeManager() {
-	printf("~ConfigurationTreeManager\n");
+	TTRACE("~ConfigurationTreeManager");
 	iNotifier->deleteLater();
-	// TODO move to when deleteLater is done
 	::close(iNotifyFd);
 	for (auto it = filesMap.begin(); it != filesMap.end(); ++it) {
 		delete *it;
@@ -75,7 +76,7 @@ ConfigurationTreeManager::~ConfigurationTreeManager() {
 }
 
 void ConfigurationTreeManager::onINotify() {
-	printf("onINotify\n");
+	TTRACE("onINotify");
 	struct inotify_event event;
 	event.len = 0;
 	int nread = read(iNotifyFd, iNotifyBuffer, sizeof(iNotifyBuffer));
@@ -86,16 +87,16 @@ void ConfigurationTreeManager::onINotify() {
 
 		assert(dirName.length());
 
-		printf("read from inotify %d %s\n", event.mask, dirName.data());
+		TTRACE("read from inotify %d %s", event.mask, dirName.data());
 		if (event.len) {
-			printf("event.name %s\n", iNotifyBuffer + sizeof(event));
+			TTRACE("event.name %s", iNotifyBuffer + sizeof(event));
 			// filter out files with leading . (rsync)
 			if (iNotifyBuffer[sizeof(event)] == '.') {
 				// TODO filter out non .yaml files
 				continue;
 			}
 			QString fileName = dirName + '/' + QString(&iNotifyBuffer[sizeof(event)]);
-			printf("modified fileName=[%s]\n", fileName.toLatin1().data());
+			TDEBUG("inotify: modified fileName=[%s]", fileName.toLatin1().data());
 			dirtyFiles << fileName;
 			somethingChanged = true;
 		} else {
@@ -116,8 +117,8 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 	QMutexLocker locker(&mutex);
 
 	struct timespec a,b;
-printf("loadAllFiles start\n");
-clock_gettime(CLOCK_MONOTONIC, &a);
+	TTRACE("loadAllFiles start");
+	clock_gettime(CLOCK_MONOTONIC, &a);
 
 	baseFiles.clear();
 	overrideFiles.clear();
@@ -139,10 +140,10 @@ clock_gettime(CLOCK_MONOTONIC, &a);
 			}
 			somethingChanged |= (*file)->parse();
 			if (numPaths < firstOverride) {
-printf("loadAllFiles base: %s\n", fileName.c_str());
+				TTRACE("loadAllFiles base: %s", fileName.c_str());
 				baseFiles << *file;
 			} else {
-printf("loadAllFiles override: %s\n", fileName.c_str());
+				TTRACE("loadAllFiles override: %s", fileName.c_str());
 				overrideFiles << *file;
 			}
 		}
@@ -150,30 +151,29 @@ printf("loadAllFiles override: %s\n", fileName.c_str());
 	}
 	// Check for removed files
 	if (size_t(filesMap.count()) > fileNamesInDir.size()) {
-printf("Checking for removed files\n");
+		TTRACE("Checking for removed files");
 		for (auto f = filesMap.begin(); f != filesMap.end();) {
 			if (fileNamesInDir.find(f.key()) == fileNamesInDir.end()) {
-printf("removed file: %s\n", f.key().c_str());
+				TTRACE("removed file: %s", f.key().c_str());
 				somethingChanged = true;
 				delete *f;
 				f = filesMap.erase(f);
 			} else {
-printf("not removed file: %s\n", f.key().c_str());
+				TTRACE("not removed file: %s", f.key().c_str());
 				++f;
 			}
 		}
 	}
 
 
-clock_gettime(CLOCK_MONOTONIC, &b);
-printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-fflush(stdout);
+	clock_gettime(CLOCK_MONOTONIC, &b);
+	TDEBUG("loadAllFiles took %ld usecs", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
 
 	if (somethingChanged) {
-		printf("something changed\n");
+		TTRACE("something changed");
 		merge();
 	} else {
-		printf("nothing changed\n");
+		TTRACE("nothing changed");
 	}
 }
 
@@ -188,7 +188,7 @@ void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeMana
 		for (auto fileName = files.begin(); fileName != files.end(); ++fileName) {
 				auto file = filesMap.find(fileName->toStdString());
 				if (file == filesMap.end()) {
-					printf("new file %s\n", fileName->toLatin1().data());
+					TDEBUG("new file %s", fileName->toLatin1().data());
 					areDirsModified = true;
 					break;
 					// TODO new file
@@ -196,53 +196,50 @@ void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeMana
 					// TODO could have been deleted
 					try {
 						bool isModified = (*file)->parse();
-						printf("modified file %s = %d\n", fileName->toLatin1().data(), isModified);
+						TDEBUG("modified file %s = %d", fileName->toLatin1().data(), isModified);
 						areFilesModified |= isModified;
 					} catch (... /* FileNotFound */) {
-						printf("deleted file %s\n", fileName->toLatin1().data());
+						TDEBUG("deleted file %s", fileName->toLatin1().data());
 						areDirsModified = true;
 					}
 				}
 		}
 		if (areFilesModified && ! areDirsModified) {
-			printf("soft merge\n");
+			TTRACE("soft merge");
 			merge();
 			return;
 		}
 	}
 
 	if (areDirsModified) {
-		printf("dirs modified\n");
+		TTRACE("dirs modified");
 		loadAllFiles(referenceHolder);
 	} else {
-		printf("nothing changed\n");
+		TTRACE("nothing changed");
 	}
 }
 
 void ConfigurationTreeManager::merge() {
 	struct timespec a,b;
 	clock_gettime(CLOCK_MONOTONIC, &a);
-	printf("merger start\n");
+	TTRACE("merger start");
 	ConfigurationMerger merger(baseFiles, overrideFiles);
 	merger.merge();
 
 	clock_gettime(CLOCK_MONOTONIC, &b);
-	printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-	printf("merge end\n");
+	TDEBUG("merge took %ld usecs", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
 
 	auto mergeResult = merger.dump();
 
 	clock_gettime(CLOCK_MONOTONIC, &b);
-	printf("lapsed %ld\n", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
-	printf("loadAllFiles end\n");
+	TDEBUG("dump took %ld usecs", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
 
 	boost::atomic_store(&tree, boost::make_shared<const ConfigurationTree>(QString(mergeResult.first.c_str()), mergeResult.second));
-
 	emit newTreeAvailable();
 }
 
 void ConfigurationTreeManager::onHardCheck() {
-	printf("onHardCheck\n");
+	TTRACE("onHardCheck");
 	if (!hardCheckFuture.isStarted() || hardCheckFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
 		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles, referenceHolder);
@@ -250,7 +247,7 @@ void ConfigurationTreeManager::onHardCheck() {
 }
 
 void ConfigurationTreeManager::onSoftCheck() {
-	printf("onSoftCheck\n");
+	TTRACE("onSoftCheck");
 	if (!softCheckFuture.isStarted() || softCheckFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
 		softCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles.toList());
@@ -260,7 +257,7 @@ void ConfigurationTreeManager::onSoftCheck() {
 }
 
 void ConfigurationTreeManager::onLingerTimeout() {
-	printf("onLingerTimeout\n");
+	TTRACE("onLingerTimeout");
 	lingerReference.reset();
 }
 

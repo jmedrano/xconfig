@@ -36,7 +36,12 @@
 #define T_QLOGGER_DEFINE_OTHER_ROOT(klass, other) log4cxx::LoggerPtr klass::T_LOGGER_VAR(log4cxx::Logger::getLogger(TLogger::HierarchyNamer(&other::staticMetaObject, TLoggerRoot()).name()))
 #define T_LOGGER_DEFINE_ROOT(klass, name) log4cxx::LoggerPtr klass::T_LOGGER_VAR(log4cxx::Logger::getLogger(TLogger::MessageFormatter("%s.%s", TLoggerRoot(), name)))
 
+#ifdef NDEBUG
+#define TTRACE(message_, ...) do { } while(0);
+#else
 #define TTRACE(message_, ...) do { if (ISEMPTY(__VA_ARGS__)) { LOG4CXX_TRACE(T_LOGGER_VAR, (message_)); } else { LOG4CXX_TRACE(T_LOGGER_VAR, TLogger::MessageFormatter(message_, ##__VA_ARGS__).message()); } } while(0);
+#endif
+
 #define TDEBUG(message_, ...) do {if (ISEMPTY(__VA_ARGS__)) { LOG4CXX_DEBUG(T_LOGGER_VAR, (message_)); } else { LOG4CXX_DEBUG(T_LOGGER_VAR, TLogger::MessageFormatter(message_, ##__VA_ARGS__).message()); } } while(0);
 #define TINFO(message_, ...) do { if (ISEMPTY(__VA_ARGS__)) { LOG4CXX_INFO(T_LOGGER_VAR, (message_)); } else { LOG4CXX_INFO(T_LOGGER_VAR, TLogger::MessageFormatter(message_, ##__VA_ARGS__).message()); } } while(0);
 #define TWARN(message_, ...) do {if (ISEMPTY(__VA_ARGS__)) { LOG4CXX_WARN(T_LOGGER_VAR, (message_)); } else { LOG4CXX_WARN(T_LOGGER_VAR, TLogger::MessageFormatter(message_, ##__VA_ARGS__).message()); } } while(0);
