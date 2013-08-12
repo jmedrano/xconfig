@@ -10,6 +10,7 @@
 #include <yaml.h>
 #include <cmph.h>
 #include <string>
+#include <QString>
 
 #include <boost/lexical_cast.hpp>
 
@@ -43,10 +44,14 @@ printf("adding stringPool [%s]\n", &(*it)->getStringPool()[0]);
 		bucketList << buckets;
 		stringPools << (*it)->getStringPool();
 	}
+	// Additional entry on bucketList and stringPools for dynamic buckets generated from expandrefs
+	bucketList << &dynamicBuckets[0];
+	stringPools << &dynamicStringPool[0];
 }
 
 ConfigurationMerger::~ConfigurationMerger()
 {
+	bucketList.pop_back();
 	if (blobs.size() > 1) {
 		for (auto it = bucketList.begin(); it != bucketList.end(); ++it) {
 			delete[](*it);
@@ -86,7 +91,17 @@ const char* ConfigurationMerger::getKey(size_t blobId, size_t nodeId) {
 	assert(nodeId > 0);
 	assert(blobId > 0);
 
-	return blobs[blobId - 1]->getKeys()[nodeId - 1];
+if (blobId > blobs.size()) {
+	printf("getKey(%d,%d) dynamicKeys.size()=%d ", blobId, nodeId, dynamicKeys.size());
+	fflush(stdout);
+	printf("%p ", dynamicKeys[nodeId - 1]);
+	fflush(stdout);
+	printf("%s\n", dynamicKeys[nodeId - 1]);
+	fflush(stdout);
+}
+	return blobId > blobs.size()
+		? dynamicKeys[nodeId - 1]
+		: blobs[blobId - 1]->getKeys()[nodeId - 1];
 }
 
 xconfig::XConfigBucket* ConfigurationMerger::getBucket(size_t blobId, size_t nodeId)
@@ -210,7 +225,7 @@ printf("insert parent=[%s] orig=[%s] ", getKey(parentBlob, parentNodeId), getKey
 	assert(parentBucket->type == xconfig::TYPE_MAP);
 
 	origBucket->parent = composeNodeId(parentBlob, parentNodeId);
-	origBucket->next = composeNodeId(parentBlob, parentBucket->value._vectorial.child);
+	origBucket->next = parentBucket->value._vectorial.child ? composeNodeId(parentBlob, parentBucket->value._vectorial.child) : 0;
 	parentBucket->value._vectorial.child = composeNodeId(origBlob, origNodeId);
 	parentBucket->value._vectorial.size++;
 printf("size=%d\n", parentBucket->value._vectorial.size);
@@ -275,7 +290,7 @@ printf("replace %ld %ld %ld\n", nodeInDestination, blobId, nodeId);
 		// add to destination as child of parentInDestination
 printf(" parentInDestination %ld\n", parentInDestination);
 printf("insert %ld %ld %ld %ld\n", parentBlobId, parentInDestination, blobId, nodeId);
-		if (!currentBucket->type == xconfig::TYPE_DELETE)
+		if (currentBucket->type != xconfig::TYPE_DELETE)
 			insert(parentBlobId, parentInDestination, blobId, nodeId);
 	}
 printf("mergeNode exit\n");
@@ -284,10 +299,11 @@ printf("mergeNode exit\n");
 void ConfigurationMerger::merge()
 {
 	// First Blob is #1
-	for (int blobId=2; blobId <= bucketList.size(); blobId++) {
+	for (int blobId=2; blobId <= blobs.size(); blobId++) {
 		printf("merge blobId=%d\n", blobId);
 		mergeNode(blobId, 1, 1, 1);
 	}
+
 }
 
 std::pair<string, int> ConfigurationMerger::dump()
@@ -295,6 +311,9 @@ std::pair<string, int> ConfigurationMerger::dump()
 	destBuckets.reserve(16384);
 	destStringPool.reserve(65536);
 	destStringPool.push_back(0);
+	dynamicStringPool.push_back(0);
+
+	expandRefs();
 
 	// First Blob is #1
 	dumpNode(composeNodeId(1, 1), true);
@@ -419,6 +438,19 @@ printf("parentDestId=%d\n", parentDestId);
 			printf(" scalar[%s] ", name);
 			break;
 		}
+		case xconfig::TYPE_EXPANDSTRING:
+			// string is already in destStringPool
+			printf(" expandstring[%s] ", &destStringPool[destBucket->value._string - 1]);
+			destBucket->type = xconfig::TYPE_STRING;
+			break;
+		case xconfig::TYPE_EXPANDREF: {
+			// dump child
+			printf("\n expandref \n");
+			destBuckets.pop_back();
+			destKeys.pop_back();
+			return dumpNode(currentBucket->value._vectorial.child, inMap);
+			break;
+		}
 		default:
 			break;
 	}
@@ -437,4 +469,192 @@ printf("parentDestId=%d\n", parentDestId);
 	printf(" next=%d\n", destBucket->next);
 
 	return 0;
+}
+
+void ConfigurationMerger::expandRefs()
+{
+	int blobId = 1;
+	for (auto blob = blobs.begin(); blob != blobs.end(); ++blob, ++blobId) {
+		auto nodeIdsToBeExpanded = (*blob)->getNodeIdsToBeExpanded();
+		for (auto nodeId = nodeIdsToBeExpanded.begin(); nodeId != nodeIdsToBeExpanded.end(); ++nodeId) {
+			expandRef(blobId, *nodeId);
+		}
+	}
+}
+
+void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
+{
+	canonicalIds(&blobId, &nodeId);
+	XConfigBucket* bucket = getBucket(blobId, nodeId);
+	if (bucket->type == xconfig::TYPE_EXPANDREF) {
+		printf("expanding expandref [%s]\n", getKey(blobId, nodeId));
+		size_t refBlobId = 1;
+		size_t refNodeId = 1;
+		size_t childId = bucket->value._vectorial.child;
+		size_t n;
+		for (n = 0; n < bucket->value._vectorial.size && childId; n++) {
+			printf("#%d/%d ", n, bucket->value._vectorial.size);
+			XConfigBucket* childBucket = getBucket(blobId, childId);
+			assert(childBucket->type == xconfig::TYPE_STRING);
+			refNodeId = findChild(refBlobId, refNodeId, getString(blobId, childBucket->value._string));
+			canonicalIds(&refBlobId, &refNodeId);
+			if (!refNodeId) {
+				printf("can't find ref\n");
+				return;
+			}
+			childId = childBucket->next;
+		}
+		printf("found\n");
+		// TODO deep copy. keys need to be regenerated
+		// we might need to use a new blobId to insert the copied buckets to
+		if (true) {
+			bucket->value._vectorial.child = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
+			auto childBucket = getBucket(decodeBlobId(bucket->value._vectorial.child), bucket->value._vectorial.child);
+			childBucket->name = insertDynamicString(getString(blobId, bucket->name));
+		} else {
+			bucket->type = xconfig::TYPE_STRING;
+			bucket->value._string = 0;
+		}
+	} else if (bucket->type == xconfig::TYPE_EXPANDSTRING) {
+		printf("expanding expandstring [%s]\n", getKey(blobId, nodeId));
+		XConfigBucket* stringBucket = getBucket(blobId, bucket->value._vectorial.child);
+		assert(stringBucket->type == xconfig::TYPE_STRING);
+		QString expanded = getString(blobId, stringBucket->value._string);
+		size_t childId = stringBucket->next;
+		for (size_t n=1; n < bucket->value._vectorial.size && childId; n++) {
+			printf(" getting ref #%d\n", n);
+			// TODO get ref
+			size_t refBlobId = 1;
+			size_t refNodeId = 1;
+			XConfigBucket* childBucket = getBucket(blobId, childId);
+			assert(childBucket->type == xconfig::TYPE_SEQUENCE);
+			size_t child2ndLevelId = childBucket->value._vectorial.child;
+			for (size_t i = 0; i < childBucket->value._vectorial.size && child2ndLevelId; i++) {
+				XConfigBucket* child2ndLevelBucket = getBucket(blobId, child2ndLevelId);
+				assert(child2ndLevelBucket->type == xconfig::TYPE_STRING);
+				refNodeId = findChild(refBlobId, refNodeId, getString(blobId, child2ndLevelBucket->value._string));
+				canonicalIds(&refBlobId, &refNodeId);
+				if (!refNodeId) {
+					printf("can't find ref\n");
+					return;
+				}
+				child2ndLevelId = child2ndLevelBucket->next;
+			}
+			XConfigBucket* refBucket = getBucket(refBlobId, refNodeId);
+			printf("found ref #%d [%s]\n", n, getString(refBlobId, refBucket->value._string));
+			expanded = expanded.arg(getString(refBlobId, refBucket->value._string));
+
+			childId = childBucket->next;
+		}
+		// string value is inserted into destStringPool
+		bucket->value._string = destStringPool.size() + 1;
+		auto value = expanded.toLocal8Bit();
+		destStringPool.insert(destStringPool.end(), value.constData(), value.constData() + expanded.length() + 1);
+	} else {
+		printf("expanding WAT [%s]\n", getKey(blobId, nodeId));
+	}
+}
+
+size_t ConfigurationMerger::insertDynamicString(const char* string)
+{
+	auto stringOffset = dynamicStringPool.size();
+	size_t len = strlen(string);
+	dynamicStringPool.insert(dynamicStringPool.end(), string, string + len + 1);
+	stringPools.back() = &dynamicStringPool[0];
+	return stringOffset + 1;
+}
+
+size_t ConfigurationMerger::insertDynamicBucket(const XConfigBucket* bucket)
+{
+	dynamicBuckets.push_back(*bucket);
+	bucketList.back() = &dynamicBuckets[0];
+	return composeNodeId(bucketList.size(), dynamicBuckets.size());
+}
+
+size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& key)
+{
+	auto blobId = decodeBlobId(nodeId);
+	auto bucket = getBucket(blobId, nodeId);
+	auto destNodeId = insertDynamicBucket(bucket);
+	auto destBlobId = decodeBlobId(destNodeId);
+	auto destBucket = getBucket(destBlobId, destNodeId);
+	bool isMap = false;
+printf("deepCopy(%d,%d,%s) destBlobId=%d destNodeId=%d\n", nodeId, inMap, key.c_str(), destBlobId, destNodeId);
+	if (inMap) {
+		destBucket->name = insertDynamicString(getString(blobId, bucket->name));
+	}
+	dynamicKeys.push_back(strdup(key.c_str()));
+	printf("buckets.size()=%d keys.size()=%d [%s]\n", dynamicBuckets.size(), dynamicKeys.size(), key.c_str());
+	switch (bucket->type) {
+		case xconfig::TYPE_MAP:
+			isMap = true;
+			// fall-through
+		case xconfig::TYPE_SEQUENCE: {
+			// iterate
+			printf(" vect size=%d, child=%d isMap=%d\n", destBucket->value._vectorial.size, destBucket->value._vectorial.child, isMap);
+
+			size_t childId = bucket->value._vectorial.child;
+			size_t firstChildId = 0;
+			size_t prevChildId = 0;
+			size_t n;
+			for (n = 0; n < bucket->value._vectorial.size && childId; n++) {
+				printf("#%d/%d ", n, bucket->value._vectorial.size);
+
+				canonicalIds(&blobId, &childId);
+				XConfigBucket* childBucket = getBucket(blobId, childId);
+
+				string childKey(key);
+				if (!key.empty())
+					childKey += isMap ? string("/") : string("#");
+				childKey += isMap ? getString(blobId, childBucket->name) : lexical_cast<string>(childBucket->name);
+//printf(" childKey=[%s] ", childKey.c_str());
+
+				auto newChildId = deepCopy(composeNodeId(blobId, childId), isMap, childKey);
+				if (prevChildId) {
+					auto prevChildBlobId = decodeBlobId(prevChildId);
+					printf("\nprevChild(%d)->next=%d\n", prevChildId, newChildId);
+					getBucket(prevChildBlobId, prevChildId)->next = newChildId;
+				} else {
+					firstChildId = newChildId;
+				}
+					
+				prevChildId = newChildId;
+				childId = childBucket->next;
+			}
+
+			printf("end vect\n");
+
+			// recalculate afer insertions on the vector
+			printf("recalculate destBucket %d,%d\n", destBlobId, destNodeId);
+			auto destBucket = getBucket(destBlobId, destNodeId);
+			if (n != destBucket->value._vectorial.size) {
+				printf("wrong size, fixing to %d\n", n);
+				destBucket->value._vectorial.size = n;
+			}
+			destBucket->value._vectorial.child = firstChildId;
+			break;
+		}
+		case xconfig::TYPE_STRING: {
+			const char* value = getString(blobId, bucket->value._string);
+			//printf("deep copy string [%s]\n", value);
+			destBucket->value._string = insertDynamicString(value);
+			printf("deep copy string [%s] [%s]\n", value, getString(destBlobId, destBucket->value._string));
+			break;
+		}
+		case xconfig::TYPE_DELETE:
+			printf("Unexpected delete node\n");
+			destBucket->type = xconfig::TYPE_NULL;
+			break;
+		case xconfig::TYPE_EXPANDREF:
+		case xconfig::TYPE_EXPANDSTRING:
+			printf("Multi level references are not allowed\n");
+			destBucket->type = xconfig::TYPE_NULL;
+			break;
+		default:
+			// non-string scalar. nothing further to be done
+			break;
+	}
+printf("end deepCopy [%s] %d\n", key.c_str(), dynamicKeys.size());
+	// TODO insert key
+	return destNodeId;
 }

@@ -16,6 +16,7 @@ enum XConfigValueType : uint32_t {
 	// they can't be in a dumped file
 	// they're temporary items only used within the daemon
 	TYPE_EXPANDREF,
+	TYPE_EXPANDSTRING,
 	TYPE_DELETE,
 };
 

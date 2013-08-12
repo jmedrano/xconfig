@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 class YamlParser {
 public:
@@ -21,6 +22,7 @@ public:
 	const char* getStringPool() const;
 	size_t getStringPoolSize() const;
 	const std::vector<char*>& getKeys() const;
+	const std::set<size_t>& getNodeIdsToBeExpanded() const;
 
 private:
 	static const int RESERVE_BUCKETS = 1024;
@@ -37,6 +39,7 @@ private:
 	xconfig::XConfigHeader header;
 	size_t totalSize;
 	struct timespec mtime;
+	std::set<size_t> nodeIdsToBeExpanded;
 
 	int yamlParseNode(const std::string& prefix, bool isDocumentRoot, bool isMapping, int maxItems = -1);
 	xconfig::XConfigBucket* insertBucket(const std::string& key);

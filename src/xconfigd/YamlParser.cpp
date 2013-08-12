@@ -51,6 +51,10 @@ const std::vector<char*>& YamlParser::getKeys() const {
 	return keys;
 }
 
+const std::set<size_t>& YamlParser::getNodeIdsToBeExpanded() const {
+	return nodeIdsToBeExpanded;
+}
+
 static void parserError(const yaml_parser_t* parser) {
 	switch (parser->error) {
 		case YAML_MEMORY_ERROR:
@@ -98,12 +102,6 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 			return;
 		} else if (strcmp(tag, "!delete") == 0) {
 			bucket->type = xconfig::TYPE_DELETE;
-			return;
-		} else if (strcmp(tag, "!expandref") == 0) {
-			bucket->type = xconfig::TYPE_EXPANDREF;
-			stringPool.insert(stringPool.end(), value, value + len + 1);
-			bucket->value._string = stringOffset + 1;
-			stringOffset += len + 1;
 			return;
 		} else {
 			printf("unknown tag [%s]\n", tag);
@@ -323,7 +321,19 @@ printf("YAML_SCALAR_EVENT: tag: [%s]\n", event.data.scalar.tag);
 				currentBucket = insertBucket(nextPrefix);
 				currentBucket->name = name;
 				currentBucket->parent = parent;
-				currentBucket->type = XConfigValueType::TYPE_SEQUENCE;
+				if (event.data.sequence_start.tag == NULL) {
+					currentBucket->type = XConfigValueType::TYPE_SEQUENCE;
+				} else if (strcmp((char*)event.data.sequence_start.tag, "!expandref") == 0) {
+					printf("expandref\n");
+					currentBucket->type = XConfigValueType::TYPE_EXPANDREF;
+					nodeIdsToBeExpanded.insert(bucketIdx);
+				} else if (strcmp((char*)event.data.sequence_start.tag, "!expandstring") == 0) {
+					printf("expandstring\n");
+					currentBucket->type = XConfigValueType::TYPE_EXPANDSTRING;
+					nodeIdsToBeExpanded.insert(bucketIdx);
+				} else {
+					currentBucket->type = XConfigValueType::TYPE_SEQUENCE;
+				}
 				currentBucket->value._vectorial.child = bucketIdx + 1;
 				currentBucket->value._vectorial.size = yamlParseNode(nextPrefix, false, false);
 				currentBucket->next = bucketIdx + 1;
@@ -388,6 +398,7 @@ bool YamlParser::parse() {
 	buckets.reserve(RESERVE_BUCKETS);
 	keys.reserve(RESERVE_BUCKETS);
 	stringPool.reserve(RESERVE_STRINGPOOL);
+	nodeIdsToBeExpanded.clear();
 	bucketIdx = 0;
 	stringPool.push_back(0);
 	stringOffset = 1;

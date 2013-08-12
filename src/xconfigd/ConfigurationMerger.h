@@ -21,6 +21,9 @@ private:
 	std::vector<xconfig::XConfigBucket> destBuckets;
 	std::vector<char> destStringPool;
 	std::vector<char*> destKeys;
+	std::vector<xconfig::XConfigBucket> dynamicBuckets;
+	std::vector<char> dynamicStringPool;
+	std::vector<char*> dynamicKeys;
 
 	void mergeNode(size_t blobId, size_t nodeId, size_t destBlobId, size_t parentInDestination);
 	void replace(size_t parentBlobId, size_t parentNodeId, size_t destBlobId, size_t destNodeId, size_t origBlob, size_t origNodeId);
@@ -30,7 +33,12 @@ private:
 	const char* getString(size_t blobId, size_t stringOffset);
 	const char* getKey(size_t blobId, size_t nodeId);
 	size_t findChild(size_t blobId, size_t parentNodeId, const std::string& name);
-	int dumpNode(size_t nodeIdi, bool inMap);
+	int dumpNode(size_t nodeId, bool inMap);
+	void expandRefs();
+	void expandRef(size_t blobId, size_t nodeId);
+	size_t insertDynamicString(const char* string);
+	size_t insertDynamicBucket(const xconfig::XConfigBucket* bucket);
+	size_t deepCopy(size_t nodeId, bool inMap, const std::string& keyPrefix);
 };
 
 #endif
