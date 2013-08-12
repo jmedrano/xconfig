@@ -39,6 +39,8 @@ private:
 	std::vector<char*> keys;
 	size_t bucketIdx;
 	size_t stringOffset;
+	int fd;
+	FILE* file;
 	yaml_parser_t* parser;
 	xconfig::XConfigHeader header;
 	size_t totalSize;
@@ -53,6 +55,9 @@ private:
 };
 
 class YamlNotFoundException: public std::exception {
+};
+
+class YamlSyntaxErrorException: public std::exception {
 };
 
 #endif

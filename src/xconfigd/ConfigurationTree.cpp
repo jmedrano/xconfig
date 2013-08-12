@@ -156,6 +156,9 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 			} catch (const YamlNotFoundException &e) {
 				TDEBUG("deleted file %s", fileName.c_str());
 				somethingChanged = true;
+			} catch (const YamlSyntaxErrorException &e) {
+				TWARN("syntax error on file %s", fileName.c_str());
+				somethingChanged = true;
 			}
 		}
 
@@ -202,15 +205,16 @@ void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeMana
 					TDEBUG("new file %s", fileName->toLatin1().data());
 					areDirsModified = true;
 					break;
-					// TODO new file
 				} else {
-					// TODO could have been deleted
 					try {
 						bool isModified = (*file)->parse();
 						TDEBUG("modified file %s = %d", fileName->toLatin1().data(), isModified);
 						areFilesModified |= isModified;
 					} catch (const YamlNotFoundException &e) {
 						TDEBUG("deleted file %s", fileName->toLocal8Bit().data());
+						areDirsModified = true;
+					} catch (const YamlSyntaxErrorException &e) {
+						TWARN("syntax error on file %s", fileName->toLocal8Bit().data());
 						areDirsModified = true;
 					}
 				}

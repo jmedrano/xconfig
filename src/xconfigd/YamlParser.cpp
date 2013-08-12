@@ -22,7 +22,7 @@ using xconfig::XConfigValueType;
 
 T_LOGGER_DEFINE(YamlParser, "YamlParser");
 
-YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), mtime{0, 0}
+YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), fd(-1), file(NULL), mtime{0, 0}
 {
 }
 
@@ -31,6 +31,14 @@ YamlParser::~YamlParser()
 	for	(auto key = keys.begin(); key != keys.end(); ++key) {
 		free(*key);
 	}
+	if (parser) {
+		yaml_parser_delete(parser);
+		delete(parser);
+	}
+	if (file)
+		fclose(file);
+	if (fd >=0)
+		::close(fd);
 }
 
 const xconfig::XConfigHeader& YamlParser::getHeader() const {
@@ -73,7 +81,7 @@ void YamlParser::parserError(const yaml_parser_t* parser) {
 			TERROR("Internal error: %s", parser->problem);
 			break;
 	}
-	abort();
+	throw YamlSyntaxErrorException();
 }
 
 void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const char* tag) {
@@ -369,7 +377,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 }
 
 bool YamlParser::parse() {
-	int fd = ::open(path.c_str(), O_RDONLY);
+	fd = ::open(path.c_str(), O_RDONLY);
 	if (fd < 0) {
 		TTRACE("can't open %s", path.c_str());
 		throw YamlNotFoundException();
@@ -385,7 +393,6 @@ bool YamlParser::parse() {
 		mtime = {st.st_mtime, st.st_mtim.tv_nsec};
 	}
 
-	FILE *file;
 	parser = new yaml_parser_t;
 	buckets.clear();
 	keys.clear();
@@ -409,7 +416,14 @@ bool YamlParser::parse() {
 	delete(parser);
 	parser = NULL;
 	fclose(file);
+	file = NULL;
 	::close(fd);
+	fd = -1;
+
+	if (buckets.empty()) {
+		// root node is missing
+		throw YamlSyntaxErrorException();
+	}
 
 	TTRACE("keys.size()=%ld", keys.size());
 	int nkey = 0;
