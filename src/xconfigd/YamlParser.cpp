@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <yaml.h>
-#include <cmph.h>
 #include <string>
 
 #include <boost/lexical_cast.hpp>
@@ -435,19 +434,8 @@ bool YamlParser::parse() {
 		TTRACE(" keys[%d]=[%s]", nkey, *key);
 		nkey++;
 	}
-	// TODO cmph hash is not used
-	cmph_io_adapter_t *source = cmph_io_vector_adapter(&keys[0], keys.size());
-	TTRACE("source=%p", source);
-	cmph_config_t *config = cmph_config_new(source);
-	cmph_config_set_algo(config, CMPH_CHM);
-	TTRACE("config=%p", config);
-	cmph_t *hash_serialization = cmph_new(config);
-	TTRACE("hash_serialization=%p", hash_serialization);
-	cmph_config_destroy(config);
 
-	size_t hashSize = cmph_packed_size(hash_serialization);
-	cmph_destroy(hash_serialization);
-	cmph_io_vector_adapter_destroy(source);
+	size_t hashSize = 0;
 	size_t numBuckets = bucketIdx;
 	totalSize = sizeof(header) + hashSize + sizeof(XConfigBucket) * numBuckets + stringOffset;
 	size_t offset = 0;
