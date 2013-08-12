@@ -19,6 +19,12 @@
 
 #include <set>
 
+
+ConfigurationTree::~ConfigurationTree() {
+	::close(fd);
+	unlink(path.toLocal8Bit().data());
+}
+
 T_QLOGGER_DEFINE(ConfigurationTreeManager);
 
 void ConfigurationTreeManager::openTree() {

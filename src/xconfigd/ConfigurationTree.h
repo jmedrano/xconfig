@@ -21,9 +21,7 @@ class ConfigurationTree {
 public:
 	ConfigurationTree(QString path, int fd) : path(path), fd(fd) {
 	}
-	~ConfigurationTree() {
-		::close(fd);
-	}
+	~ConfigurationTree();
 
 	QString path;
 	int fd;
