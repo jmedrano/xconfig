@@ -421,7 +421,11 @@ bool YamlParser::parse() {
 	fd = -1;
 
 	if (buckets.empty()) {
-		// root node is missing
+		TWARN("root node is missing on file %s", path.c_str());
+		throw YamlSyntaxErrorException();
+	}
+	if (buckets[0].type != xconfig::TYPE_MAP) {
+		TWARN("root node is not a map on file %s", path.c_str());
 		throw YamlSyntaxErrorException();
 	}
 
