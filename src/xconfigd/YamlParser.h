@@ -27,6 +27,7 @@ public:
 	size_t getStringPoolSize() const;
 	const std::vector<char*>& getKeys() const;
 	const std::set<size_t>& getNodeIdsToBeExpanded() const;
+	const std::string& getPath() const;
 
 private:
 	static const int RESERVE_BUCKETS = 1024;

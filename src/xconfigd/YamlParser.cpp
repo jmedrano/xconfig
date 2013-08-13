@@ -64,6 +64,10 @@ const std::set<size_t>& YamlParser::getNodeIdsToBeExpanded() const {
 	return nodeIdsToBeExpanded;
 }
 
+const std::string& YamlParser::getPath() const {
+	return path;
+}
+
 void YamlParser::parserError(const yaml_parser_t* parser) {
 	switch (parser->error) {
 		case YAML_MEMORY_ERROR:
@@ -116,7 +120,7 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 			TINFO("unknown tag [%s]", tag);
 		}
 	} catch (boost::bad_lexical_cast) {
-		TWARN("type error");
+		TWARN("type error on %s:%s", path.c_str(), keys.back());
 	}
 
 	// infer type
@@ -234,8 +238,8 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 				break;
 			case YAML_MAPPING_START_EVENT:
 				if (nextNodeIsKey) {
-					TWARN("complex keys not supported");
-					abort();
+					TWARN("complex keys not supported on %s:%s", path.c_str(), keys.back());
+					throw YamlSyntaxErrorException();
 				}
 				lastSibling = bucketIdx;
 				TTRACE("insert map bucket bucketIdx=%ld, buckets.size()=%ld", bucketIdx, buckets.size());
@@ -277,8 +281,8 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 								TTRACE("override end keys");
 								continue;
 							default:
-								TERROR("Unexpected event");
-								abort();
+								TERROR("Unexpected type inside override key on %s:%s", path.c_str(), keys.back());
+								throw YamlSyntaxErrorException();
 						}
 						if (previousName) {
 							// there was another key on the previous iteration
@@ -298,8 +302,8 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 							firstBucketId = bucketIdx;
 					}
 					if (overrideKey.empty()) {
-						TWARN("Empty override key");
-						abort();
+						TWARN("Empty override key on %s:%s", path.c_str(), keys.back());
+						throw YamlSyntaxErrorException();
 					}
 					// parse value
 					TTRACE("override value key=[%s] name=[%s]", overrideKey.c_str(), &stringPool[name - 1]);

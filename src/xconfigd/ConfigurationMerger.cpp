@@ -281,7 +281,7 @@ void ConfigurationMerger::mergeNode(size_t blobId, size_t nodeId, size_t parentB
 					replace(decodeBlobId(parentInDestination), parentInDestination, destBlobId, nodeInDestination, blobId, nodeId);
 			} else {
 				// warn: conflict found
-				TWARN("conflict in base file for [%s]", getKey(blobId, nodeId));
+				TWARN("conflict in base file %s:%s", blobs[blobId - 1]->getPath().c_str(), getKey(blobId, nodeId));
 			}
 		}
 	} else {
