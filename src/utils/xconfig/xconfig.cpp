@@ -180,7 +180,9 @@ static void yamlParse(const string& yaml_path, const string& xcPath) {
 
 	file = fopen(yaml_path.c_str(), "rb");
 	assert(file);
-	assert(yaml_parser_initialize(&parser));
+	int parser_init_ret = yaml_parser_initialize(&parser);
+	if (!parser_init_ret)
+		abort;
 	yaml_parser_set_input_file(&parser, file);
 
 	yamlParseNode(&parser, "", true, false);
