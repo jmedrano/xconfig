@@ -93,11 +93,11 @@ const char* ConfigurationMerger::getKey(size_t blobId, size_t nodeId) {
 	assert(nodeId > 0);
 	assert(blobId > 0);
 
-	if (blobId > blobs.size()) {
+	if (int(blobId) > blobs.size()) {
 		TTRACE("getKey(%ld,%ld) dynamicKeys.size()=%ld [%s]", blobId, nodeId, dynamicKeys.size(), dynamicKeys[nodeId - 1]);
 	}
 
-	return blobId > blobs.size()
+	return int(blobId) > blobs.size()
 		? dynamicKeys[nodeId - 1]
 		: blobs[blobId - 1]->getKeys()[nodeId - 1];
 }
@@ -239,11 +239,10 @@ void ConfigurationMerger::mergeNode(size_t blobId, size_t nodeId, size_t parentB
 
 	XConfigBucket* currentBucket = getBucket(blobId, nodeId);
 	XConfigBucket* parentBucket = getBucket(parentBlobId, parentInDestination);
+	Q_UNUSED(parentBucket); // only used on TTRACE()
 
-	if (nodeId)
-		TTRACE("current getString(%ld, %d)=[%s] [%s]", blobId, currentBucket->name, getString(blobId, currentBucket->name), getKey(blobId, nodeId));
-	if (parentInDestination)
-		TTRACE("parent getString(%ld, %d)=[%s] [%s]", parentBlobId, parentBucket->name, getString(parentBlobId, parentBucket->name), getKey(parentBlobId,parentInDestination));
+	TTRACE("current getString(%ld, %d)=[%s] [%s]", blobId, currentBucket->name, getString(blobId, currentBucket->name), getKey(blobId, nodeId));
+	TTRACE("parent getString(%ld, %d)=[%s] [%s]", parentBlobId, parentBucket->name, getString(parentBlobId, parentBucket->name), getKey(parentBlobId,parentInDestination));
 
 	size_t nodeInDestination;
 	size_t destBlobId;
