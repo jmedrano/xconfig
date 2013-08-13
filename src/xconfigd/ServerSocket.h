@@ -1,6 +1,8 @@
 #ifndef SERVERSOCKET_H
 #define SERVERSOCKET_H
 
+#include "TLogger.h"
+
 #include <QLocalSocket>
 #include <QQueue>
 
@@ -9,6 +11,7 @@ class QSocketNotifier;
 
 class ServerSocket : public QObject {
 	Q_OBJECT
+	T_LOGGER_DECLARE(ConfigurationTreeManager);
 
 Q_SIGNALS:
     void newConnection();
