@@ -170,7 +170,7 @@ void ConfigurationMerger::replace(size_t parentBlobId, size_t parentNodeId, size
 			canonicalIds(&destBlobId, &childId);
 		}
 		if (!childId || n >= parentBucket->value._vectorial.size) {
-			TWARN("WAT");
+			TERROR("childs are corrupted for [%s]", getKey(parentBlobId, parentNodeId));
 			// TODO throw
 			throw std::exception();
 		}
@@ -203,7 +203,7 @@ void ConfigurationMerger::erase(size_t parentBlobId, size_t parentNodeId, size_t
 			canonicalIds(&destBlobId, &childId);
 		}
 		if (!childId || n >= parentBucket->value._vectorial.size) {
-			TWARN("WAT");
+			TERROR("childs are corrupted for [%s]", getKey(parentBlobId, parentNodeId));
 			// TODO throw
 			throw std::exception();
 		}
@@ -549,7 +549,7 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 		auto value = expanded.toLocal8Bit();
 		destStringPool.insert(destStringPool.end(), value.constData(), value.constData() + expanded.length() + 1);
 	} else {
-		TWARN("expanding WAT [%s]", getKey(blobId, nodeId));
+		TWARN("expanding unexpected type [%s]", getKey(blobId, nodeId));
 	}
 }
 

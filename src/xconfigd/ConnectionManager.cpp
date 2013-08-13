@@ -208,7 +208,7 @@ void ConnectionManager::receiveDatagram(const char* buf, size_t len)
 	} else if (memcmp(buf, "CAPABILITIES ", 6) == 0) {
 		receiveHandshake(buf, len);
 	} else {
-		TWARN("WAT");
+		TWARN("Unknown command %.*s", (int)len, buf);
 	}
 }
 
