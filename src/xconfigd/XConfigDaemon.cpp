@@ -117,6 +117,15 @@ bool XConfigDaemon::reloadConfig()
 		TWARN("Cannot change the server socket once the daemon is running");
 	}
 
+	softTimeoutMsecs = settings.value("SoftCheckTimeMsecs", 100).toInt();
+	hardTimeoutMsecs = settings.value("HardCheckTimeMsecs", 15000).toInt();
+	lingerTimeoutMsecs = settings.value("LingerTimeMsecs", 30000).toInt();
+
+	TDEBUG("ServerSocketPath = %s", qPrintable(server_path));
+	TDEBUG("SoftCheckTimeMsecs = %d", softTimeoutMsecs);
+	TDEBUG("HardCheckTimeMsecs = %d", hardTimeoutMsecs);
+	TDEBUG("LingerTimeMsecs = %d", lingerTimeoutMsecs);
+
 	return true;
 }
 

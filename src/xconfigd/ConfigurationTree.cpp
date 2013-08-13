@@ -40,7 +40,8 @@ void ConfigurationTreeManager::openTree() {
 	}
 }
 
-ConfigurationTreeManager::ConfigurationTreeManager(QString path) : path(path) {
+ConfigurationTreeManager::ConfigurationTreeManager(QString path, int softTimeoutMsecs, int hardTimeoutMsecs, int lingerTimeoutMsecs)
+		: path(path), softTimeoutMsecs(softTimeoutMsecs), hardTimeoutMsecs(hardTimeoutMsecs), lingerTimeoutMsecs(lingerTimeoutMsecs) {
 	TTRACE("ConfigurationTreeManager");
 
 	iNotifyFd = inotify_init();
@@ -66,8 +67,7 @@ ConfigurationTreeManager::ConfigurationTreeManager(QString path) : path(path) {
 	connect(hardTimer, SIGNAL(timeout()), SLOT(onHardCheck()));
 	connect(softTimer, SIGNAL(timeout()), SLOT(onSoftCheck()));
 	connect(lingerTimer, SIGNAL(timeout()), SLOT(onLingerTimeout()));
-	// TODO get from config
-	hardTimer->start(10000);
+	hardTimer->start(hardTimeoutMsecs);
 
 	QtConcurrent::run(this, &ConfigurationTreeManager::openTree);
 }
@@ -113,8 +113,7 @@ void ConfigurationTreeManager::onINotify() {
 
 	}
 	if (somethingChanged) {
-		// TODO get from config
-		softTimer->start(100);
+		softTimer->start(softTimeoutMsecs);
 	}
 }
 
@@ -279,6 +278,5 @@ void ConfigurationTreeManager::onLingerTimeout() {
 void ConfigurationTreeManager::touch() {
 	if (!lingerReference)
 		lingerReference = ConfigurationPool::getInstance().getConfigurationManager(path);
-	// TODO get from config
-	lingerTimer->start(20000);
+	lingerTimer->start(lingerTimeoutMsecs);
 }

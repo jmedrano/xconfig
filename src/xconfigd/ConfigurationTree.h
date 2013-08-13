@@ -32,7 +32,7 @@ class ConfigurationTreeManager : public QObject {
 	T_LOGGER_DECLARE(ConfigurationTreeManager);
 
 public:
-	ConfigurationTreeManager(QString path);
+	ConfigurationTreeManager(QString path, int softTimeoutMsecs, int hardTimeoutMsecs, int lingerTimeoutMsecs);
 	virtual ~ConfigurationTreeManager();
 
 	boost::shared_ptr<const ConfigurationTree> getConfigurationTree() {
@@ -57,6 +57,9 @@ private:
 	void merge();
 
 	QString path;
+	int softTimeoutMsecs;
+	int hardTimeoutMsecs;
+	int lingerTimeoutMsecs;
 	QStringList paths;
 	QList<YamlParser*> baseFiles;
 	QList<YamlParser*> overrideFiles;

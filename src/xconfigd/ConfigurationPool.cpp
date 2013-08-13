@@ -1,7 +1,6 @@
 #include "ConfigurationPool.h"
 #include "ConfigurationTree.h"
-
-#include <boost/make_shared.hpp>
+#include "XConfigDaemon.h"
 
 ConfigurationPool::ConfigurationPool* ConfigurationPool::instance = NULL;
 
@@ -17,8 +16,14 @@ boost::shared_ptr<ConfigurationTreeManager> ConfigurationPool::getConfigurationM
 	if (!map.insert(accessor, path.toStdString())) {
 		ret = accessor->second.lock();
 	}
+	auto daemon = XConfigDaemon::instance();
+	int softTimeoutMsecs = daemon->getSoftTimeoutMsecs();
+	int hardTimeoutMsecs = daemon->getHardTimeoutMsecs();
+	int lingerTimeoutMsecs = daemon->getLingerTimeoutMsecs();
 	if (!ret) {
-		ret = boost::shared_ptr<ConfigurationTreeManager>(new ConfigurationTreeManager(path), deleteLaterConfigurationTreeManager);
+		ret = boost::shared_ptr<ConfigurationTreeManager>(
+			new ConfigurationTreeManager(path, softTimeoutMsecs, hardTimeoutMsecs, lingerTimeoutMsecs),
+			deleteLaterConfigurationTreeManager);
 		accessor->second = ret;
 	}
 	return ret;

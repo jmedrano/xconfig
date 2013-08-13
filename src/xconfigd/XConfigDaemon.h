@@ -20,6 +20,16 @@ public:
 
 	static XConfigDaemon* instance() { return qobject_cast<XConfigDaemon*>(QCoreApplication::instance()); }
 
+	int getSoftTimeoutMsecs() const {
+		return softTimeoutMsecs;
+	}
+	int getHardTimeoutMsecs() const {
+		return hardTimeoutMsecs;
+	}
+	int getLingerTimeoutMsecs() const {
+		return lingerTimeoutMsecs;
+	}
+
 protected:
 	virtual bool init();
 	virtual int run();
@@ -35,6 +45,9 @@ private:
 	QDir config_dir;
 	QString server_path;
 	ServerSocket* server;
+	int softTimeoutMsecs;
+	int hardTimeoutMsecs;
+	int lingerTimeoutMsecs;
 };
 
 #endif // XCONFIGDAEMON_H
