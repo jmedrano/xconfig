@@ -53,12 +53,17 @@ ConfigurationMerger::ConfigurationMerger(QList<YamlParser*> baseBlobs, QList<Yam
 
 ConfigurationMerger::~ConfigurationMerger()
 {
+	// ignore last entry that points to dynamicBuckets
 	bucketList.pop_back();
 	if (blobs.size() > 1) {
 		for (auto it = bucketList.begin(); it != bucketList.end(); ++it) {
 			delete[](*it);
 		}
 	}
+	for (auto key = dynamicKeys.begin(); key != dynamicKeys.end(); ++key) {
+		free(*key); // allocated with strdup()
+	}
+
 }
 
 static inline size_t decodeNodeId(size_t composedId) {
