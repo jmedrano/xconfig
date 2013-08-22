@@ -8,9 +8,12 @@
 #include <boost/weak_ptr.hpp>
 #include <tbb/concurrent_hash_map.h>
 
+#include "TLogger.h"
+
 class ConfigurationTreeManager;
 
 class ConfigurationPool {
+	T_LOGGER_DECLARE(ConfigurationPool);
 public:
 	static ConfigurationPool& getInstance() {
 		if (!instance) {
@@ -21,9 +24,9 @@ public:
 
 	boost::shared_ptr<ConfigurationTreeManager> getConfigurationManager(QString path);
 
-	// TODO implement some method to cleanup empty entries
-
 private:
+	static void deleteLaterConfigurationTreeManager(ConfigurationTreeManager* tree);
+
 	tbb::concurrent_hash_map<std::string, boost::weak_ptr<ConfigurationTreeManager>> map;
 
 	static ConfigurationPool* instance;

@@ -2,10 +2,15 @@
 #include "ConfigurationTree.h"
 #include "XConfigDaemon.h"
 
+T_LOGGER_DEFINE(ConfigurationPool, "ConfigurationPool");
+
 ConfigurationPool::ConfigurationPool* ConfigurationPool::instance = NULL;
 
-static void deleteLaterConfigurationTreeManager(ConfigurationTreeManager* tree)
+void ConfigurationPool::deleteLaterConfigurationTreeManager(ConfigurationTreeManager* tree)
 {
+	auto path = tree->getPath();
+	TTRACE("deleteLaterConfigurationTreeManager: %s", qPrintable(path));
+	getInstance().map.erase(path.toStdString());
 	tree->deleteLater();
 }
 

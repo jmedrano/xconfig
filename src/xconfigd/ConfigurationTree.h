@@ -35,6 +35,9 @@ public:
 	ConfigurationTreeManager(QString path, int softTimeoutMsecs, int hardTimeoutMsecs, int lingerTimeoutMsecs);
 	virtual ~ConfigurationTreeManager();
 
+	QString getPath() {
+		return path;
+	}
 	boost::shared_ptr<const ConfigurationTree> getConfigurationTree() {
 		return tree;
 	}

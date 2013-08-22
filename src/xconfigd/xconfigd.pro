@@ -22,6 +22,7 @@ HEADERS += \
 	FileLock.h \
 	ConnectionManager.h \
 	ConfigurationTree.h \
+	ConfigurationPool.h \
 	YamlParser.h \
 	ConfigurationMerger.h
 
