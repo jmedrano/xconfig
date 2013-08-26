@@ -173,6 +173,49 @@ inline void XConfig::mightReload() {
 		applyReload();
 }
 
+inline enum XConfigValueType XConfigNode::getType() const {
+	return xc->getType(*this);
+}
+inline struct timespec XConfigNode::getMtime() const {
+	return xc->getMtime(*this);
+}
+inline bool XConfigNode::isScalar() const {
+	return xc->isScalar(*this);
+}
+inline bool XConfigNode::isMap() const {
+	return xc->isMap(*this);
+}
+inline bool XConfigNode::isSequence() const {
+	return xc->isSequence(*this);
+}
+inline std::string XConfigNode::getString() const {
+	return xc->getString(*this);
+}
+inline bool XConfigNode::getBool() const {
+	return xc->getBool(*this);
+}
+inline int XConfigNode::getInt() const {
+	return xc->getInt(*this);
+}
+inline double XConfigNode::getFloat() const {
+	return xc->getFloat(*this);
+}
+inline int XConfigNode::getCount() const {
+	return xc->getCount(*this);
+}
+inline std::vector<std::string> XConfigNode::getMapKeys() const {
+	return xc->getMapKeys(*this);
+}
+inline std::string XConfigNode::getName() const {
+	return xc->getName(*this);
+}
+inline XConfigNode XConfigNode::getParent() const {
+	return xc->getParent(*this);
+}
+inline std::vector<XConfigNode> XConfigNode::getChildren() const {
+	return xc->getChildren(*this);
+}
+
 } // namespace xconfig
 
 #endif // LIBXCONFIG_XCONFIG_INL_H_

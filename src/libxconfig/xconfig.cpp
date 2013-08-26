@@ -68,6 +68,7 @@ inline const XConfigBucket* XConfig::getBucket(const XConfigNode& node) const
 		throw XConfigNotConnected();
 	if (!node)
 		throw XConfigNotFound();
+	assert(node.xc == this);
 	return &buckets[node.getIdx()];
 }
 
@@ -134,10 +135,10 @@ std::vector<std::string> XConfig::getMapKeys(const XConfigNode& node) const
 		throw XConfigWrongType();
 	vector<string> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
-		const XConfigBucket* child = getBucket(XConfigNode(bucket->value._vectorial.child));
+		const XConfigBucket* child = getBucket(XConfigNode(this, bucket->value._vectorial.child));
 		for (auto retIterator = ret.begin();
 				child && retIterator != ret.end();
-				child = getBucket(XConfigNode(child->next)), ++retIterator) {
+				child = getBucket(XConfigNode(this, child->next)), ++retIterator) {
 			*retIterator = getString(child->name);
 		}
 	}
@@ -151,12 +152,12 @@ std::vector<XConfigNode> XConfig::getChildren(const XConfigNode& node) const
 		throw XConfigWrongType();
 	vector<XConfigNode> ret(bucket->value._vectorial.size);
 	if (bucket->value._vectorial.size > 0) {
-		XConfigNode childNode(bucket->value._vectorial.child);
+		XConfigNode childNode(this, bucket->value._vectorial.child);
 		const XConfigBucket* child = getBucket(childNode);
 		for (auto retIterator = ret.begin(); retIterator != ret.end(); ++retIterator) {
 			*retIterator = childNode;
 			child = getBucket(childNode);
-			childNode = XConfigNode(child->next);
+			childNode = XConfigNode(this, child->next);
 		}
 	}
 	return ret;
@@ -166,7 +167,7 @@ std::vector<XConfigNode> XConfig::getChildren(const XConfigNode& node) const
 XConfigNode XConfig::getNodeNoThrow(const std::string& key) const
 {
 	// idx is 1-based so that 0 means null node
-	XConfigNode node = XConfigNode(cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1);
+	XConfigNode node = XConfigNode(this, cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1);
 
 	if (getKey(node) != key)
 		node = NULL_NODE;
@@ -238,7 +239,7 @@ std::string XConfig::getKey(const XConfigNode & node) const
 	vector<string> keys;
 	const XConfigBucket* bucket = getBucket(node);
 	while (bucket->parent) {
-		const XConfigBucket* parent = getBucket(XConfigNode(bucket->parent));
+		const XConfigBucket* parent = getBucket(XConfigNode(this, bucket->parent));
 		string separator;
 		switch (parent->type) {
 			case XConfigValueType::TYPE_MAP:
@@ -271,7 +272,7 @@ XConfigNode XConfig::getParent(const XConfigNode& node) const
 {
 	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->parent)
-		return XConfigNode(bucket->parent);
+		return XConfigNode(this, bucket->parent);
 	throw XConfigWrongType();
 }
 
@@ -279,7 +280,7 @@ std::string XConfig::getName(const XConfigNode& node) const
 {
 	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->parent) {
-		const XConfigBucket* parent = getBucket(XConfigNode(bucket->parent));
+		const XConfigBucket* parent = getBucket(XConfigNode(this, bucket->parent));
 		switch (parent->type) {
 			case XConfigValueType::TYPE_MAP:
 				return getString(bucket->name);

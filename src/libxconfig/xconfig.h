@@ -127,16 +127,33 @@ private:
 
 class XConfigNode {
 	friend class XConfig;
+public:
+	XConfigNode() : bucketIdx(0), xc(0) { }
+	operator bool() const { return bucketIdx; }
+
+	enum XConfigValueType getType() const;
+	struct timespec getMtime() const;
+	bool isScalar() const;
+	bool isMap() const;
+	bool isSequence() const;
+	std::string getString() const;
+	bool getBool() const;
+	int getInt() const;
+	double getFloat() const;
+	int getCount() const;
+	std::vector<std::string> getMapKeys() const;
+	std::string getName() const;
+	XConfigNode getParent() const;
+	// this method could throw XConfigWrongType
+	std::vector<XConfigNode> getChildren() const;
 private:
 	// bucketIdx == 0 => root node for parent, none for next field.
 	// bucketIdx == 1 => first bucket
 	uint32_t bucketIdx;
+	const XConfig* xc;
 	// private so only available from XConfig
-	explicit XConfigNode(uint32_t b) : bucketIdx(b) { }
+	XConfigNode(const XConfig* xc, uint32_t b) : bucketIdx(b), xc(xc) { }
 	uint32_t getIdx() const { return bucketIdx; }
-public:
-	XConfigNode() : bucketIdx(0) { }
-	operator bool() const { return bucketIdx; }
 };
 
 class XConfigException : public std::exception {
