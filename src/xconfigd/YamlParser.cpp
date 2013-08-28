@@ -227,7 +227,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 					stringOffset += event.data.scalar.length + 1;
 				} else {
 					lastSibling = bucketIdx;
-					TTRACE("insert scalar bucket bucketIdx=%ld, buckets.size()=%ld, key=[%s], value=[%s]", bucketIdx, buckets.size(), nextPrefix.c_str(), &stringPool[stringOffset]);
+					TTRACE("insert scalar bucket bucketIdx=%ld, buckets.size()=%ld, key=[%s]", bucketIdx, buckets.size(), nextPrefix.c_str());
 					currentBucket = insertBucket(nextPrefix);
 					currentBucket->name = name;
 					currentBucket->parent = parent;
@@ -236,25 +236,29 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 					name = 0;
 				}
 				break;
-			case YAML_MAPPING_START_EVENT:
+			case YAML_MAPPING_START_EVENT: {
 				if (nextNodeIsKey) {
 					TWARN("complex keys not supported on %s:%s", path.c_str(), keys.back());
 					throw YamlSyntaxErrorException();
 				}
 				lastSibling = bucketIdx;
+				auto currentBucketIdx = bucketIdx;
 				TTRACE("insert map bucket bucketIdx=%ld, buckets.size()=%ld", bucketIdx, buckets.size());
 				currentBucket = insertBucket(nextPrefix);
 				currentBucket->name = name;
 				currentBucket->parent = parent;
 				currentBucket->type = XConfigValueType::TYPE_MAP;
 				currentBucket->value._vectorial.child = bucketIdx + 1;
-				currentBucket->value._vectorial.size = yamlParseNode(nextPrefix, false, true);
+				auto size = yamlParseNode(nextPrefix, false, true);
+				currentBucket = &buckets[currentBucketIdx];
+				currentBucket->value._vectorial.size = size;
 				currentBucket->next = bucketIdx + 1;
 				TTRACE("insert map bucket child=%d, size=%d, next=%d", currentBucket->value._vectorial.child, currentBucket->value._vectorial.size, currentBucket->next);
 				if (currentBucket->value._vectorial.size == 0)
 					currentBucket->value._vectorial.child = 0;
 				break;
-			case YAML_SEQUENCE_START_EVENT:
+			}
+			case YAML_SEQUENCE_START_EVENT: {
 				if (nextNodeIsKey) {
 					size_t firstBucketId = 0;
 					string overrideKey;
@@ -325,6 +329,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 					break;
 				}
 				lastSibling = bucketIdx;
+				auto currentBucketIdx = bucketIdx;
 				currentBucket = insertBucket(nextPrefix);
 				currentBucket->name = name;
 				currentBucket->parent = parent;
@@ -342,11 +347,14 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 					currentBucket->type = XConfigValueType::TYPE_SEQUENCE;
 				}
 				currentBucket->value._vectorial.child = bucketIdx + 1;
-				currentBucket->value._vectorial.size = yamlParseNode(nextPrefix, false, false);
+				auto size = yamlParseNode(nextPrefix, false, false);
+				currentBucket = &buckets[currentBucketIdx];
+				currentBucket->value._vectorial.size = size;
 				currentBucket->next = bucketIdx + 1;
 				if (currentBucket->value._vectorial.size == 0)
 					currentBucket->value._vectorial.child = 0;
 				break;
+			}
 			case YAML_DOCUMENT_START_EVENT:
 				yaml_event_delete(&event);
 				return yamlParseNode("", true, false);
