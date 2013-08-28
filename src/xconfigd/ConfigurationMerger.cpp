@@ -10,6 +10,7 @@
 #include <yaml.h>
 #include <cmph.h>
 #include <string>
+#include <set>
 #include <QString>
 
 #include <boost/lexical_cast.hpp>
@@ -331,6 +332,13 @@ std::pair<string, int> ConfigurationMerger::dump()
 	cmph_t *hash_serialization = cmph_new(config);
 	if (!hash_serialization) {
 		TWARN("cannot generate hash");
+		std::set<string> keysSet;
+		for (size_t i=0; i<destKeys.size(); i++) {
+			if (keysSet.count(destKeys[i])) {
+				TWARN("duplicated key: %s", destKeys[i]);
+			}
+			keysSet.insert(destKeys[i]);
+		}
 		abort();
 	}
 	TTRACE("hash_serialization=%p", hash_serialization);
