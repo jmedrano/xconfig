@@ -173,7 +173,8 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 	event.data.fd = closingPipe[0];
 	event.events = EPOLLIN;
 	int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, closingPipe[0], &event);
-	assert(ctlResult >= 0);
+	if (ctlResult < 0)
+		abort();
 
 	eventLoopThread = boost::thread(eventLoop, weak_ptr<SharedData>(sharedData));
 }
@@ -228,7 +229,8 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 		int socketFd = conn.getSockedFd();
 		// NOTE: hashMap and fdMap are both locked
 		bool insertedInFdMap = sharedData->fdMap.insert(std::pair<const int, KeyType>(socketFd, key));
-		assert(insertedInFdMap);
+		if (!insertedInFdMap)
+			abort();
 
 		// add socket to epoll
 		struct epoll_event event;
@@ -236,7 +238,8 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 		event.data.fd = socketFd;
 		event.events = EPOLLIN;
 		int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, socketFd, &event);
-		assert(ctlResult >= 0);
+		if (ctlResult < 0)
+			abort();
 	}
 
 	auto lingerProxy = accessor->second->sharedConn.lock();
@@ -280,7 +283,8 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 	bool found = fdMap.find(fdAccessor, fd);
 	if (!found || error) {
 		int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
-		assert(ctlResult >= 0);
+		if (ctlResult < 0)
+			abort();
 		if (!found)
 			return;
 		fdMap.erase(fdAccessor);
@@ -291,7 +295,8 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 
 	SharedData::HashMap::accessor accessor;
 	found = hashMap.find(accessor, key);
-	assert(found);
+	if (!found)
+		abort();
 	UnixConnection& conn = accessor->second->unixConn;
 	accessor.release();
 
@@ -304,7 +309,8 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 	if (error) {
 		int socketFd = conn.getSockedFd();
 		bool insertedInFdMap = fdMap.insert(std::pair<const int, KeyType>(socketFd, key));
-		assert(insertedInFdMap);
+		if (!insertedInFdMap)
+			abort();
 	}
 }
 
@@ -333,7 +339,8 @@ void UnixConnectionPool::SharedData::checkLingerList() {
 		if (found && accessor->second->sharedConn.expired()) {
 			int fd = accessor->second->unixConn.getSockedFd();
 			int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
-			assert(ctlResult >= 0);
+		if (ctlResult < 0)
+			abort();
 			fdMap.erase(fd);
 			hashMap.erase(accessor);
 		}
@@ -357,7 +364,8 @@ bool UnixConnectionPool::LingerProxy::connect() {
 	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
-	assert(found);
+	if (!found)
+		abort();
 	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.connect();
 }
@@ -365,7 +373,8 @@ void UnixConnectionPool::LingerProxy::close() {
 	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
-	assert(found);
+	if (!found)
+		abort();
 	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.close();
 }
@@ -373,7 +382,8 @@ boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() co
 	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
-	assert(found);
+	if (!found)
+		abort();
 	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.getMap();
 }
