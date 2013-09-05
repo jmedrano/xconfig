@@ -133,7 +133,7 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 	int numPaths = 0;
 	std::set<std::string> fileNamesInDir;
 	for (auto it = paths.begin(); it != paths.end(); ++it, ++numPaths) {
-		QDir dir(*it, "*.yaml", QDir::NoSort, QDir::Files | QDir::Readable);
+		QDir dir(*it, "*.yaml", QDir::Name, QDir::Files | QDir::Readable);
 		auto filesInDir = dir.entryInfoList();
 		for (auto f = filesInDir.begin(); f != filesInDir.end(); ++f) {
 			std::string fileName = f->absoluteFilePath().toStdString();
