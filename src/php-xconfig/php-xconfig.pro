@@ -33,5 +33,7 @@ TARGET = build/modules/xconfig.so
 extensions.path = $$system(php-config --extension-dir)
 extensions.files = build/modules/xconfig.so
 extensions.CONFIG = no_check_exist
+ini.path = /etc/php5/conf.d/
+ini.files = xconfig.ini
 
-INSTALLS += extensions
+INSTALLS += extensions ini
