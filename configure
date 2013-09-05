@@ -80,6 +80,6 @@ fi
 	
 PREFIX=${PREFIX:-/usr/local}
 
-"$QMAKE" -o .qmake.cache.makefile "PREFIX = $PREFIX" "$relpath"/genconfig.pro "${ARGS[@]}"; rm -f .qmake.cache.makefile
+"$QMAKE" -o .qmake.cache.makefile "CONFIG += $CONFIG_ADD" "CONFIG -= $CONFIG_SUB" "PREFIX = $PREFIX" "$relpath"/genconfig.pro "${ARGS[@]}"; rm -f .qmake.cache.makefile
 "$QMAKE" -o Makefile "CONFIG += $CONFIG_ADD" "CONFIG -= $CONFIG_SUB" "$relpath"/xconfig.pro "${ARGS[@]}"
 
