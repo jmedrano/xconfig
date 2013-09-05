@@ -182,7 +182,7 @@ static void yamlParse(const string& yaml_path, const string& xcPath) {
 	assert(file);
 	int parser_init_ret = yaml_parser_initialize(&parser);
 	if (!parser_init_ret)
-		abort;
+		abort();
 	yaml_parser_set_input_file(&parser, file);
 
 	yamlParseNode(&parser, "", true, false);
