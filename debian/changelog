@@ -1,5 +1,5 @@
-xconfig (1.0.0-tuenti1) stable; urgency=low
+xconfig (0.1.0-tuenti1) stable; urgency=low
 
   * Initial Release.
 
- -- Placido Revilla <previlla@tuenti.com>  Sun, 17 Mar 2013 18:28:27 +0100
+ -- Jaime Medrano <jmedrano@tuenti.com>  Thu, 5 Sep 2013 13:05:19 +0100
