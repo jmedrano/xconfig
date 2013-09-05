@@ -14,7 +14,7 @@ SOURCES_PHPIZE = config.m4 xconfig.cpp
 phpize.input = SOURCES_PHPIZE
 phpize.target = configure
 phpize.output = configure
-phpize.depends = config.m4
+phpize.depends = config.m4 xconfig.cpp
 phpize.commands = phpize
 
 SOURCES_CONFIGURE = configure
@@ -22,10 +22,16 @@ configure.input = SOURCES_CONFIGURE
 configure.target = build/Makefile
 configure.output = build/Makefile
 configure.depends = configure
-configure.commands = cd build && ../configure --enable-xconfig && cd -
+configure.commands = cd build && LDFLAGS=-L../../../target/lib ../configure --enable-xconfig && cd -
 
-QMAKE_EXTRA_COMPILERS += phpize copym4 configure
+QMAKE_EXTRA_COMPILERS += phpize copym4 copycpp configure
 
 QMAKE_LINK = make -C build && true
 OBJECTS = build/Makefile
 TARGET = build/modules/xconfig.so
+
+extensions.path = $$system(php-config --extension-dir)
+extensions.files = build/modules/xconfig.so
+extensions.CONFIG = no_check_exist
+
+INSTALLS += extensions
