@@ -30,7 +30,7 @@ const char* UnixConnection::WATCH_MSG = "watch";
 const char* UnixConnection::PUSH_MSG = "push";
 const char* UnixConnection::SEPARATOR = " ";
 const char* UnixConnection::TERMINATOR = "\r\n";
-const char* UnixConnection::DEFAULT_SOCKET = PKGLOCALSTATEDIR;
+const char* UnixConnection::DEFAULT_SOCKET = PKGLOCALSTATEDIR "/server";
 
 void MappedFile::reset(int fd) {
 	if (blob)
