@@ -15,6 +15,7 @@
 
 #include "xconfig_connection.h"
 #include "xconfig.h"
+#include "config.h"
 
 using std::string;
 using boost::shared_ptr;
@@ -29,7 +30,7 @@ const char* UnixConnection::WATCH_MSG = "watch";
 const char* UnixConnection::PUSH_MSG = "push";
 const char* UnixConnection::SEPARATOR = " ";
 const char* UnixConnection::TERMINATOR = "\r\n";
-const char* UnixConnection::DEFAULT_SOCKET = "/var/run/xconfig.socket";
+const char* UnixConnection::DEFAULT_SOCKET = PKGLOCALSTATEDIR;
 
 void MappedFile::reset(int fd) {
 	if (blob)
