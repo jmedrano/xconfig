@@ -5,6 +5,7 @@
 #include <QLocalServer>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 
 T_QLOGGER_DEFINE(ServerSocket);
 
@@ -47,6 +48,13 @@ bool ServerSocket::start()
 
 	if (::bind(listenSocket, (sockaddr *)&addr, sizeof(sockaddr_un)) < 0) {
 		TERROR("can't bind on socket: %s", strerror(errno));
+		::close(listenSocket);
+		listenSocket = -1;
+		return false;
+	}
+
+	if (::chmod(addr.sun_path, 0777) < 0) {
+		TERROR("can't chmod on socket: %s", strerror(errno));
 		::close(listenSocket);
 		listenSocket = -1;
 		return false;
