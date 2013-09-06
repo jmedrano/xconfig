@@ -140,6 +140,8 @@ std::vector<std::string> XConfig::getMapKeys(const XConfigNode& node) const
 				child && retIterator != ret.end();
 				child = getBucket(XConfigNode(this, child->next)), ++retIterator) {
 			*retIterator = getString(child->name);
+			if (!child->next)
+				break;
 		}
 	}
 	return ret;
