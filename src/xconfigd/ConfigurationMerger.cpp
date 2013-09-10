@@ -28,7 +28,9 @@ T_LOGGER_DEFINE(ConfigurationMerger, "ConfigurationMerger");
 ConfigurationMerger::ConfigurationMerger(QList<YamlParser*> baseBlobs, QList<YamlParser*> overrideBlobs)
 	: blobs(baseBlobs), firstOverride(baseBlobs.count())
 {
-	assert(blobs.size() > 0);
+	if (blobs.size() == 0) {
+		TWARN("Number of base files is zero");
+	}
 	blobs << overrideBlobs;
 	if (blobs.size() > 1) {
 		for (auto it = blobs.begin(); it != blobs.end(); ++it) {
@@ -40,12 +42,21 @@ ConfigurationMerger::ConfigurationMerger(QList<YamlParser*> baseBlobs, QList<Yam
 			stringPools << (*it)->getStringPool();
 			TTRACE("adding stringPool [%s]", &(*it)->getStringPool()[0]);
 		}
-	} else {
+	} else if (blobs.size() > 0) {
 		auto it = blobs.begin();
 		XConfigHeader header = (*it)->getHeader();
 		XConfigBucket* buckets = const_cast<XConfigBucket*>((*it)->getBuckets());
 		bucketList << buckets;
 		stringPools << (*it)->getStringPool();
+	} else {
+		TWARN("Number of total files is zero");
+		XConfigBucket* buckets = new XConfigBucket[1];
+		buckets[0].type = xconfig::TYPE_MAP;
+		buckets[0].parent = 0;
+		buckets[0].next = 0;
+		buckets[0].value._vectorial.child = 0;
+		buckets[0].value._vectorial.size = 0;
+		bucketList << buckets;
 	}
 	// Additional entry on bucketList and stringPools for dynamic buckets generated from expandrefs
 	bucketList << &dynamicBuckets[0];
@@ -56,7 +67,7 @@ ConfigurationMerger::~ConfigurationMerger()
 {
 	// ignore last entry that points to dynamicBuckets
 	bucketList.pop_back();
-	if (blobs.size() > 1) {
+	if (blobs.size() != 1) {
 		for (auto it = bucketList.begin(); it != bucketList.end(); ++it) {
 			delete[](*it);
 		}
@@ -339,6 +350,7 @@ std::pair<string, int> ConfigurationMerger::dump()
 			}
 			keysSet.insert(destKeys[i]);
 		}
+		// TODO throw something
 		abort();
 	}
 	TTRACE("hash_serialization=%p", hash_serialization);
