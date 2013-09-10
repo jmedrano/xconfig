@@ -156,7 +156,7 @@ void ConfigurationMerger::replace(size_t parentBlobId, size_t parentNodeId, size
 	XConfigBucket* destBucket = getBucket(destBlobId, destNodeId);
 	XConfigBucket* parentBucket = getBucket(parentBlobId, parentNodeId);
 
-	origBucket->next = destBucket->next;
+	origBucket->next = destBucket->next ? composeNodeId(destBlobId, destBucket->next) : 0;
 
 	size_t childId;
 	canonicalIds(&destBlobId, &childId, destBlobId, parentBucket->value._vectorial.child);
