@@ -6,8 +6,8 @@ extern "C" {
 #include "Zend/zend_exceptions.h"
 }
 
-#include <xconfig/xconfig.h>
-#include <xconfig/xconfig_connection.h>
+#include <xconfig.h>
+#include <xconfig_connection.h>
 
 using xconfig::XConfig;
 using xconfig::XConfigNode;

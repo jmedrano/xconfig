@@ -22,7 +22,7 @@ configure.input = SOURCES_CONFIGURE
 configure.target = build/Makefile
 configure.output = build/Makefile
 configure.depends = configure
-configure.commands = cd build && LDFLAGS=-L../../../target/lib ../configure --enable-xconfig && cd -
+configure.commands = cd build && CPPFLAGS=-I$$TOP_SRCDIR/src/libxconfig LDFLAGS=-L$$TOP_BUILDDIR/target/lib ../configure --enable-xconfig && cd -
 
 QMAKE_EXTRA_COMPILERS += phpize copym4 copycpp configure
 
