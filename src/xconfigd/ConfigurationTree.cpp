@@ -42,7 +42,7 @@ void ConfigurationTreeManager::openTree() {
 
 ConfigurationTreeManager::ConfigurationTreeManager(QString path, int softTimeoutMsecs, int hardTimeoutMsecs, int lingerTimeoutMsecs)
 		: path(path), softTimeoutMsecs(softTimeoutMsecs), hardTimeoutMsecs(hardTimeoutMsecs), lingerTimeoutMsecs(lingerTimeoutMsecs) {
-	TTRACE("ConfigurationTreeManager");
+	TDEBUG("New tree for %s", qPrintable(path));
 
 	iNotifyFd = inotify_init();
 	paths = path.split(':');
