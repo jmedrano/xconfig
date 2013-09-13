@@ -79,18 +79,18 @@ ConfigurationMerger::~ConfigurationMerger()
 }
 
 static inline size_t decodeNodeId(size_t composedId) {
-	return composedId & 0xffffff;
+	return composedId & 0xffff;
 }
 
 static inline size_t decodeBlobId(size_t composedId) {
-	return composedId >> 24;
+	return composedId >> 16;
 }
 
 static inline size_t composeNodeId(size_t blobId, size_t nodeId) {
 	size_t encodedBlobId = decodeBlobId(nodeId);
 	if (encodedBlobId)
 		blobId = encodedBlobId;
-	return nodeId | (blobId << 24);
+	return nodeId | (blobId << 16);
 }
 
 static inline void canonicalIds(size_t* canonicBlobId, size_t* canonicNodeId, size_t referenceBlobId, size_t encodedNodeId) {
