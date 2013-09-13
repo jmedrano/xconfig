@@ -42,7 +42,7 @@ void XConfig::close()
 void XConfig::applyReload()
 {
 	map = conn->getMap();
-	const void* blob = map->getBlob();
+	const void* blob = map ? map->getBlob() : 0;
 	if (blob) {
 		const XConfigHeader* header = reinterpret_cast<const XConfigHeader*>(blob);
 		hash = reinterpret_cast<const char*>(blob) + sizeof(XConfigHeader);
