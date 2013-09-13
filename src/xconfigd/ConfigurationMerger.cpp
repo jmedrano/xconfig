@@ -358,6 +358,8 @@ std::pair<string, int> ConfigurationMerger::dump()
 
 	XConfigHeader header;
 	size_t hashSize = cmph_packed_size(hash_serialization);
+	// align on 16 bytes boundary
+	hashSize = ((hashSize - 1) / 16 + 1) * 16;
 	size_t numBuckets = destBuckets.size();
 	size_t stringPoolSize = destStringPool.size();
 	size_t totalSize = sizeof(header) + hashSize + sizeof(XConfigBucket) * numBuckets + stringPoolSize;

@@ -209,7 +209,7 @@ static void yamlParse(const string& yaml_path, const string& xcPath) {
 	fwrite(stringPool, stringOffset, 1, xcFile);
 	fflush(xcFile);
 	fclose(xcFile);
-	printf("generated %s file\nheader_size=%lu hash_size=%d buckets_size=%lu strings_size=%d total_size=%d\n",
+	printf("generated %s file\nheader_size=%lu hash_size=%ld buckets_size=%lu strings_size=%d total_size=%d\n",
 			xcPath.c_str(), sizeof(header), header.hashSize,
 			sizeof(XConfigBucket) * header.numBuckets, stringOffset, totalSize);
 }

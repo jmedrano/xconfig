@@ -21,8 +21,6 @@ enum XConfigValueType : uint32_t {
 };
 
 struct XConfigBucket {
-	uint32_t name;
-	XConfigValueType type;
 	union {
 		bool _boolean;
 		uint64_t _integer;
@@ -33,6 +31,8 @@ struct XConfigBucket {
 			uint32_t child;
 		} _vectorial;
 	} value;
+	uint32_t name;
+	XConfigValueType type;
 	uint32_t parent;
 	uint32_t next;
 	uint32_t mtimeSecs;
@@ -43,11 +43,11 @@ static_assert(sizeof(XConfigBucket) == 32, "sizeof(XConfigBucket) != 32");
 #endif
 
 struct XConfigHeader {
-	uint32_t hashSize;
-	uint32_t numBuckets;
+	uint64_t hashSize;
+	uint64_t numBuckets;
 };
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
-static_assert(sizeof(XConfigHeader) == 8, "sizeof(XConfigHeader) != 8");
+static_assert(sizeof(XConfigHeader) == 16, "sizeof(XConfigHeader) != 16");
 #endif
 
 inline bool isScalar(XConfigValueType type) {
