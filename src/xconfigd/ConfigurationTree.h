@@ -39,7 +39,7 @@ public:
 		return path;
 	}
 	boost::shared_ptr<const ConfigurationTree> getConfigurationTree() {
-		return tree;
+		return boost::atomic_load(&tree);
 	}
 	void touch();
 
