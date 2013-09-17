@@ -182,7 +182,7 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 	clock_gettime(CLOCK_MONOTONIC, &b);
 	TDEBUG("loadAllFiles took %ld usecs", (b.tv_sec - a.tv_sec) * 1000000 + (b.tv_nsec - a.tv_nsec) / 1000);
 
-	if (somethingChanged) {
+	if (somethingChanged || !getConfigurationTree()) {
 		TTRACE("something changed");
 		merge();
 	} else {

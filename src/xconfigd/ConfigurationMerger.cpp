@@ -53,10 +53,12 @@ ConfigurationMerger::ConfigurationMerger(QList<YamlParser*> baseBlobs, QList<Yam
 		XConfigBucket* buckets = new XConfigBucket[1];
 		buckets[0].type = xconfig::TYPE_MAP;
 		buckets[0].parent = 0;
+		buckets[0].name = 0;
 		buckets[0].next = 0;
 		buckets[0].value._vectorial.child = 0;
 		buckets[0].value._vectorial.size = 0;
 		bucketList << buckets;
+		dynamicKeys.push_back(strdup(""));
 	}
 	// Additional entry on bucketList and stringPools for dynamic buckets generated from expandrefs
 	bucketList << &dynamicBuckets[0];
