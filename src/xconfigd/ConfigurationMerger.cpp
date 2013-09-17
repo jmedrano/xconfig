@@ -342,16 +342,23 @@ std::pair<string, int> ConfigurationMerger::dump()
 	TTRACE("config=%p", config);
 	cmph_t *hash_serialization = cmph_new(config);
 	if (!hash_serialization) {
-		TWARN("cannot generate hash");
+		TDEBUG("cannot generate hash");
 		std::set<string> keysSet;
 		for (size_t i=0; i<destKeys.size(); i++) {
 			if (keysSet.count(destKeys[i])) {
 				TWARN("duplicated key: %s", destKeys[i]);
+				free(destKeys[i]);
+				destKeys[i] = (char*)malloc(26);
+				sprintf(destKeys[i], "duplicate key:%10ld", i);
 			}
 			keysSet.insert(destKeys[i]);
 		}
-		// TODO throw something
-		abort();
+		// retry
+		hash_serialization = cmph_new(config);
+		if (!hash_serialization) {
+			TERROR("cannot generate hash");
+			abort();
+		}
 	}
 	TTRACE("hash_serialization=%p", hash_serialization);
 	cmph_config_destroy(config);
