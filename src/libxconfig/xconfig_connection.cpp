@@ -48,7 +48,7 @@ void MappedFile::reset(int fd) {
 
 bool LinkedConnection::connect() {
 	auto newMap = conn->getMap();
-	bool ret = newMap != map;
+	bool ret = newMap && (newMap != map);
 	if (ret)
 		map = std::move(newMap);
 	return ret;
@@ -363,6 +363,8 @@ UnixConnectionPool::LingerProxy::~LingerProxy() {
 
 bool UnixConnectionPool::LingerProxy::connect() {
 	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
+	if (!lockedData)
+		return false;
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
 	if (!found)
@@ -381,6 +383,8 @@ void UnixConnectionPool::LingerProxy::close() {
 }
 boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() const {
 	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
+	if (!lockedData)
+		return boost::shared_ptr<const MappedFile>();
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
 	if (!found)
