@@ -122,47 +122,47 @@ inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) cons
 
 inline enum XConfigValueType XConfig::getType(const std::string& key) {
 	mightReload();
-	return getType(key);
+	return const_cast<const XConfig*>(this)->getType(key);
 }
 inline struct timespec XConfig::getMtime(const std::string& key) {
 	mightReload();
-	return getMtime(key);
+	return const_cast<const XConfig*>(this)->getMtime(key);
 }
 inline bool XConfig::isScalar(const std::string& key) {
 	mightReload();
-	return isScalar(key);
+	return const_cast<const XConfig*>(this)->isScalar(key);
 }
 inline bool XConfig::isMap(const std::string& key) {
 	mightReload();
-	return isMap(key);
+	return const_cast<const XConfig*>(this)->isMap(key);
 }
 inline bool XConfig::isSequence(const std::string& key) {
 	mightReload();
-	return isSequence(key);
+	return const_cast<const XConfig*>(this)->isSequence(key);
 }
 inline std::string XConfig::getString(const std::string& key) {
 	mightReload();
-	return getString(key);
+	return const_cast<const XConfig*>(this)->getString(key);
 }
 inline bool XConfig::getBool(const std::string& key) {
 	mightReload();
-	return getBool(key);
+	return const_cast<const XConfig*>(this)->getBool(key);
 }
 inline int XConfig::getInt(const std::string& key) {
 	mightReload();
-	return getInt(key);
+	return const_cast<const XConfig*>(this)->getInt(key);
 }
 inline double XConfig::getFloat(const std::string& key) {
 	mightReload();
-	return getFloat(key);
+	return const_cast<const XConfig*>(this)->getFloat(key);
 }
 inline int XConfig::getCount(const std::string& key) {
 	mightReload();
-	return getCount(key);
+	return const_cast<const XConfig*>(this)->getCount(key);
 }
 inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) {
 	mightReload();
-	return getMapKeys(key);
+	return const_cast<const XConfig*>(this)->getMapKeys(key);
 }
 
 /**
