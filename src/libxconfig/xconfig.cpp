@@ -182,6 +182,24 @@ XConfigNode XConfig::getNodeNoThrow(const std::vector<std::string>& key) const
 	return getNodeNoThrow(escapeKey(key));
 }
 
+XConfigNode XConfig::getNode(const std::string& key) const
+{
+	if(!hash)
+		throw XConfigNotConnected();
+
+	XConfigNode node = getNodeNoThrow(key);
+
+	if (!node)
+		throw XConfigNotFound();
+
+	return node;
+}
+
+XConfigNode XConfig::getNode(const std::vector<std::string>& key) const
+{
+	return getNode(escapeKey(key));
+}
+
 XConfigNode XConfig::getNode(const std::string& key)
 {
 	mightReload();
