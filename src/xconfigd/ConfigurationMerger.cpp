@@ -346,16 +346,22 @@ std::pair<string, int> ConfigurationMerger::dump()
 	if (!hash_serialization) {
 		TDEBUG("cannot generate hash");
 		std::set<string> keysSet;
+		// change duplicated keys by random keys to avoid duplication
+		// insert random istring in a vector so they live until the
+		// hash generation is done
+		std::vector<string> randomKeys;
 		for (size_t i=0; i<destKeys.size(); i++) {
 			if (keysSet.count(destKeys[i])) {
 				TWARN("duplicated key: %s", destKeys[i]);
-				free(destKeys[i]);
-				destKeys[i] = (char*)malloc(26);
-				sprintf(destKeys[i], "duplicate key:%10ld", i);
+				randomKeys.push_back(std::string("duplicate key:") + lexical_cast<string>(i));
+				destKeys[i] = const_cast<char*>(randomKeys.back().c_str());
 			}
 			keysSet.insert(destKeys[i]);
 		}
 		// retry
+		cmph_config_destroy(config);
+		config = cmph_config_new(source);
+		cmph_config_set_algo(config, CMPH_CHM);
 		hash_serialization = cmph_new(config);
 		if (!hash_serialization) {
 			TERROR("cannot generate hash");
