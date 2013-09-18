@@ -399,6 +399,7 @@ bool YamlParser::parse() {
 		fstat(fd, &st);
 		if (st.st_mtime == mtime.tv_sec && st.st_mtim.tv_nsec == mtime.tv_nsec) {
 			::close(fd);
+			fd = -1;
 			return false;
 		}
 		mtime = {st.st_mtime, st.st_mtim.tv_nsec};
@@ -417,6 +418,7 @@ bool YamlParser::parse() {
 	stringOffset = 1;
 
 	file = fdopen(fd, "rb");
+	fd = -1;
 	assert(file);
 	int parser_init_ret = yaml_parser_initialize(parser);
 	if (!parser_init_ret)
@@ -431,8 +433,6 @@ bool YamlParser::parse() {
 	parser = NULL;
 	fclose(file);
 	file = NULL;
-	::close(fd);
-	fd = -1;
 
 	if (buckets.empty()) {
 		TWARN("root node is missing on file %s", path.c_str());
