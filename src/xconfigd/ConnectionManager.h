@@ -30,7 +30,6 @@ public:
 	~ConnectionManager();
 
 private:
-	void abort();
 	void sendDatagram(const char* buf, size_t len, int fd = -1);
 	void receiveDatagram(const char* buf, size_t len);
 	void receiveWatch(const char* buf, size_t len);
@@ -40,7 +39,7 @@ private:
 	
 private slots:
 	void connectionReadyRead();
-	void connectionError(QLocalSocket::LocalSocketError error);
+	void connectionClose();
 	void onNewTreeAvailable();
 
 private:

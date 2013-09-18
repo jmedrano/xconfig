@@ -25,7 +25,6 @@ ConnectionManager::ConnectionManager(int connectionFd, QObject* parent) : QObjec
 	sendHi();
 
 	connect(notifier, SIGNAL(activated(int)), SLOT(connectionReadyRead()));
-	//connect(connection, SIGNAL(error(QLocalSocket::LocalSocketError)), SLOT(connectionError(QLocalSocket::LocalSocketError)));
 
 	buffer.resize(MAX_DGRAM);
 }
@@ -58,13 +57,13 @@ void ConnectionManager::connectionReadyRead()
 	while(connectionFd >= 0) {
 		int nread = recvmsg(connectionFd, &msg, MSG_DONTWAIT);
 		if (nread == 0) {
-			abort();
+			connectionClose();
 			return;
 		} else if (nread < 0) {
 			if (errno != EAGAIN) {
 				TWARN("recvmsg error %s", strerror(errno));
 				//close(connFd);
-				abort();
+				connectionClose();
 			}
 			return;
 		}
@@ -72,13 +71,6 @@ void ConnectionManager::connectionReadyRead()
 		receiveDatagram(buffer.data(), nread);
 	}
 
-}
-
-void ConnectionManager::connectionError(QLocalSocket::LocalSocketError error)
-{
-	Q_UNUSED(error);
-	TWARN("error");
-	abort();
 }
 
 bool ConnectionManager::receiveHandshake(const char *buf, size_t len)
@@ -150,9 +142,9 @@ void ConnectionManager::onNewTreeAvailable()
 	}
 }
 
-void ConnectionManager::abort()
+void ConnectionManager::connectionClose()
 {
-	TDEBUG("abort");
+	TDEBUG("connectionClose");
 
 	notifier->setEnabled(false);
 	::close(connectionFd);
@@ -195,7 +187,7 @@ void ConnectionManager::sendDatagram(const char* buf, size_t len, int controlFd)
 
 	if (sendmsg(connectionFd, &msg, MSG_DONTWAIT) < 0) {
 		TWARN("sendmsg error %s", strerror(errno));
-		abort();
+		connectionClose();
 		//close(connFd);
 		return;
 	}
