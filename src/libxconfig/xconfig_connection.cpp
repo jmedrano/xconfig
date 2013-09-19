@@ -164,27 +164,27 @@ shared_ptr<const MappedFile> FileConnection::getMap() const
 UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 		: sharedData(new SharedData), localThreadCache(localThreadCache) {
 	sharedData->timeout = timeout;
-	sharedData->epollFd = epoll_create(1);
-	int closingPipe[2];
-	pipe(closingPipe);
-	sharedData->closingPipe = closingPipe[1];
+	sharedData->epollFd = epoll_create1(EPOLL_CLOEXEC);
+	pipe2(sharedData->closingPipe, O_CLOEXEC);
 
 	struct epoll_event event;
 	memset(&event, 0, sizeof(event));
-	event.data.fd = closingPipe[0];
+	event.data.fd = sharedData->closingPipe[0];
 	event.events = EPOLLIN;
-	int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, closingPipe[0], &event);
+	int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, sharedData->closingPipe[0], &event);
 	if (ctlResult < 0)
 		abort();
 
 	eventLoopThread = boost::thread(eventLoop, weak_ptr<SharedData>(sharedData));
 }
 UnixConnectionPool::~UnixConnectionPool() {
-	int closingPipe = sharedData->closingPipe;
-	sharedData.reset();
 	char c = 0;
-	::write(closingPipe, &c, sizeof(c));
+	::write(sharedData->closingPipe[1], &c, sizeof(c));
 	eventLoopThread.join();
+
+	::close(sharedData->epollFd);
+	::close(sharedData->closingPipe[0]);
+	::close(sharedData->closingPipe[1]);
 }
 
 boost::shared_ptr<LinkedConnection> UnixConnectionPool::getConnection(const std::string& path, std::string socket) {
@@ -273,6 +273,9 @@ void UnixConnectionPool::eventLoop(const weak_ptr<SharedData>& sharedData) {
 		for (int i = 0; i < numEvents; i++) {
 			int fd = events[i].data.fd;
 			bool error = (events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP);
+			if (fd == lockedData->closingPipe[0]) {
+				return;
+			}
 			lockedData->onReadEvent(fd, error);
 		}
 		lockedData->checkLingerList();
