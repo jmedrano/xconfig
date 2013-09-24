@@ -224,7 +224,13 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 		UnixConnection& conn = accessor->second->unixConn;
 
 		// connect
-		conn.connect();
+		try {
+			conn.connect();
+		} catch (const XConfigNotConnected& e) {
+			// can't connect: erase from map and rethrow
+			sharedData->hashMap.erase(accessor);
+			throw e;
+		}
 
 		// insert into fdMap
 		int socketFd = conn.getSockedFd();
