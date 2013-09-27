@@ -157,15 +157,36 @@ private:
 };
 
 class XConfigException : public std::exception {
+public:
+	XConfigException() {}
+	XConfigException(const std::string& key) : key(key) {}
+	const char* what() const throw() {
+		return key.c_str();
+	}
+	~XConfigException() throw() {}
+	void setKey(const std::string& key) {
+		this->key = key;
+	}
+private:
+	std::string key;
 };
 
 class XConfigWrongType : public XConfigException {
+public:
+	XConfigWrongType() {}
+	XConfigWrongType(const std::string& key) : XConfigException(key) {}
 };
 
 class XConfigNotFound : public XConfigException {
+public:
+	XConfigNotFound() {}
+	XConfigNotFound(const std::string& key) : XConfigException(key) {}
 };
 
 class XConfigNotConnected : public XConfigException {
+public:
+	XConfigNotConnected() {}
+	XConfigNotConnected(const std::string& key) : XConfigException(key) {}
 };
 
 

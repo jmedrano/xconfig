@@ -101,22 +101,52 @@ inline bool XConfig::isSequence(const std::string& key) const {
 	return isSequence(getNode(key));
 }
 inline std::string XConfig::getString(const std::string& key) const {
-	return getString(getNode(key));
+	try {
+		return getString(getNode(key));
+	} catch (XConfigException &e) {
+		e.setKey(key);
+		throw e;
+	}
 }
 inline bool XConfig::getBool(const std::string& key) const {
-	return getBool(getNode(key));
+	try {
+		return getBool(getNode(key));
+	} catch (XConfigException &e) {
+		e.setKey(key);
+		throw e;
+	}
 }
 inline int XConfig::getInt(const std::string& key) const {
-	return getInt(getNode(key));
+	try {
+		return getInt(getNode(key));
+	} catch (XConfigException &e) {
+		e.setKey(key);
+		throw e;
+	}
 }
 inline double XConfig::getFloat(const std::string& key) const {
-	return getFloat(getNode(key));
+	try {
+		return getFloat(getNode(key));
+	} catch (XConfigException &e) {
+		e.setKey(key);
+		throw e;
+	}
 }
 inline int XConfig::getCount(const std::string& key) const {
-	return getCount(getNode(key));
+	try {
+		return getCount(getNode(key));
+	} catch (XConfigException &e) {
+		e.setKey(key);
+		throw e;
+	}
 }
 inline std::vector<std::string> XConfig::getMapKeys(const std::string& key) const {
-	return getMapKeys(getNode(key));
+	try {
+		return getMapKeys(getNode(key));
+	} catch (XConfigException &e) {
+		e.setKey(key);
+		throw e;
+	}
 }
 
 

@@ -185,12 +185,12 @@ XConfigNode XConfig::getNodeNoThrow(const std::vector<std::string>& key) const
 XConfigNode XConfig::getNode(const std::string& key) const
 {
 	if(!hash)
-		throw XConfigNotConnected();
+		throw XConfigNotConnected(key);
 
 	XConfigNode node = getNodeNoThrow(key);
 
 	if (!node)
-		throw XConfigNotFound();
+		throw XConfigNotFound(key);
 
 	return node;
 }
@@ -205,12 +205,12 @@ XConfigNode XConfig::getNode(const std::string& key)
 	mightReload();
 
 	if(!hash)
-		throw XConfigNotConnected();
+		throw XConfigNotConnected(key);
 
 	XConfigNode node = getNodeNoThrow(key);
 
 	if (!node)
-		throw XConfigNotFound();
+		throw XConfigNotFound(key);
 
 	return node;
 }
