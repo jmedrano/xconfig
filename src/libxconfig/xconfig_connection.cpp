@@ -252,11 +252,13 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 	auto lingerProxy = accessor->second->sharedConn.lock();
 	if (!lingerProxy) {
 		lingerProxy = boost::make_shared<LingerProxy>(key, sharedData);
+		accessor->second->sharedConn = lingerProxy;
 	}
 	if (accessor->second->linger != sharedData->lingerList.end()) {
 		// NOTE: hashMap and lingerList are both locked
 		lock_guard<mutex> lock(sharedData->lingerListMutex);
 		sharedData->lingerList.erase(accessor->second->linger);
+		accessor->second->linger = sharedData->lingerList.end();
 	}
 	return lingerProxy;
 }
@@ -344,7 +346,10 @@ void UnixConnectionPool::SharedData::checkLingerList() {
 	for (auto it = keysToDelete.begin(); it != keysToDelete.end(); ++it) {
 		SharedData::HashMap::accessor accessor;
 		bool found = hashMap.find(accessor, *it);
-		assert(found);
+		if (!found) {
+			// already deleted
+			abort();
+		}
 		// we need to check if the entry has a new usage
 		if (found && accessor->second->sharedConn.expired()) {
 			int fd = accessor->second->unixConn.getSockedFd();
@@ -365,8 +370,18 @@ UnixConnectionPool::LingerProxy::~LingerProxy() {
 	shared_ptr<SharedData> lockedData(sharedData.lock());
 	if (lockedData) {
 		int timestamp = ::time(NULL);
+		LingerList::iterator lingerEntry;
+
+		// NOTE: hashMap and lingerList are both locked
+		SharedData::HashMap::accessor accessor;
+		bool found = lockedData->hashMap.find(accessor, key);
 		lock_guard<mutex> lock(lockedData->lingerListMutex);
+
 		lockedData->lingerList.push_back(std::pair<int, KeyType>(timestamp, key));
+		lingerEntry = --lockedData->lingerList.end();
+		if (found) {
+			accessor->second->linger = lingerEntry;
+		}
 	}
 }
 
