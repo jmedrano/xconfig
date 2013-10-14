@@ -364,7 +364,7 @@ static void serveFile(const string& xcPath, const string& socket) {
 
 void Dumper::yamlDump(const XConfigNode& node) {
 	yaml_event_t event;
-	int tag_implicit = 0;
+	int tag_implicit = implicitYamlSeparator;
 	switch(xc.getType(node)) {
 		case XConfigValueType::TYPE_MAP: {
 			yaml_mapping_start_event_initialize(&event, NULL, NULL, 1, YAML_BLOCK_MAPPING_STYLE);
@@ -449,14 +449,14 @@ int main(int argc, char** argv)
 		("key,k", boost::program_options::value<string>()->default_value(""), "key node to query")
 		("server,s", "server mode")
 		("socket,t", boost::program_options::value<string>()->default_value(UnixConnection::DEFAULT_SOCKET), "socket")
-		("path,p", boost::program_options::value<string>()->implicit_value(""), "configuration path")
+		("path,p", boost::program_options::value<string>(), "configuration path")
 		("noind,y", "do not include yaml document indicators");
 
 	boost::program_options::variables_map vm;
 	boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
 	boost::program_options::notify(vm);
 
-	if (vm.count("help") || vm.count("generate") + vm.count("file") == 0) {
+	if (vm.count("help") || vm.count("generate") + vm.count("file") + vm.count("path") == 0) {
 		std::cout << desc << "\n";
 		return 1;
 	}
@@ -473,7 +473,8 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	string path(vm["file"].as<string>());
+	bool unixSocketMode = vm.count("path");
+	string path(vm[unixSocketMode ? "path" : "file"].as<string>());
 	string socket(vm["socket"].as<string>());
 	if (vm.count("server")) {
 		serveFile(path, socket);
@@ -483,7 +484,7 @@ int main(int argc, char** argv)
 
 		boost::shared_ptr<XConfigConnection> conn;
 		UnixConnectionPool pool;
-		if (vm.count("path")) {
+		if (unixSocketMode) {
 			conn = pool.getConnection(path, socket);
 		} else {
 			conn.reset(new FileConnection(path));
