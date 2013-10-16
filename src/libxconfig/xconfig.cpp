@@ -104,7 +104,7 @@ bool XConfig::getBool(const XConfigNode& node) const
 	throw XConfigWrongType();
 }
 
-int XConfig::getInt(const XConfigNode& node) const
+int64_t XConfig::getInt(const XConfigNode& node) const
 {
 	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->type == XConfigValueType::TYPE_INTEGER)

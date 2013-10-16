@@ -100,7 +100,7 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 			return;
 		} else if (strcmp(tag, YAML_INT_TAG) == 0) {
 			bucket->type = xconfig::TYPE_INTEGER;
-			bucket->value._integer = lexical_cast<long>(value);
+			bucket->value._integer = lexical_cast<int64_t>(value);
 			return;
 		} else if (strcmp(tag, YAML_BOOL_TAG) == 0) {
 			bucket->type = xconfig::TYPE_BOOLEAN;
@@ -129,7 +129,7 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 	} else {
 		if (isdigit(value[0])) {
 			try {
-				long int_val = lexical_cast<long>(value);
+				long int_val = lexical_cast<int64_t>(value);
 				if (lexical_cast<string>(int_val) == value) {
 					TTRACE("inferred int");
 					bucket->type = xconfig::TYPE_INTEGER;

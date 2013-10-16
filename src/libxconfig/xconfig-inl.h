@@ -38,7 +38,7 @@ inline std::string XConfig::getString(const std::vector<std::string>& key) const
 inline bool XConfig::getBool(const std::vector<std::string>& key) const {
 	return getBool(escapeKey(key));
 }
-inline int XConfig::getInt(const std::vector<std::string>& key) const {
+inline int64_t XConfig::getInt(const std::vector<std::string>& key) const {
 	return getInt(escapeKey(key));
 }
 inline double XConfig::getFloat(const std::vector<std::string>& key) const {
@@ -72,7 +72,7 @@ inline std::string XConfig::getString(const std::vector<std::string>& key) {
 inline bool XConfig::getBool(const std::vector<std::string>& key) {
 	return getBool(escapeKey(key));
 }
-inline int XConfig::getInt(const std::vector<std::string>& key) {
+inline int64_t XConfig::getInt(const std::vector<std::string>& key) {
 	return getInt(escapeKey(key));
 }
 inline double XConfig::getFloat(const std::vector<std::string>& key) {
@@ -116,7 +116,7 @@ inline bool XConfig::getBool(const std::string& key) const {
 		throw e;
 	}
 }
-inline int XConfig::getInt(const std::string& key) const {
+inline int64_t XConfig::getInt(const std::string& key) const {
 	try {
 		return getInt(getNode(key));
 	} catch (XConfigException &e) {
@@ -178,7 +178,7 @@ inline bool XConfig::getBool(const std::string& key) {
 	mightReload();
 	return const_cast<const XConfig*>(this)->getBool(key);
 }
-inline int XConfig::getInt(const std::string& key) {
+inline int64_t XConfig::getInt(const std::string& key) {
 	mightReload();
 	return const_cast<const XConfig*>(this)->getInt(key);
 }
@@ -224,7 +224,7 @@ inline std::string XConfigNode::getString() const {
 inline bool XConfigNode::getBool() const {
 	return xc->getBool(*this);
 }
-inline int XConfigNode::getInt() const {
+inline int64_t XConfigNode::getInt() const {
 	return xc->getInt(*this);
 }
 inline double XConfigNode::getFloat() const {

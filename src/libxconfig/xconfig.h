@@ -41,8 +41,8 @@ public:
 	std::string getString(const std::vector<std::string>& key);
 	bool getBool(const std::vector<std::string>& key) const;
 	bool getBool(const std::vector<std::string>& key);
-	int getInt(const std::vector<std::string>& key) const;
-	int getInt(const std::vector<std::string>& key);
+	int64_t getInt(const std::vector<std::string>& key) const;
+	int64_t getInt(const std::vector<std::string>& key);
 	double getFloat(const std::vector<std::string>& key) const;
 	double getFloat(const std::vector<std::string>& key);
 	int getCount(const std::vector<std::string>& key) const;
@@ -66,8 +66,8 @@ public:
 	std::string getString(const std::string& key);
 	bool getBool(const std::string& key) const;
 	bool getBool(const std::string& key);
-	int getInt(const std::string& key) const;
-	int getInt(const std::string& key);
+	int64_t getInt(const std::string& key) const;
+	int64_t getInt(const std::string& key);
 	double getFloat(const std::string& key) const;
 	double getFloat(const std::string& key);
 	int getCount(const std::string& key) const;
@@ -85,7 +85,7 @@ public:
 	bool isSequence(const XConfigNode& node) const;
 	std::string getString(const XConfigNode& node) const;
 	bool getBool(const XConfigNode& node) const;
-	int getInt(const XConfigNode& node) const;
+	int64_t getInt(const XConfigNode& node) const;
 	double getFloat(const XConfigNode& node) const;
 	int getCount(const XConfigNode& node) const;
 	std::vector<std::string> getMapKeys(const XConfigNode& node) const;
@@ -138,7 +138,7 @@ public:
 	bool isSequence() const;
 	std::string getString() const;
 	bool getBool() const;
-	int getInt() const;
+	int64_t getInt() const;
 	double getFloat() const;
 	int getCount() const;
 	std::vector<std::string> getMapKeys() const;
