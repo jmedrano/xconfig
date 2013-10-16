@@ -316,6 +316,10 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 					currentBucket = &buckets[valueIdx];
 					// fix value node
 					currentBucket->name = name;
+					// use a diffent type for maps in order to avoid map merging
+					// and perform full overrides
+					if (currentBucket->type == xconfig::TYPE_MAP)
+						currentBucket->type = xconfig::TYPE_MAP_OVERRIDED;
 					if (firstBucketId) {
 						currentBucket->parent = bucketIdx - 1;
 					} else {

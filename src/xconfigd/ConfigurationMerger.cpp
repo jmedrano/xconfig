@@ -293,10 +293,13 @@ void ConfigurationMerger::mergeNode(size_t blobId, size_t nodeId, size_t parentB
 		} else {
 			if (blobId > firstOverride) {
 				TTRACE("replace %ld %ld %ld", nodeInDestination, blobId, nodeId);
-				if (currentBucket->type == xconfig::TYPE_DELETE)
+				if (currentBucket->type == xconfig::TYPE_DELETE) {
 					erase(decodeBlobId(parentInDestination), parentInDestination, destBlobId, nodeInDestination);
-				else
+				} else {
+					if (currentBucket->type == xconfig::TYPE_MAP_OVERRIDED)
+						currentBucket->type = xconfig::TYPE_MAP;
 					replace(decodeBlobId(parentInDestination), parentInDestination, destBlobId, nodeInDestination, blobId, nodeId);
+				}
 			} else {
 				// warn: conflict found
 				TWARN("conflict in base file %s:%s", blobs[blobId - 1]->getPath().c_str(), getKey(blobId, nodeId));
@@ -306,8 +309,11 @@ void ConfigurationMerger::mergeNode(size_t blobId, size_t nodeId, size_t parentB
 		// add to destination as child of parentInDestination
 		TTRACE("parentInDestination %ld", parentInDestination);
 		TTRACE("insert %ld %ld %ld %ld", parentBlobId, parentInDestination, blobId, nodeId);
-		if (currentBucket->type != xconfig::TYPE_DELETE)
+		if (currentBucket->type != xconfig::TYPE_DELETE) {
+			if (currentBucket->type == xconfig::TYPE_MAP_OVERRIDED)
+				currentBucket->type = xconfig::TYPE_MAP;
 			insert(parentBlobId, parentInDestination, blobId, nodeId);
+		}
 	}
 	TTRACE("mergeNode exit");
 }

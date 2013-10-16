@@ -18,6 +18,7 @@ enum XConfigValueType : uint32_t {
 	TYPE_EXPANDREF,
 	TYPE_EXPANDSTRING,
 	TYPE_DELETE,
+	TYPE_MAP_OVERRIDED,
 };
 
 struct XConfigBucket {
