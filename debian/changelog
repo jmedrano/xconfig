@@ -1,3 +1,11 @@
+xconfig (0.2.0-tuenti1) stable; urgency=low
+
+  * Do full overrides on overrides for maps instead of merging their content
+  * 64 bit ints
+  * Fix xconfig util params
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Thu, 17 Oct 2013 14:50:26 +0100
+
 xconfig (0.1.0-tuenti1) stable; urgency=low
 
   * Initial Release.
