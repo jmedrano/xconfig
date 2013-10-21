@@ -171,9 +171,8 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key) {
 
 				zend_hash_internal_pointer_reset_ex(ht, &pos);
 				for (int i = 0; zend_hash_get_current_data_ex(ht, (void **) &data, &pos) == SUCCESS; i++) {
-					if (Z_TYPE_PP(data) == IS_STRING) {
-						keys[i] = string(Z_STRVAL_PP(data), Z_STRLEN_PP(data));
-					}
+					convert_to_string(*data);
+					keys[i] = string(Z_STRVAL_PP(data), Z_STRLEN_PP(data));
 					zend_hash_move_forward_ex(ht, &pos);
 				}
 				node = xc->getNode(keys);
