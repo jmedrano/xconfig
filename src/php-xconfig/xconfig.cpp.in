@@ -517,19 +517,15 @@ PHP_MINIT_FUNCTION(xconfig)
 
 	INIT_CLASS_ENTRY(ce, "XConfigException", NULL);
 	xconfig_exception_ce = zend_register_internal_class_ex(&ce, zend_exception_get_default(TSRMLS_C), NULL TSRMLS_CC);
-	xconfig_exception_ce->create_object = NULL;
 
-	INIT_CLASS_ENTRY(ce, "XConfigNotFound", NULL);
+	INIT_CLASS_ENTRY(ce, "XConfigNotFoundException", NULL);
 	xconfig_notfoundexception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
-	xconfig_notfoundexception_ce->create_object = NULL;
 
-	INIT_CLASS_ENTRY(ce, "XConfigWrongType", NULL);
+	INIT_CLASS_ENTRY(ce, "XConfigWrongTypeException", NULL);
 	xconfig_wrongtypeexception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
-	xconfig_wrongtypeexception_ce->create_object = NULL;
 
-	INIT_CLASS_ENTRY(ce, "XConfigNotConnected", NULL);
+	INIT_CLASS_ENTRY(ce, "XConfigNotConnectedException", NULL);
 	xconfig_notconnectedxception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
-	xconfig_notconnectedxception_ce->create_object = NULL;
 
 	xconfig_pool = new UnixConnectionPool;
 
