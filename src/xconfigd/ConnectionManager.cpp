@@ -114,7 +114,7 @@ void ConnectionManager::receiveWatch(const char *buf, size_t len)
 	TTRACE("got watch");
 
 	if (treeManager) {
-		disconnect(treeManager.get(), 0, 0, 0);
+		disconnect(treeManager.get(), 0, this, 0);
 	}
 
 	// TODO improve this
@@ -150,7 +150,7 @@ void ConnectionManager::connectionClose()
 	::close(connectionFd);
 	connectionFd = -1;
 	if (treeManager) {
-		disconnect(treeManager.get(), 0, 0, 0);
+		disconnect(treeManager.get(), 0, this, 0);
 		TDEBUG("disconnected");
 		treeManager.reset();
 	}
