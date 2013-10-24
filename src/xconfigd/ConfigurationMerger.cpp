@@ -44,7 +44,6 @@ ConfigurationMerger::ConfigurationMerger(QList<YamlParser*> baseBlobs, QList<Yam
 		}
 	} else if (blobs.size() > 0) {
 		auto it = blobs.begin();
-		XConfigHeader header = (*it)->getHeader();
 		XConfigBucket* buckets = const_cast<XConfigBucket*>((*it)->getBuckets());
 		bucketList << buckets;
 		stringPools << (*it)->getStringPool();

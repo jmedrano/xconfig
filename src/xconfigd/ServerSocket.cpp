@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 T_QLOGGER_DEFINE(ServerSocket);
 

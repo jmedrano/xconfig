@@ -2,6 +2,7 @@
 #define LIBXCONFIG_XCONFIG_H_
 
 #include <time.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

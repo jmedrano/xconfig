@@ -4,7 +4,7 @@
 
 T_LOGGER_DEFINE(ConfigurationPool, "ConfigurationPool");
 
-ConfigurationPool::ConfigurationPool* ConfigurationPool::instance = NULL;
+ConfigurationPool* ConfigurationPool::instance = NULL;
 
 void ConfigurationPool::deleteLaterConfigurationTreeManager(ConfigurationTreeManager* tree)
 {

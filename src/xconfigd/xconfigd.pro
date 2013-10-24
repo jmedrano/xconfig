@@ -4,7 +4,7 @@ TARGET = xconfigd
 include($$TOP_SRCDIR/xconfig.pri)
 
 QT += network
-PKGCONFIG += libdaemon liblog4cxx
+PKGCONFIG += libdaemon liblog4cxx tbb
 LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lcmph
 
 DESTDIR = $$TOP_BUILDDIR/target/$$BINDIR
