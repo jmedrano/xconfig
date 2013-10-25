@@ -24,7 +24,7 @@ enum XConfigValueType : uint32_t {
 struct XConfigBucket {
 	union {
 		bool _boolean;
-		uint64_t _integer;
+		int64_t _integer;
 		uint64_t _string;
 		double _float;
 		struct {
