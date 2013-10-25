@@ -90,78 +90,75 @@ void YamlParser::parserError(const yaml_parser_t* parser) {
 
 void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const char* tag) {
 	size_t len = strlen(value);
+	// end of string for type conversions
+	const char *expected_end = value + len;
+	char *end;
 	// interpret tag
-	try {
-		if (tag == NULL) {
-		} else if (strcmp(tag, YAML_STR_TAG) == 0) {
-			bucket->type = xconfig::TYPE_STRING;
-			stringPool.insert(stringPool.end(), value, value + len + 1);
-			bucket->value._string = stringOffset + 1;
-			stringOffset += len + 1;
-			return;
-		} else if (strcmp(tag, YAML_INT_TAG) == 0) {
-			bucket->type = xconfig::TYPE_INTEGER;
-			bucket->value._integer = lexical_cast<int64_t>(value);
-			return;
-		} else if (strcmp(tag, YAML_BOOL_TAG) == 0) {
-			bucket->type = xconfig::TYPE_BOOLEAN;
-			bucket->value._boolean = strcmp(value, "true") == 0;
-			return;
-		} else if (strcmp(tag, YAML_FLOAT_TAG) == 0) {
-			bucket->type = xconfig::TYPE_FLOAT;
-			bucket->value._float = lexical_cast<double>(value);
-			return;
-		} else if (strcmp(tag, YAML_NULL_TAG) == 0) {
-			bucket->type = xconfig::TYPE_NULL;
-			return;
-		} else if (strcmp(tag, "!delete") == 0) {
-			bucket->type = xconfig::TYPE_DELETE;
-			return;
+	if (tag == NULL) {
+	} else if (strcmp(tag, YAML_STR_TAG) == 0) {
+		bucket->type = xconfig::TYPE_STRING;
+		stringPool.insert(stringPool.end(), value, value + len + 1);
+		bucket->value._string = stringOffset + 1;
+		stringOffset += len + 1;
+		return;
+	} else if (strcmp(tag, YAML_INT_TAG) == 0) {
+		bucket->type = xconfig::TYPE_INTEGER;
+		bucket->value._integer = strtoll(value, &end, 0);
+		if (end != expected_end) {
+			TWARN("type error (int) on %s:%s", path.c_str(), keys.back());
 		} else {
-			TINFO("unknown tag [%s]", tag);
+			return;
 		}
-	} catch (boost::bad_lexical_cast) {
-		TWARN("type error on %s:%s", path.c_str(), keys.back());
+	} else if (strcmp(tag, YAML_BOOL_TAG) == 0) {
+		bucket->type = xconfig::TYPE_BOOLEAN;
+		bucket->value._boolean = strcmp(value, "true") == 0;
+		return;
+	} else if (strcmp(tag, YAML_FLOAT_TAG) == 0) {
+		bucket->type = xconfig::TYPE_FLOAT;
+		bucket->value._float = strtod(value, &end);
+		if (end != expected_end) {
+			TWARN("type error (float) on %s:%s", path.c_str(), keys.back());
+		} else {
+			return;
+		}
+	} else if (strcmp(tag, YAML_NULL_TAG) == 0) {
+		bucket->type = xconfig::TYPE_NULL;
+		return;
+	} else if (strcmp(tag, "!delete") == 0) {
+		bucket->type = xconfig::TYPE_DELETE;
+		return;
+	} else {
+		TINFO("unknown tag [%s]", tag);
 	}
 
 	// infer type
 	if (len == 0) {
 		bucket->type = xconfig::TYPE_STRING;
 	} else {
-		if (isdigit(value[0])) {
-			try {
-				long int_val = lexical_cast<int64_t>(value);
-				if (lexical_cast<string>(int_val) == value) {
-					TTRACE("inferred int");
-					bucket->type = xconfig::TYPE_INTEGER;
-					bucket->value._integer = int_val;
-					return;
-				}
-			} catch (boost::bad_lexical_cast) {
+		if (isdigit(value[0]) || value[0] == '-') {
+			int64_t int_val = strtoll(value, &end, 0);
+			if (end == expected_end) {
+				TTRACE("inferred int");
+				bucket->type = xconfig::TYPE_INTEGER;
+				bucket->value._integer = int_val;
+				return;
+			} else {
 				// not an int
-				try {
-					double float_val = lexical_cast<double>(value);
-					if (lexical_cast<string>(float_val) == value) {
-						TTRACE("inferred float");
-						bucket->type = xconfig::TYPE_FLOAT;
-						bucket->value._float = float_val;
-						return;
-					}
-				} catch (boost::bad_lexical_cast) {
-				// not a float
-				}
-			}
-		} else if (value[0] == '.') {
-			try {
-				double float_val = lexical_cast<double>(value);
-				if (lexical_cast<string>(float_val) == value) {
+				double float_val = strtod(value, &end);
+				if (end == expected_end) {
 					TTRACE("inferred float");
 					bucket->type = xconfig::TYPE_FLOAT;
 					bucket->value._float = float_val;
 					return;
 				}
-			} catch (boost::bad_lexical_cast) {
-				// not a float
+			}
+		} else if (value[0] == '.') {
+			double float_val = strtod(value, &end);
+			if (end == expected_end) {
+				TTRACE("inferred float");
+				bucket->type = xconfig::TYPE_FLOAT;
+				bucket->value._float = float_val;
+				return;
 			}
 		} else if (strcmp(value, "null") == 0) {
 			bucket->type = xconfig::TYPE_NULL;
