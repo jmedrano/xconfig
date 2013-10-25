@@ -88,7 +88,7 @@ void YamlParser::parserError(const yaml_parser_t* parser) {
 	throw YamlSyntaxErrorException();
 }
 
-void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const char* tag) {
+void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const char* tag, yaml_scalar_style_t style) {
 	size_t len = strlen(value);
 	// end of string for type conversions
 	const char *expected_end = value + len;
@@ -131,10 +131,9 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 		TINFO("unknown tag [%s]", tag);
 	}
 
-	// infer type
-	if (len == 0) {
-		bucket->type = xconfig::TYPE_STRING;
-	} else {
+	// infer type only for plain scalar types, all other are assumed
+	// to be strings
+	if (len > 0 && style == YAML_PLAIN_SCALAR_STYLE) {
 		if (isdigit(value[0]) || value[0] == '-') {
 			int64_t int_val = strtoll(value, &end, 0);
 			if (end == expected_end) {
@@ -219,6 +218,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 				assert(stringOffset == stringPool.size());
 				TTRACE("YAML_SCALAR_EVENT: name: [%s]", event.data.scalar.value);
 				TTRACE("YAML_SCALAR_EVENT: tag: [%s]", event.data.scalar.tag);
+				TTRACE("YAML_SCALAR_EVENT: style %d", event.data.scalar.style);
 				if (nextNodeIsKey) {
 					stringPool.insert(stringPool.end(), (char*)event.data.scalar.value, (char*)event.data.scalar.value + event.data.scalar.length + 1);
 					name = stringOffset + 1;
@@ -229,7 +229,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 					currentBucket = insertBucket(nextPrefix);
 					currentBucket->name = name;
 					currentBucket->parent = parent;
-					inferScalarType(currentBucket, (char*)event.data.scalar.value, (char*)event.data.scalar.tag);
+					inferScalarType(currentBucket, (char*)event.data.scalar.value, (char*)event.data.scalar.tag, event.data.scalar.style);
 					currentBucket->next = bucketIdx + 1;
 					name = 0;
 				}

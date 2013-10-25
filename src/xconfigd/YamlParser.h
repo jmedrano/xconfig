@@ -50,7 +50,7 @@ private:
 
 	int yamlParseNode(const std::string& prefix, bool isDocumentRoot, bool isMapping, int maxItems = -1);
 	xconfig::XConfigBucket* insertBucket(const std::string& key);
-	void inferScalarType(xconfig::XConfigBucket* bucket, const char* value, const char* tag);
+	void inferScalarType(xconfig::XConfigBucket* bucket, const char* value, const char* tag, yaml_scalar_style_t style);
 	void parserError(const yaml_parser_t* parser);
 
 };
