@@ -539,30 +539,34 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 		for (n = 0; n < bucket->value._vectorial.size && childId; n++) {
 			TTRACE("#%ld/%d", n, bucket->value._vectorial.size);
 			XConfigBucket* childBucket = getBucket(blobId, childId);
-			assert(childBucket->type == xconfig::TYPE_STRING);
-			refNodeId = findChild(refBlobId, refNodeId, getString(blobId, childBucket->value._string));
-			canonicalIds(&refBlobId, &refNodeId);
-			if (!refNodeId) {
-				TTRACE("can't find ref");
+			if (childBucket->type != xconfig::TYPE_STRING) {
+				bucket->type = xconfig::TYPE_NULL;
+				TWARN("expandref: string expected in key");
 				return;
 			}
+			refNodeId = findChild(refBlobId, refNodeId, getString(blobId, childBucket->value._string));
+			if (!refNodeId) {
+				TWARN("expandref: can't find ref %s", getString(blobId, childBucket->value._string));
+				bucket->type = xconfig::TYPE_NULL;
+				return;
+			}
+			canonicalIds(&refBlobId, &refNodeId);
 			childId = childBucket->next;
 		}
 		TTRACE("found");
-		// TODO deep copy. keys need to be regenerated
-		// we might need to use a new blobId to insert the copied buckets to
-		if (true) {
-			bucket->value._vectorial.child = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
-			auto childBucket = getBucket(decodeBlobId(bucket->value._vectorial.child), bucket->value._vectorial.child);
-			childBucket->name = insertDynamicString(getString(blobId, bucket->name));
-		} else {
-			bucket->type = xconfig::TYPE_STRING;
-			bucket->value._string = 0;
-		}
+		// deep copy. keys need to be regenerated
+		bucket->value._vectorial.child = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
+		auto childBucket = getBucket(decodeBlobId(bucket->value._vectorial.child), bucket->value._vectorial.child);
+		childBucket->name = insertDynamicString(getString(blobId, bucket->name));
 	} else if (bucket->type == xconfig::TYPE_EXPANDSTRING) {
 		TTRACE("expanding expandstring [%s]", getKey(blobId, nodeId));
 		XConfigBucket* stringBucket = getBucket(blobId, bucket->value._vectorial.child);
 		assert(stringBucket->type == xconfig::TYPE_STRING);
+		if (stringBucket->type != xconfig::TYPE_STRING) {
+			bucket->type = xconfig::TYPE_NULL;
+			TWARN("expandstring: string expected");
+			return;
+		}
 		QString expanded = getString(blobId, stringBucket->value._string);
 		size_t childId = stringBucket->next;
 		for (size_t n=1; n < bucket->value._vectorial.size && childId; n++) {
@@ -571,17 +575,26 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 			size_t refBlobId = 1;
 			size_t refNodeId = 1;
 			XConfigBucket* childBucket = getBucket(blobId, childId);
-			assert(childBucket->type == xconfig::TYPE_SEQUENCE);
+			if (childBucket->type != xconfig::TYPE_SEQUENCE) {
+				bucket->type = xconfig::TYPE_NULL;
+				TWARN("expandstring: sequence expected");
+				return;
+			}
 			size_t child2ndLevelId = childBucket->value._vectorial.child;
 			for (size_t i = 0; i < childBucket->value._vectorial.size && child2ndLevelId; i++) {
 				XConfigBucket* child2ndLevelBucket = getBucket(blobId, child2ndLevelId);
-				assert(child2ndLevelBucket->type == xconfig::TYPE_STRING);
-				refNodeId = findChild(refBlobId, refNodeId, getString(blobId, child2ndLevelBucket->value._string));
-				canonicalIds(&refBlobId, &refNodeId);
-				if (!refNodeId) {
-					TTRACE("can't find ref");
+				if (child2ndLevelBucket->type != xconfig::TYPE_STRING) {
+					bucket->type = xconfig::TYPE_NULL;
+					TWARN("expandstring: string expected");
 					return;
 				}
+				refNodeId = findChild(refBlobId, refNodeId, getString(blobId, child2ndLevelBucket->value._string));
+				if (!refNodeId) {
+					bucket->type = xconfig::TYPE_NULL;
+					TWARN("expandstring: can't find ref %s", getString(blobId, child2ndLevelBucket->value._string));
+					return;
+				}
+				canonicalIds(&refBlobId, &refNodeId);
 				child2ndLevelId = child2ndLevelBucket->next;
 			}
 			XConfigBucket* refBucket = getBucket(refBlobId, refNodeId);
