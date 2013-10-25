@@ -109,6 +109,8 @@ int64_t XConfig::getInt(const XConfigNode& node) const
 	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->type == XConfigValueType::TYPE_INTEGER)
 		return bucket->value._integer;
+	if (bucket->type == XConfigValueType::TYPE_FLOAT)
+		return static_cast<int64_t>(bucket->value._float);
 	throw XConfigWrongType();
 }
 
@@ -117,6 +119,8 @@ double XConfig::getFloat(const XConfigNode& node) const
 	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->type == XConfigValueType::TYPE_FLOAT)
 		return bucket->value._float;
+	if (bucket->type == XConfigValueType::TYPE_INTEGER)
+		return static_cast<double>(bucket->value._integer);
 	throw XConfigWrongType();
 }
 
