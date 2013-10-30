@@ -81,8 +81,11 @@ bool UnixConnection::connect()
 		socketFd = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
 		if (socketFd < 0)
 			throw XConfigNotConnected();
-		if (::connect(socketFd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0)
+		if (::connect(socketFd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+			::close(socketFd);
+			socketFd = -1;
 			throw XConfigNotConnected();
+		}
 	}
 	if (!map) {
 		// send watch msg
@@ -111,7 +114,8 @@ bool UnixConnection::connect()
 
 			// don't wait for push msg if a tree is already available
 			int msg_flags = map || treeFd >= 0 ? MSG_CMSG_CLOEXEC | MSG_DONTWAIT : MSG_CMSG_CLOEXEC;
-			if (::recvmsg(socketFd, &msg, msg_flags) < 0)
+			int nread = ::recvmsg(socketFd, &msg, msg_flags);
+			if (nread <= 0)
 				break;
 
 			data[iov.iov_len] = '\0';
@@ -291,8 +295,12 @@ void UnixConnectionPool::eventLoop(const weak_ptr<SharedData>& sharedData) {
 }
 
 void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
+
+	KeyType key;
 	SharedData::FdMap::accessor fdAccessor;
 	bool found = fdMap.find(fdAccessor, fd);
+	if (found)
+		key = fdAccessor->second;
 	if (!found || error) {
 		int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
 		if (ctlResult < 0)
@@ -302,7 +310,6 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 		fdMap.erase(fdAccessor);
 	}
 
-	KeyType key(fdAccessor->second);
 	fdAccessor.release();
 
 	SharedData::HashMap::accessor accessor;
@@ -316,14 +323,8 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 	// are only done from the event loop thread
 	if (error)
 		conn.close();
-	conn.connect();
-
-	if (error) {
-		int socketFd = conn.getSockedFd();
-		bool insertedInFdMap = fdMap.insert(std::pair<const int, KeyType>(socketFd, key));
-		if (!insertedInFdMap)
-			abort();
-	}
+	else
+		conn.connect();
 }
 
 void UnixConnectionPool::SharedData::checkLingerList() {
@@ -413,7 +414,28 @@ boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() co
 	bool found = lockedData->hashMap.find(accessor, key);
 	if (!found)
 		abort();
-	XConfigConnection& conn = accessor->second->unixConn;
+	UnixConnection& conn = accessor->second->unixConn;
+	if (conn.getSockedFd() < 0) {
+		try {
+			conn.connect();
+		} catch (const XConfigNotConnected& e) {
+			return boost::shared_ptr<const MappedFile>();
+		}
+		int newSocketFd = conn.getSockedFd();
+		if (newSocketFd >= 0) {
+			bool insertedInFdMap = lockedData->fdMap.insert(std::pair<const int, KeyType>(newSocketFd, key));
+			if (!insertedInFdMap)
+				abort();
+			// add socket to epoll
+			struct epoll_event event;
+			memset(&event, 0, sizeof(event));
+			event.data.fd = newSocketFd;
+			event.events = EPOLLIN;
+			int ctlResult = epoll_ctl(lockedData->epollFd, EPOLL_CTL_ADD, newSocketFd, &event);
+			if (ctlResult < 0)
+				abort();
+		}
+	}
 	return conn.getMap();
 }
 
