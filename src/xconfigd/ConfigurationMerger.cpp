@@ -556,8 +556,10 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 		TTRACE("found");
 		// deep copy. keys need to be regenerated
 		bucket->value._vectorial.child = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
+		size_t nextNodeId = bucket->next ? composeNodeId(blobId, bucket->next) : 0;
 		auto childBucket = getBucket(decodeBlobId(bucket->value._vectorial.child), bucket->value._vectorial.child);
 		childBucket->name = insertDynamicString(getString(blobId, bucket->name));
+		childBucket->next = nextNodeId;
 	} else if (bucket->type == xconfig::TYPE_EXPANDSTRING) {
 		TTRACE("expanding expandstring [%s]", getKey(blobId, nodeId));
 		XConfigBucket* stringBucket = getBucket(blobId, bucket->value._vectorial.child);
