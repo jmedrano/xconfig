@@ -6,11 +6,21 @@ Build-Depends: debhelper (>= 8.0.0), build-essential, qt4-qmake, pkg-config, lib
 Standards-Version: 3.9.2
 Homepage: http://www.tuenti.com/
 
-Package: xconfigd
+Package: xconfigd-base
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: xconfigd (<= 0.4.0)
 Description: XConfig daemon
  Implementation of the daemon for the XConfig configuration system
+ No init scripts included
+
+Package: xconfigd
+Architecture: any
+Depends: xconfigd-base
+Conflicts: xconfigd (<= 0.4.0)
+Description: XConfig daemon
+ Implementation of the daemon for the XConfig configuration system
+ Init scripts
 
 Package: libxconfig
 Architecture: any
@@ -20,7 +30,7 @@ Description: XConfig library
 
 Package: libxconfig-dev
 Architecture: any
-Depends: libxconfig (= ${binary:Version}), ${misc:Depends}
+Depends: libxconfig (= ${binary:Version}), ${misc:Depends}, libtbb-dev, libboost-thread-dev|libboost-thread1.49-dev
 Description: XConfig library (Development files)
  Client library for the XConfig configuration system
 

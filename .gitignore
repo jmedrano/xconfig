@@ -10,6 +10,7 @@ moc_*
 debian/*.debhelper.log
 debian/*.substvars
 debian/*.debhelper
+debian/xconfigd-base/
 debian/xconfigd/
 debian/libxconfig/
 debian/libxconfig-dev/
