@@ -88,6 +88,7 @@ public:
 
 	explicit UnixConnectionPool(int timeout = DEFAULT_TIMEOUT, bool localThreadCache = false);
 	~UnixConnectionPool();
+	void setReloadCallback(void (*reloadCallback)(void*), void* reloadCallbackData);
 	boost::shared_ptr<LinkedConnection> getConnection(const std::string& path, std::string socket = "");
 	void flushLocal();
 
@@ -113,6 +114,8 @@ private:
 		boost::mutex lingerListMutex;
 		int epollFd;
 		int closingPipe[2];
+		void (*reloadCallback)(void*);
+		void* reloadCallbackData;
 
 		void checkLingerList();
 		void onReadEvent(int fd, bool error);

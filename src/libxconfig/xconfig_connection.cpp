@@ -169,6 +169,7 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 		: sharedData(new SharedData), localThreadCache(localThreadCache) {
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create1(EPOLL_CLOEXEC);
+	sharedData->reloadCallback = 0;
 	pipe2(sharedData->closingPipe, O_CLOEXEC);
 
 	struct epoll_event event;
@@ -189,6 +190,11 @@ UnixConnectionPool::~UnixConnectionPool() {
 	::close(sharedData->epollFd);
 	::close(sharedData->closingPipe[0]);
 	::close(sharedData->closingPipe[1]);
+}
+
+void UnixConnectionPool::setReloadCallback(void (*reloadCallback)(void*), void* reloadCallbackData) {
+	sharedData->reloadCallback = reloadCallback;
+	sharedData->reloadCallbackData = reloadCallbackData;
 }
 
 boost::shared_ptr<LinkedConnection> UnixConnectionPool::getConnection(const std::string& path, std::string socket) {
@@ -323,8 +329,11 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 	// are only done from the event loop thread
 	if (error)
 		conn.close();
-	else
+	else {
 		conn.connect();
+		if (reloadCallback)
+			reloadCallback(reloadCallbackData);
+	}
 }
 
 void UnixConnectionPool::SharedData::checkLingerList() {
