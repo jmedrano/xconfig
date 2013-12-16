@@ -184,8 +184,13 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 }
 UnixConnectionPool::~UnixConnectionPool() {
 	char c = 0;
-	::write(sharedData->closingPipe[1], &c, sizeof(c));
-	eventLoopThread.join();
+	int flags = fcntl(sharedData->closingPipe[1], F_GETFL, 0);
+	fcntl(sharedData->closingPipe[1], F_SETFL, flags | O_NONBLOCK);
+	int nwritten = ::write(sharedData->closingPipe[1], &c, sizeof(c));
+	if (nwritten < 1) {
+		return;
+	}
+	eventLoopThread.timed_join(boost::posix_time::seconds(10));
 
 	::close(sharedData->epollFd);
 	::close(sharedData->closingPipe[0]);

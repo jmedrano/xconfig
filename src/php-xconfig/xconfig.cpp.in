@@ -6,6 +6,8 @@ extern "C" {
 #include "Zend/zend_exceptions.h"
 }
 
+#include <pthread.h>
+
 #include <xconfig.h>
 #include <xconfig_connection.h>
 
@@ -112,7 +114,7 @@ zend_class_entry *xconfig_wrongtypeexception_ce;
 zend_class_entry *xconfig_notfoundexception_ce;
 zend_class_entry *xconfig_notconnectedxception_ce;
 
-UnixConnectionPool *xconfig_pool;
+UnixConnectionPool* xconfig_pool;
 
 PHP_METHOD(XConfig, __construct)
 {
@@ -127,6 +129,8 @@ PHP_METHOD(XConfig, __construct)
 
 	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
 	try {
+		if (!xconfig_pool)
+			xconfig_pool = new UnixConnectionPool;
 		if (socket) {
 			obj->xconfig = new XConfig(xconfig_pool->getConnection(string(path, path_len), string(socket, socket_len)), autoreload);
 		} else {
@@ -488,6 +492,10 @@ zend_module_entry xconfig_module_entry = {
 extern "C" {
 ZEND_GET_MODULE(xconfig)
 }
+
+static void reset_pool() {
+	xconfig_pool = 0;
+}
  
 PHP_MINIT_FUNCTION(xconfig)
 {
@@ -526,14 +534,20 @@ PHP_MINIT_FUNCTION(xconfig)
 	INIT_CLASS_ENTRY(ce, "XConfigNotConnectedException", NULL);
 	xconfig_notconnectedxception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
 
-	xconfig_pool = new UnixConnectionPool;
+	xconfig_pool = 0;
+
+	// reset pool on child after fork
+	pthread_atfork(NULL, NULL, &reset_pool);
 
 	return SUCCESS;
 }
 
 PHP_MSHUTDOWN_FUNCTION(xconfig)
 {
-	delete xconfig_pool;
+	if (xconfig_pool) {
+		delete xconfig_pool;
+		xconfig_pool = 0;
+	}
 
 	return SUCCESS;
 }
