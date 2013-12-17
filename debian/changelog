@@ -1,3 +1,11 @@
+xconfig (0.6.0-tuenti1) stable; urgency=low
+
+  * Add reloadCallback support
+  * Don't hang when using pcntl_fork() with PHP extension
+  * Fix escaping on first level keys
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Mon, 16 Dec 2013 17:18:23 +0200
+
 xconfig (0.5.0-tuenti1) stable; urgency=low
 
   * Split xconfigd package
