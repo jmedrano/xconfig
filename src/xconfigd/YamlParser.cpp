@@ -196,7 +196,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 		if (!isDocumentRoot) {
 			if (isMapping && !nextNodeIsKey) {
 				if (prefix.empty()) {
-					nextPrefix = &stringPool[name - 1];
+					nextPrefix = XConfig::escapeKey(&stringPool[name - 1]);
 				} else {
 					nextPrefix = prefix + XConfig::MAP_SEPARATOR + XConfig::escapeKey(&stringPool[name - 1]);
 				}
