@@ -1,3 +1,9 @@
+xconfig (0.6.1-tuenti1) stable; urgency=low
+
+  * Fix segfault on broken expandstrings
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Mon, 18 Dec 2013 16:35:54 +0200
+
 xconfig (0.6.0-tuenti1) stable; urgency=low
 
   * Add reloadCallback support

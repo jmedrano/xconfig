@@ -9,7 +9,7 @@ Homepage: http://www.tuenti.com/
 Package: xconfigd-base
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: xconfigd (<= 0.4.0)
+Conflicts: xconfigd (< 0.5.0)
 Description: XConfig daemon
  Implementation of the daemon for the XConfig configuration system
  No init scripts included
@@ -17,7 +17,7 @@ Description: XConfig daemon
 Package: xconfigd
 Architecture: any
 Depends: xconfigd-base
-Conflicts: xconfigd (<= 0.4.0)
+Conflicts: xconfigd (< 0.5.0)
 Description: XConfig daemon
  Implementation of the daemon for the XConfig configuration system
  Init scripts
