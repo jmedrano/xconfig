@@ -600,6 +600,11 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 				child2ndLevelId = child2ndLevelBucket->next;
 			}
 			XConfigBucket* refBucket = getBucket(refBlobId, refNodeId);
+			if (refBucket->type != xconfig::TYPE_STRING) {
+				bucket->type = xconfig::TYPE_NULL;
+				TWARN("expandstring: string expected on reference");
+				return;
+			}
 			TTRACE("found ref #%ld [%s]", n, getString(refBlobId, refBucket->value._string));
 			expanded = expanded.arg(getString(refBlobId, refBucket->value._string));
 
