@@ -258,6 +258,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 			}
 			case YAML_SEQUENCE_START_EVENT: {
 				if (nextNodeIsKey) {
+					lastSibling = bucketIdx;
 					size_t firstBucketId = 0;
 					string overrideKey;
 					size_t previousName = 0;
