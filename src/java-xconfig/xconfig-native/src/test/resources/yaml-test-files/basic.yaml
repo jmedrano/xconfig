@@ -1,0 +1,23 @@
+---
+basic:
+    "integerValue": 123
+    "stringValue": "test"
+    "floatValue": 3.14
+    "booleanValue": false
+    "nullValue": null
+    "integersList":
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    "pureMap":
+      "key1": "test1"
+      "key2": "test2"
+      "key3": "test3"
+    "mixedMap":
+      "key1": "test1"
+      "key2": 2
+      "key3": 1.16
+      "key4": true
+...
