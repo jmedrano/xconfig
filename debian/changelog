@@ -1,3 +1,12 @@
+xconfig (0.6.2-tuenti1) stable; urgency=low
+
+  * Fix mixing override and base formats
+  * Handle modified and added files on the same event
+  * Log everything to log files
+  * Fix memory leak
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Tue, 14 Dec 2014 16:35:54 +0200
+
 xconfig (0.6.1-tuenti1) stable; urgency=low
 
   * Fix segfault on broken expandstrings
