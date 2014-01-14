@@ -410,6 +410,9 @@ bool YamlParser::parse() {
 
 	parser = new yaml_parser_t;
 	buckets.clear();
+	for (auto key = keys.begin(); key != keys.end(); ++key) {
+		free(*key);
+	}
 	keys.clear();
 	stringPool.clear();
 	buckets.reserve(RESERVE_BUCKETS);
