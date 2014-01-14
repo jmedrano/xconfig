@@ -55,7 +55,7 @@ private Q_SLOTS:
 	void onLingerTimeout();
 
 private:
-	void loadAllFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder);
+	void loadAllFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, bool somethingChanged = false);
 	void loadFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, QList<QString> files);
 	void merge();
 

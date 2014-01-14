@@ -117,7 +117,7 @@ void ConfigurationTreeManager::onINotify() {
 	}
 }
 
-void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder) {
+void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, bool somethingChanged) {
 	Q_UNUSED(referenceHolder);
 	QMutexLocker locker(&mutex);
 
@@ -127,8 +127,6 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 
 	baseFiles.clear();
 	overrideFiles.clear();
-
-	bool somethingChanged = false;
 
 	int numPaths = 0;
 	std::set<std::string> fileNamesInDir;
@@ -193,11 +191,11 @@ void ConfigurationTreeManager::loadAllFiles(boost::shared_ptr<ConfigurationTreeM
 void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeManager> referenceHolder, QList<QString> files) {
 	Q_UNUSED(referenceHolder);
 	bool areDirsModified = false;
+	bool areFilesModified = false;
 	// locked block
 	{
 		QMutexLocker locker(&mutex);
 
-		bool areFilesModified = false;
 		for (auto fileName = files.begin(); fileName != files.end(); ++fileName) {
 				auto file = filesMap.find(fileName->toStdString());
 				if (file == filesMap.end()) {
@@ -227,7 +225,7 @@ void ConfigurationTreeManager::loadFiles(boost::shared_ptr<ConfigurationTreeMana
 
 	if (areDirsModified) {
 		TTRACE("dirs modified");
-		loadAllFiles(referenceHolder);
+		loadAllFiles(referenceHolder, areFilesModified);
 	} else {
 		TTRACE("nothing changed");
 	}
@@ -256,7 +254,7 @@ void ConfigurationTreeManager::onHardCheck() {
 	TTRACE("onHardCheck");
 	if (!hardCheckFuture.isStarted() || hardCheckFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
-		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles, referenceHolder);
+		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles, referenceHolder, false);
 	}
 }
 
