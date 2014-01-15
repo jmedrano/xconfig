@@ -98,10 +98,13 @@ void ConfigurationTreeManager::onINotify() {
 			TTRACE("event.name %s", iNotifyBuffer + sizeof(event));
 			// filter out files with leading . (rsync)
 			if (iNotifyBuffer[sizeof(event)] == '.') {
-				// TODO filter out non .yaml files
 				continue;
 			}
 			QString fileName = dirName + '/' + QString(&iNotifyBuffer[sizeof(event)]);
+			// filter out non .yaml files
+			if (!fileName.endsWith(".yaml")) {
+				continue;
+			}
 			TDEBUG("inotify: modified fileName=[%s]", fileName.toLatin1().data());
 			dirtyFiles << fileName;
 			somethingChanged = true;
