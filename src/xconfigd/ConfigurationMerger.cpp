@@ -428,6 +428,8 @@ std::pair<string, int> ConfigurationMerger::dump()
 	assert(offset + stringPoolSize == totalSize);
 	assert(destKeys.size() == destBuckets.size());
 
+	munmap(blob, totalSize);
+
 	return std::pair<string, int>(xcFileName, xcFd);
 }
 
