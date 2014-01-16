@@ -150,6 +150,7 @@ void ConnectionManager::connectionClose()
 	::close(connectionFd);
 	connectionFd = -1;
 	if (treeManager) {
+		treeManager->touch();
 		disconnect(treeManager.get(), 0, this, 0);
 		TDEBUG("disconnected");
 		treeManager.reset();
