@@ -1,3 +1,10 @@
+xconfig (0.6.3-tuenti1) stable; urgency=low
+
+  * Fix mmap leakage
+  * Improve reusing of trees between connections
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Thu, 16 Jan 2014 16:25:32 +0200
+
 xconfig (0.6.2-tuenti1) stable; urgency=low
 
   * Fix mixing override and base formats
@@ -5,7 +12,7 @@ xconfig (0.6.2-tuenti1) stable; urgency=low
   * Log everything to log files
   * Fix memory leak
 
- -- Jaime Medrano <jmedrano@tuenti.com>  Tue, 14 Dec 2014 16:35:54 +0200
+ -- Jaime Medrano <jmedrano@tuenti.com>  Tue, 14 Jan 2014 16:35:54 +0200
 
 xconfig (0.6.1-tuenti1) stable; urgency=low
 
