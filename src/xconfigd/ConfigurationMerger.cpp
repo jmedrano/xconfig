@@ -484,12 +484,12 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 			TTRACE("scalar[%s]", name);
 			break;
 		}
-		case xconfig::TYPE_EXPANDSTRING:
+		case xconfig::TYPE_EXPANDSTRING_EXPANDED:
 			// string is already in destStringPool
 			TTRACE("expandstring[%s]", &destStringPool[destBucket->value._string - 1]);
 			destBucket->type = xconfig::TYPE_STRING;
 			break;
-		case xconfig::TYPE_EXPANDREF: {
+		case xconfig::TYPE_EXPANDREF_EXPANDED: {
 			// dump child
 			TTRACE("expandref");
 			destBuckets.pop_back();
@@ -498,6 +498,7 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 			break;
 		}
 		default:
+			// non-string scalar type. nothing to be done
 			break;
 	}
 
@@ -532,7 +533,9 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 {
 	canonicalIds(&blobId, &nodeId);
 	XConfigBucket* bucket = getBucket(blobId, nodeId);
-	if (bucket->type == xconfig::TYPE_EXPANDREF) {
+	auto bucketType = bucket->type;
+	bucket->type = xconfig::TYPE_EXPANSION_IN_PROGRESS;
+	if (bucketType == xconfig::TYPE_EXPANDREF) {
 		TTRACE("expanding expandref [%s]", getKey(blobId, nodeId));
 		size_t refBlobId = 1;
 		size_t refNodeId = 1;
@@ -557,15 +560,19 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 		}
 		TTRACE("found");
 		// deep copy. keys need to be regenerated
-		bucket->value._vectorial.child = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
+		auto newChildId = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
+		bucket = getBucket(blobId, nodeId);
+		bucket->value._vectorial.child = newChildId;
+		bucket->type = xconfig::TYPE_EXPANDREF_EXPANDED;
 		size_t nextNodeId = bucket->next ? composeNodeId(blobId, bucket->next) : 0;
 		auto childBucket = getBucket(decodeBlobId(bucket->value._vectorial.child), bucket->value._vectorial.child);
 		childBucket->name = insertDynamicString(getString(blobId, bucket->name));
 		childBucket->next = nextNodeId;
-	} else if (bucket->type == xconfig::TYPE_EXPANDSTRING) {
+		TTRACE("end expanding expandref [%s]", getKey(blobId, nodeId));
+		TTRACE("%p->type = %d", bucket, bucket->type);
+	} else if (bucketType == xconfig::TYPE_EXPANDSTRING) {
 		TTRACE("expanding expandstring [%s]", getKey(blobId, nodeId));
 		XConfigBucket* stringBucket = getBucket(blobId, bucket->value._vectorial.child);
-		assert(stringBucket->type == xconfig::TYPE_STRING);
 		if (stringBucket->type != xconfig::TYPE_STRING) {
 			bucket->type = xconfig::TYPE_NULL;
 			TWARN("expandstring: string expected");
@@ -602,22 +609,46 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 				child2ndLevelId = child2ndLevelBucket->next;
 			}
 			XConfigBucket* refBucket = getBucket(refBlobId, refNodeId);
-			if (refBucket->type != xconfig::TYPE_STRING) {
+			for(;;) {
+				if (refBucket->type == xconfig::TYPE_EXPANDREF || refBucket->type == xconfig::TYPE_EXPANDSTRING) {
+					expandRef(refBlobId, refNodeId);
+					continue;
+				} else if (refBucket->type == xconfig::TYPE_EXPANDREF_EXPANDED) {
+					// actual content is in child node
+					refNodeId = refBucket->value._vectorial.child;
+					refBlobId = decodeBlobId(refNodeId);
+					refBucket = getBucket(refBlobId, refNodeId);
+					continue;
+				} else {
+					break;
+				}
+			}
+			if (refBucket->type == xconfig::TYPE_STRING) {
+				TTRACE("found ref #%ld [%s]", n, getString(refBlobId, refBucket->value._string));
+				expanded = expanded.arg(getString(refBlobId, refBucket->value._string));
+			} else if (refBucket->type == xconfig::TYPE_EXPANDSTRING_EXPANDED) {
+				TTRACE("found expanded ref #%ld [%s]", n, &destStringPool[refBucket->value._string - 1]);
+				expanded = expanded.arg(&destStringPool[refBucket->value._string - 1]);
+			} else {
 				bucket->type = xconfig::TYPE_NULL;
 				TWARN("expandstring: string expected on reference");
 				return;
 			}
-			TTRACE("found ref #%ld [%s]", n, getString(refBlobId, refBucket->value._string));
-			expanded = expanded.arg(getString(refBlobId, refBucket->value._string));
 
 			childId = childBucket->next;
 		}
 		// string value is inserted into destStringPool
 		bucket->value._string = destStringPool.size() + 1;
+		bucket->type = xconfig::TYPE_EXPANDSTRING_EXPANDED;
 		auto value = expanded.toLocal8Bit();
 		destStringPool.insert(destStringPool.end(), value.constData(), value.constData() + expanded.length() + 1);
+		TTRACE("end expanding expandstring [%s]", getKey(blobId, nodeId));
+	} else if (bucketType == xconfig::TYPE_EXPANSION_IN_PROGRESS) {
+		bucket->type = xconfig::TYPE_NULL;
+		TWARN("circular reference on [%s]", getKey(blobId, nodeId), bucketType);
 	} else {
-		TWARN("expanding unexpected type [%s]", getKey(blobId, nodeId));
+		TWARN("expanding unexpected type [%s] %d", getKey(blobId, nodeId), bucketType);
+		bucket->type = bucketType;
 	}
 }
 
@@ -641,17 +672,37 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 {
 	auto blobId = decodeBlobId(nodeId);
 	auto bucket = getBucket(blobId, nodeId);
+	bool isMap = false;
+	TTRACE("buckets.size()=%ld keys.size()=%ld [%s]", dynamicBuckets.size(), dynamicKeys.size(), key.c_str());
+	for(;;) {
+		if (bucket->type == xconfig::TYPE_EXPANDREF || bucket->type == xconfig::TYPE_EXPANDSTRING) {
+			expandRef(blobId, nodeId);
+		} else if (bucket->type == xconfig::TYPE_EXPANDREF_EXPANDED) {
+			// actual content is in child node
+			nodeId = bucket->value._vectorial.child;
+			blobId = decodeBlobId(nodeId);
+			bucket = getBucket(blobId, nodeId);
+		} else {
+			break;
+		}
+	}
 	auto destNodeId = insertDynamicBucket(bucket);
 	auto destBlobId = decodeBlobId(destNodeId);
 	auto destBucket = getBucket(destBlobId, destNodeId);
-	bool isMap = false;
-	TTRACE("deepCopy(%ld,%d,%s) destBlobId=%ld destNodeId=%ld", nodeId, inMap, key.c_str(), destBlobId, destNodeId);
+	dynamicKeys.push_back(strdup(key.c_str()));
+	bucket = getBucket(blobId, nodeId);
 	if (inMap) {
 		destBucket->name = insertDynamicString(getString(blobId, bucket->name));
 	}
-	dynamicKeys.push_back(strdup(key.c_str()));
-	TTRACE("buckets.size()=%ld keys.size()=%ld [%s]", dynamicBuckets.size(), dynamicKeys.size(), key.c_str());
+	TTRACE("deepCopy(%ld,%d,%s) destBlobId=%ld destNodeId=%ld", nodeId, inMap, key.c_str(), destBlobId, destNodeId);
 	switch (bucket->type) {
+		case xconfig::TYPE_EXPANSION_IN_PROGRESS:
+			destBucket->type = xconfig::TYPE_NULL;
+			TWARN("circular reference");
+			break;
+		case xconfig::TYPE_EXPANDREF_EXPANDED:
+			TWARN("unexpected TYPE_EXPANDREF_EXPANDED");
+			break;
 		case xconfig::TYPE_MAP:
 			isMap = true;
 			// fall-through
@@ -697,6 +748,7 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 				destBucket->value._vectorial.size = n;
 			}
 			destBucket->value._vectorial.child = firstChildId;
+
 			break;
 		}
 		case xconfig::TYPE_STRING: {
@@ -705,13 +757,16 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 			TTRACE("deep copy string [%s] [%s]", value, getString(destBlobId, destBucket->value._string));
 			break;
 		}
+		case xconfig::TYPE_EXPANDSTRING_EXPANDED:
+			// string is already in destStringPool
+			break;
 		case xconfig::TYPE_DELETE:
 			TWARN("Unexpected delete node");
 			destBucket->type = xconfig::TYPE_NULL;
 			break;
 		case xconfig::TYPE_EXPANDREF:
 		case xconfig::TYPE_EXPANDSTRING:
-			TWARN("Multi level references are not allowed");
+			TWARN("unexpected unexpanded reference [%s]", key.c_str());
 			destBucket->type = xconfig::TYPE_NULL;
 			break;
 		default:
