@@ -1,0 +1,23 @@
+base
+base/base.yaml
+---
+key1:
+  ref1: !expandstring
+    - "prefix.%1.suffix"
+    - [ key2, ref2 ]
+  foo: foo
+key2:
+  ref2: !expandref [ key1, foo ]
+key3:
+  ref3: !expandref [ key1, ref1 ]
+...
+expected
+---
+key1:
+  ref1: !!str prefix.foo.suffix
+  foo: !!str foo
+key2:
+  ref2: !!str foo
+key3:
+  ref3: !!str prefix.foo.suffix
+...

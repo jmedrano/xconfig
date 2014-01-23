@@ -1,0 +1,49 @@
+base
+base/base.yaml
+---
+int1: 10
+int2: -10
+int3: 9223372036854775807
+int4: -9223372036854775808
+float1: 3.141592
+float2: -3.141592
+float3: .2
+float4: -.2
+string1: string
+string2: "10"
+string3: !!str 10
+string4: "10"
+string5: 10,2
+bool1: true
+bool2: false
+bool3: !!bool true
+bool4: !!bool false
+null1: null
+null2: !!null ""
+null3: !!null "null"
+null4: !!null null
+...
+expected
+---
+int1: !!int 10
+int2: !!int -10
+int3: !!int 9223372036854775807
+int4: !!int -9223372036854775808
+float1: !!float 3.1415920000000002
+float2: !!float -3.1415920000000002
+float3: !!float 0.20000000000000001
+float4: !!float -0.20000000000000001
+string1: !!str string
+string2: !!str 10
+string3: !!str 10
+string4: !!str 10
+string5: !!str 10,2
+bool1: !!bool true
+bool2: !!bool false
+bool3: !!bool true
+bool4: !!bool false
+null1: !!null null
+null2: !!null null
+null3: !!null null
+null4: !!null null
+...

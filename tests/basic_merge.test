@@ -1,0 +1,14 @@
+base
+base/base1.yaml
+---
+key1: "value1"
+...
+base/base2.yaml
+---
+key2: "value2"
+...
+expected
+---
+key2: !!str value2
+key1: !!str value1
+...

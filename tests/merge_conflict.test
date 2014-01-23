@@ -1,0 +1,21 @@
+base1;base2
+base1/base1.yaml
+---
+key1:
+  key2:
+    key3: "value"
+...
+base2/base2.yaml
+---
+key1:
+  key2:
+  - "overriden value lost because of a conflict"
+  key4: "merged value"
+...
+expected
+---
+key1:
+  key4: !!str merged value
+  key2:
+    key3: !!str value
+...

@@ -1,0 +1,21 @@
+base:override
+base/base.yaml
+---
+key1:
+  key2:
+    key3: "value"
+...
+override/override.yaml
+---
+key1:
+  key2:
+  - "overriden value"
+  key4: "merged value"
+...
+expected
+---
+key1:
+  key4: !!str merged value
+  key2:
+  - !!str overriden value
+...

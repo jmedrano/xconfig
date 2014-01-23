@@ -1,0 +1,17 @@
+base
+base/base.yaml
+---
+key1:
+  ref1: !expandref [ key2, ref2 ]
+  foo: foo
+key2:
+  ref2: !expandref [ key1, foo ]
+...
+expected
+---
+key1:
+  ref1: !!str foo
+  foo: !!str foo
+key2:
+  ref2: !!str foo
+...

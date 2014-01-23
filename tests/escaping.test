@@ -1,0 +1,15 @@
+base;
+base/base.yaml
+---
+/key/with/slashes: value1
+"#key#with#hashes": value2
+/key#with/both1: value3
+"#key/with#both2": value4
+...
+expected
+---
+/key/with/slashes: !!str value1
+'#key#with#hashes': !!str value2
+/key#with/both1: !!str value3
+'#key/with#both2': !!str value4
+...

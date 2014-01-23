@@ -1,0 +1,42 @@
+base:override
+base/base.yaml
+---
+key1:
+  ref1: !expandref [ key2, ref2 ]
+  foo: foo
+  bar: bar
+key2:
+  ref2: !expandref [ key1, foo ]
+key3:
+  ref3: !expandref [ key4, ref4 ]
+key4:
+  ref4: !expandstring
+    - "prefix.%1.suffix"
+    - [ key5, ref5 ]
+key5:
+  ref5: orig
+...
+override/override.yaml
+---
+? [key2, ref2]
+: !expandref [ key1, bar ]
+? [key3, ref3]
+: !expandref [ key1, bar ]
+? [key5, ref5]
+: !expandref [ key1, bar ]
+...
+expected
+---
+key1:
+  ref1: !!str bar
+  foo: !!str foo
+  bar: !!str bar
+key2:
+  ref2: !!str bar
+key3:
+  ref3: !!str bar
+key4:
+  ref4: !!str prefix.bar.suffix
+key5:
+  ref5: !!str bar
+...
