@@ -226,8 +226,8 @@ void ConfigurationMerger::erase(size_t parentBlobId, size_t parentNodeId, size_t
 			throw std::exception();
 		}
 	}
-	parentBucket->value._vectorial.size--;
 	assert(parentBucket->value._vectorial.size);
+	parentBucket->value._vectorial.size--;
 }
 
 void ConfigurationMerger::insert(size_t parentBlob, size_t parentNodeId, size_t origBlob, size_t origNodeId) {
