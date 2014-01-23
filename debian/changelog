@@ -1,9 +1,8 @@
-xconfig (0.6.3-tuenti1) stable; urgency=low
+xconfig (0.7.0-tuenti1) stable; urgency=low
 
-  * Fix mmap leakage
-  * Improve reusing of trees between connections
+  * Multilevel reference expansion
 
- -- Jaime Medrano <jmedrano@tuenti.com>  Thu, 16 Jan 2014 16:25:32 +0200
+ -- Jaime Medrano <jmedrano@tuenti.com>  Thu, 23 Jan 2014 16:53:20 +0200
 
 xconfig (0.6.2-tuenti1) stable; urgency=low
 
