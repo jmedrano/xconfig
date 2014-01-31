@@ -4,7 +4,7 @@ TARGET = xconfig
 include($$TOP_SRCDIR/xconfig.pri)
 
 PKGCONFIG += cmph
-LIBS += -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lboost_program_options -lboost_thread
+LIBS += -Wl,--add-needed -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lboost_program_options -lboost_thread
 
 DESTDIR = $$TOP_BUILDDIR/target/$$BINDIR
 
