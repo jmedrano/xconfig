@@ -3,7 +3,7 @@ QT -= gui
 QT +=
 
 release {
-	OPTIMIZE_FLAGS = -O3 -march=native -fomit-frame-pointer -mno-sse2 -fstrict-aliasing -DNDEBUG
+	OPTIMIZE_FLAGS = -O3 -march=native -fomit-frame-pointer -mno-sse2 -mno-aes -mno-pclmul -fstrict-aliasing -DNDEBUG
 }
 
 profile {
