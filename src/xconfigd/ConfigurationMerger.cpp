@@ -645,7 +645,7 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 		TTRACE("end expanding expandstring [%s]", getKey(blobId, nodeId));
 	} else if (bucketType == xconfig::TYPE_EXPANSION_IN_PROGRESS) {
 		bucket->type = xconfig::TYPE_NULL;
-		TWARN("circular reference on [%s]", getKey(blobId, nodeId), bucketType);
+		TWARN("circular reference on [%s]", getKey(blobId, nodeId));
 	} else {
 		TWARN("expanding unexpected type [%s] %d", getKey(blobId, nodeId), bucketType);
 		bucket->type = bucketType;

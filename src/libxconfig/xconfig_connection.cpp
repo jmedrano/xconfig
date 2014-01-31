@@ -170,7 +170,8 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create1(EPOLL_CLOEXEC);
 	sharedData->reloadCallback = 0;
-	pipe2(sharedData->closingPipe, O_CLOEXEC);
+	if (pipe2(sharedData->closingPipe, O_CLOEXEC) < 0)
+		abort();
 
 	struct epoll_event event;
 	memset(&event, 0, sizeof(event));
