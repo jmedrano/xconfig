@@ -62,8 +62,14 @@ bool TApplication::init(const QList<int>& hsignals, bool daemonize, const QStrin
 				return false;
 			}
 
-			setgid(user_pw->pw_gid);
-			setuid(user_pw->pw_uid);
+			if (setgid(user_pw->pw_gid) < 0) {
+				perror("setgid");
+				return false;
+			}
+			if (setuid(user_pw->pw_uid) < 0) {
+				perror("setuid");
+				return false;
+			}
 		}
 
 		process = daemon_fork();

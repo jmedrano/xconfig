@@ -91,8 +91,8 @@ void ServerSocket::onNewConnection()
 	int connectedSocket = ::accept(listenSocket, (sockaddr *)&addr, &length);
 	if (-1 == connectedSocket) {
 		char errstr[BUFSIZ];
-		strerror_r(errno, errstr, sizeof(errstr));
-		TERROR("error on accept %s", errstr);
+		char *err = strerror_r(errno, errstr, sizeof(errstr));
+		TERROR("error on accept %s", err);
 	} else {
 		TDEBUG("accepted new connection");
 		pendingConnections.enqueue(connectedSocket);
