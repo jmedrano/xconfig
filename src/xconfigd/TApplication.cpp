@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <locale.h>
 
 TApplication::TApplication(int& argc, char** argv) : QCoreApplication(argc, argv), daemon_signal_notifier(0), daemonized(false)
 {
@@ -89,6 +90,8 @@ bool TApplication::init(const QList<int>& hsignals, bool daemonize, const QStrin
 
 		daemonized = daemonize;
 	}
+
+	setlocale(LC_NUMERIC, "C");
 
 	if (hsignals.size() == 0)
 		daemon_signal_init(SIGINT, SIGTERM, 0);

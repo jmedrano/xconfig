@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <locale.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
@@ -440,6 +441,8 @@ void Dumper::yamlDump(const XConfigNode& node) {
 
 int main(int argc, char** argv)
 {
+	setlocale(LC_NUMERIC, "C");
+
 	// Declare the supported options.
 	boost::program_options::options_description desc("Allowed options");
 	desc.add_options()
