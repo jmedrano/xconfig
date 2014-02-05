@@ -434,7 +434,7 @@ void Dumper::yamlDump(const XConfigNode& node) {
 				emitterError();
 			break;
 		default:
-			fprintf(stderr, "Unknown type\n");
+			fprintf(stderr, "Unknown type %d\n", xc.getType(node));
 			break;
 	}
 }
