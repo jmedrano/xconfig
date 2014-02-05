@@ -1,0 +1,25 @@
+base:override
+base/base.yaml
+---
+key1: "value1"
+key2:
+  key3: "value2"
+...
+override/override.yaml
+---
+? [ key1 ]
+: "overriden value 1"
+? [ key4, key5, key6 ]
+:
+  foo: bar
+...
+expected
+---
+key4:
+  key5:
+    key6:
+      foo: !!str bar
+key1: !!str overriden value 1
+key2:
+  key3: !!str value2
+...

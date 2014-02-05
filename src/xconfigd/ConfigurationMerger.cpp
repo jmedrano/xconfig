@@ -446,6 +446,9 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 	destKeys.push_back(const_cast<char*>(key));
 
 	switch (currentBucket->type) {
+		case xconfig::TYPE_MAP_OVERRIDED:
+			destBucket->type = xconfig::TYPE_MAP;
+			// fall-through
 		case xconfig::TYPE_MAP:
 			isMap = true;
 			// fall-through
