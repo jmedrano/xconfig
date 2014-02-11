@@ -171,7 +171,7 @@ void ConfigurationMerger::replace(size_t parentBlobId, size_t parentNodeId, size
 	origBucket->next = destBucket->next ? composeNodeId(destBlobId, destBucket->next) : 0;
 
 	size_t childId;
-	canonicalIds(&destBlobId, &childId, destBlobId, parentBucket->value._vectorial.child);
+	canonicalIds(&destBlobId, &childId, parentBlobId, parentBucket->value._vectorial.child);
 	if (childId == destNodeId) {
 		TTRACE("replace first of %d child", parentBucket->value._vectorial.size);
 		parentBucket->value._vectorial.child = composeNodeId(origBlob, origNodeId);
