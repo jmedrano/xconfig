@@ -1,3 +1,10 @@
+xconfig (0.7.1-tuenti1) stable; urgency=low
+
+  * Fix float parsing whith non C locale
+  * Ubuntu compatiblity fixes
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Tue, 11 Feb 2014 18:42:23 +0200
+
 xconfig (0.7.0-tuenti1) stable; urgency=low
 
   * Multilevel reference expansion
