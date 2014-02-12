@@ -95,13 +95,14 @@ public final class XConfigJava implements XConfig {
 	 * java.lang.Boolean)
 	 */
 	@Override
-	public Boolean getAsBoolean(final String key, final Boolean defaultValue)
-			throws XConfigWrongTypeCastingException {
+	public Boolean getAsBoolean(final String key, final Boolean defaultValue) {
 		try {
 			return this.getValue(key).getAsBoolean();
-		} catch (XConfigKeyNotFoundException e) {
-			return defaultValue;
+		} catch (XConfigKeyNotFoundException ignored) {
+		} catch (XConfigWrongTypeCastingException ignored) {
 		}
+
+		return defaultValue;
 	}
 
 	/*
@@ -122,13 +123,14 @@ public final class XConfigJava implements XConfig {
 	 * java.lang.Float)
 	 */
 	@Override
-	public Float getAsFloat(final String key, final Float defaultValue)
-			throws XConfigWrongTypeCastingException {
+	public Float getAsFloat(final String key, final Float defaultValue) {
 		try {
 			return this.getValue(key).getAsFloat();
-		} catch (XConfigKeyNotFoundException e) {
-			return defaultValue;
+		} catch (XConfigKeyNotFoundException ignored) {
+		} catch (XConfigWrongTypeCastingException ignored) {
 		}
+
+		return defaultValue;
 	}
 
 	/*
@@ -149,13 +151,14 @@ public final class XConfigJava implements XConfig {
 	 * java.lang.Integer)
 	 */
 	@Override
-	public Integer getAsInteger(final String key, final Integer defaultValue)
-			throws XConfigWrongTypeCastingException {
+	public Integer getAsInteger(final String key, final Integer defaultValue) {
 		try {
 			return this.getValue(key).getAsInteger();
-		} catch (XConfigKeyNotFoundException e) {
-			return defaultValue;
+		} catch (XConfigKeyNotFoundException ignored) {
+		} catch (XConfigWrongTypeCastingException ignored) {
 		}
+
+		return defaultValue;
 	}
 
 	/*
@@ -176,13 +179,14 @@ public final class XConfigJava implements XConfig {
 	 * java.util.List)
 	 */
 	@Override
-	public List<XConfigValue> getAsList(final String key, final List<XConfigValue> defaultValue)
-			throws XConfigWrongTypeCastingException {
+	public List<XConfigValue> getAsList(final String key, final List<XConfigValue> defaultValue) {
 		try {
 			return this.getValue(key).getAsList();
-		} catch (XConfigKeyNotFoundException e) {
-			return defaultValue;
+		} catch (XConfigKeyNotFoundException ignored) {
+		} catch (XConfigWrongTypeCastingException ignored) {
 		}
+
+		return defaultValue;
 	}
 
 	/*
@@ -203,12 +207,14 @@ public final class XConfigJava implements XConfig {
 	 */
 	@Override
 	public Map<String, XConfigValue> getAsMap(final String key,
-			final Map<String, XConfigValue> defaultValue) throws XConfigWrongTypeCastingException {
+			final Map<String, XConfigValue> defaultValue) {
 		try {
 			return this.getValue(key).getAsMap();
-		} catch (XConfigKeyNotFoundException e) {
-			return defaultValue;
+		} catch (XConfigKeyNotFoundException ignored) {
+		} catch (XConfigWrongTypeCastingException ignored) {
 		}
+
+		return defaultValue;
 	}
 
 	/*
@@ -229,13 +235,14 @@ public final class XConfigJava implements XConfig {
 	 * java.lang.String)
 	 */
 	@Override
-	public String getAsString(final String key, final String defaultValue)
-			throws XConfigWrongTypeCastingException {
+	public String getAsString(final String key, final String defaultValue) {
 		try {
 			return this.getValue(key).getAsString();
-		} catch (XConfigKeyNotFoundException e) {
-			return defaultValue;
+		} catch (XConfigKeyNotFoundException ignored) {
+		} catch (XConfigWrongTypeCastingException ignored) {
 		}
+
+		return defaultValue;
 	}
 
 	/*

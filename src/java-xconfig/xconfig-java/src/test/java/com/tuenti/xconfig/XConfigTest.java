@@ -14,6 +14,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -168,5 +171,37 @@ public class XConfigTest {
 		Assert.assertEquals(1.16f, value.getAsFloat(), 0);
 		value = map.get("key4");
 		Assert.assertEquals(true, value.getAsBoolean().booleanValue());
+	}
+
+	@Test
+	public void testGetAsStringReturnsDefaultValueWhenTypeCastingMismatch() {
+		Assert.assertEquals("test", xconfig.getAsString("basic/integerValue", "test"));
+	}
+
+	@Test
+	public void testGetAsIntegerReturnsDefaultValueWhenTypeCastingMismatch() {
+		Assert.assertEquals(1010, (int)xconfig.getAsInteger("basic/stringValue", 1010));
+	}
+
+	@Test
+	public void testGetAsFloatReturnsDefaultValueWhenTypeCastingMismatch() {
+		Assert.assertEquals(1.23f, xconfig.getAsFloat("basic/stringValue", 1.23f), 0);
+	}
+
+	@Test
+	public void testGetAsBooleanReturnsDefaultValueWhenTypeCastingMismatch() {
+		Assert.assertEquals(Boolean.TRUE, xconfig.getAsBoolean("basic/stringValue", Boolean.TRUE));
+	}
+
+	@Test
+	public void testGetAsListReturnsDefaultValueWhenTypeCastingMismatch() {
+		List<XConfigValue> testList = new ArrayList<XConfigValue>();
+		Assert.assertEquals(testList, xconfig.getAsList("basic/stringValue", testList));
+	}
+
+	@Test
+	public void testGetAsMapReturnsDefaultValueWhenTypeCastingMismatch() {
+		Map<String, XConfigValue> testMap = new HashMap<String, XConfigValue>();
+		Assert.assertEquals(testMap, xconfig.getAsMap("basic/stringValue", testMap));
 	}
 }

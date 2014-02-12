@@ -28,13 +28,13 @@ public class XConfigInteger implements XConfigValue {
     }
 
     @Override
-    public String getAsString() {
-        return Integer.toString(this.value);
+    public String getAsString() throws XConfigWrongTypeCastingException {
+	    throw new XConfigWrongTypeCastingException();
     }
 
     @Override
     public Float getAsFloat() {
-        return (float) this.value;
+        return value.floatValue();
     }
 
     @Override

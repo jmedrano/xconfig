@@ -23,8 +23,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a boolean
 	 */
-	public abstract Boolean getAsBoolean(String key, Boolean defaultValue)
-			throws XConfigWrongTypeCastingException;
+	public abstract Boolean getAsBoolean(String key, Boolean defaultValue);
 
 	/**
 	 * Tries to recover a given key as a float value.
@@ -40,8 +39,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a float
 	 */
-	public abstract Float getAsFloat(String key, Float defaultValue)
-			throws XConfigWrongTypeCastingException;
+	public abstract Float getAsFloat(String key, Float defaultValue);
 
 	/**
 	 * Tries to recover a given key as an integer value.
@@ -57,8 +55,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a float
 	 */
-	public abstract Integer getAsInteger(String key, Integer defaultValue)
-			throws XConfigWrongTypeCastingException;
+	public abstract Integer getAsInteger(String key, Integer defaultValue);
 
 	/**
 	 * Tries to recover a given key as a XConfigValue's list.
@@ -74,8 +71,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a float
 	 */
-	public abstract List<XConfigValue> getAsList(String key, List<XConfigValue> defaultValue)
-			throws XConfigWrongTypeCastingException;
+	public abstract List<XConfigValue> getAsList(String key, List<XConfigValue> defaultValue);
 
 	/**
 	 * Tries to recover a given key as a XConfigValue's map indexed by keys.
@@ -91,8 +87,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a float
 	 */
-	public abstract Map<String, XConfigValue> getAsMap(String key,
-			Map<String, XConfigValue> defaultValue) throws XConfigWrongTypeCastingException;
+	public abstract Map<String, XConfigValue> getAsMap(String key, Map<String, XConfigValue> defaultValue);
 
 	/**
 	 * Tries to recover a given key as a string value.
@@ -108,8 +103,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a string
 	 */
-	public abstract String getAsString(String key, String defaultValue)
-			throws XConfigWrongTypeCastingException;
+	public abstract String getAsString(String key, String defaultValue);
 
 	// Native methods from here
 

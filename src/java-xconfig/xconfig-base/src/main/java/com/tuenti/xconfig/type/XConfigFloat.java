@@ -29,8 +29,8 @@ public class XConfigFloat implements XConfigValue {
     }
 
     @Override
-    public String getAsString() {
-        return Float.toString(this.value);
+    public String getAsString() throws XConfigWrongTypeCastingException {
+	    throw new XConfigWrongTypeCastingException();
     }
 
     @Override
@@ -44,8 +44,8 @@ public class XConfigFloat implements XConfigValue {
     }
 
     @Override
-    public Integer getAsInteger() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
+    public Integer getAsInteger() {
+        return value.intValue();
     }
 
     @Override

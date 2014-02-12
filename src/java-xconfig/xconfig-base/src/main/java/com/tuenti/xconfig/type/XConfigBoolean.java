@@ -29,8 +29,8 @@ public class XConfigBoolean implements XConfigValue {
     }
 
     @Override
-    public String getAsString() {
-        return Boolean.toString(this.value);
+    public String getAsString() throws XConfigWrongTypeCastingException {
+	    throw new XConfigWrongTypeCastingException();
     }
 
     @Override

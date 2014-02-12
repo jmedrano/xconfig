@@ -24,48 +24,36 @@ public class XConfigBooleanUnitTest {
     @Before
     public void setUp() throws Exception {
         this.value = true;
-        this.object = new XConfigBoolean(this.value);
+        this.object = new XConfigBoolean(value);
     }
 
     @Test
     public void testGetAsBooleanReturnsExpectedBoolean() throws Exception {
-        Assert.assertEquals(this.value, this.object.getAsBoolean());
+        Assert.assertEquals(value, object.getAsBoolean());
     }
 
-    @Test
-    public void testGetAsStringReturnsExpectedString() throws Exception {
-        Assert.assertEquals(this.object.getAsString(), Boolean.toString(this.value));
+    @Test (expected = XConfigWrongTypeCastingException.class)
+    public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
+        object.getAsString();
     }
 
-    @Test
-    public void testGetAsFloatThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsFloat();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
+	@Test (expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsFloatThrowsWrongTypeCastingException() throws Exception {
+		object.getAsFloat();
     }
 
-    @Test
+	@Test (expected = XConfigWrongTypeCastingException.class)
     public void testGetAsIntegerThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsInteger();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
+        object.getAsInteger();
     }
 
-    @Test
+	@Test (expected = XConfigWrongTypeCastingException.class)
     public void testGetAsMapThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsMap();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
+        object.getAsMap();
     }
 
-    @Test
+	@Test (expected = XConfigWrongTypeCastingException.class)
     public void testGetAsListThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsList();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
+        object.getAsList();
     }
 }

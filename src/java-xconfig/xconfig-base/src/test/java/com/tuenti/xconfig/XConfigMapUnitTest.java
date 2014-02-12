@@ -22,51 +22,39 @@ import java.util.Map;
  */
 public class XConfigMapUnitTest {
 
-    private XConfigMap object;
+	private XConfigMap object;
 
-    @Before
-    public void setUp() throws Exception {
-        this.object = new XConfigMap();
-    }
+	@Before
+	public void setUp() throws Exception {
+		this.object = new XConfigMap();
+	}
 
-    @Test
-    public void testGetAsListReturnsExpectedList() throws Exception {
-        this.object.add("key1", new XConfigInteger(1));
-        Map<String, XConfigValue> map = this.object.getAsMap();
-        Assert.assertTrue(map.containsKey("key1"));
-        XConfigValue value = map.get("key1");
-        Assert.assertEquals(1, value.getAsInteger().intValue());
-    }
+	@Test
+	public void testGetAsListReturnsExpectedList() throws Exception {
+		object.add("key1", new XConfigInteger(1));
+		Map<String, XConfigValue> map = object.getAsMap();
+		Assert.assertTrue(map.containsKey("key1"));
+		XConfigValue value = map.get("key1");
+		Assert.assertEquals(1, value.getAsInteger().intValue());
+	}
 
-    @Test
-    public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsString();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
-    }
+	@Test (expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
+		object.getAsString();
+	}
 
-    @Test
-    public void testGetAsFloatThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsFloat();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
-    }
+	@Test (expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsFloatThrowsWrongTypeCastingException() throws Exception {
+		object.getAsFloat();
+	}
 
-    @Test
-    public void testGetAsBooleanThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsBoolean();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
-    }
+	@Test (expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsBooleanThrowsWrongTypeCastingException() throws Exception {
+		object.getAsBoolean();
+	}
 
-    @Test
-    public void testGetAsIntegerThrowsWrongTypeCastingException() throws Exception {
-        try {
-            this.object.getAsInteger();
-            Assert.fail();
-        } catch (XConfigWrongTypeCastingException e) {}
-    }
+	@Test (expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsIntegerThrowsWrongTypeCastingException() throws Exception {
+		object.getAsInteger();
+	}
 }
