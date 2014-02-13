@@ -5,7 +5,7 @@ public interface XConfigImplProvider {
 
 	/**
 	 * Overloaded creation method with default autoReload parameter to false.
-	 * 
+	 *
 	 * @param path
 	 *            Config entry path
 	 * @return XConfig instance

@@ -9,57 +9,76 @@ package com.tuenti.xconfig.type;
 
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * XConfigString class.
  */
 public class XConfigString implements XConfigValue {
 
-    private String value;
+	private String value;
 
-    public XConfigString(String value) {
-        this.value = value;
-    }
+	public XConfigString(String value) {
+		this.value = value;
+	}
 
-    @Override
-    public String getAsString() {
-        return this.value;
-    }
+	@Override
+	public String getAsString() {
+		return this.value;
+	}
 
-    @Override
-    public Integer getAsInteger() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public Integer getAsInteger() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public Float getAsFloat() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public Float getAsFloat() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public Map<String, XConfigValue> getAsMap() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public XConfigMap getAsMap() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public List<XConfigValue> getAsList() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public XConfigList getAsList() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public XConfigValueType getType() {
-        return XConfigValueType.STRING;
-    }
+	@Override
+	public XConfigValueType getType() {
+		return XConfigValueType.STRING;
+	}
 
 	@Override
 	public String toString() {
 		return "XConfigString [value=" + value + "]";
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		XConfigString that = (XConfigString) o;
+
+		if (!value.equals(that.value)) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		return value.hashCode();
+	}
+
+	@Override
+	public String getAsJavaObject() {
+		return value;
 	}
 }

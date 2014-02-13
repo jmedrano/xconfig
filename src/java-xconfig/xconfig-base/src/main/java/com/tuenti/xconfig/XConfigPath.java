@@ -17,7 +17,7 @@ public class XConfigPath {
 
 	/**
 	 * Create a path object concatenating pieces. Pieces will be escaped.
-	 * 
+	 *
 	 * @param pieces
 	 */
 	public XConfigPath(Object... pieces) {
@@ -26,7 +26,7 @@ public class XConfigPath {
 
 	/**
 	 * Return the path as a string extending it the given pieces (all escaped).
-	 * 
+	 *
 	 * @param pieces
 	 * @return
 	 */
@@ -42,7 +42,7 @@ public class XConfigPath {
 	/**
 	 * Create a key concatenating the given parts. Does not escape components
 	 * use {@link #XCJoin} instead.
-	 * 
+	 *
 	 * @param pieces
 	 * @return Valid key path
 	 */
@@ -59,7 +59,7 @@ public class XConfigPath {
 
 	/**
 	 * Retrieve a valid key given by parts. Parts containing / will be escaped
-	 * 
+	 *
 	 * @param pieces
 	 * @return Valid key path
 	 */
@@ -72,7 +72,7 @@ public class XConfigPath {
 
 	/**
 	 * This method escapes the characters that need to be escaped.
-	 * 
+	 *
 	 * @param string
 	 * @return Escaped string
 	 */

@@ -1,42 +1,45 @@
 /**
- * XConfigIntegerUnitTest.java
+ * XConfigFloatUnitTest.java
  *
  * Copyright (C) 2014 Tuenti Technologies S.L.
  *
  * This file can only be stored on servers belonging to Tuenti Technologies S.L.
  */
-package com.tuenti.xconfig;
+package com.tuenti.xconfig.type;
+
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
-import com.tuenti.xconfig.type.XConfigInteger;
-import org.junit.*;
 
 /**
- * XConfigIntegerUnitTest test class
+ * XConfigFloatUnitTest test class
  */
-public class XConfigIntegerUnitTest {
+public class XConfigFloatUnitTest {
 
-	private XConfigInteger object;
-	private Integer value;
+	private XConfigFloat object;
+	private Float value;
 
 	@Before
 	public void setUp() throws Exception {
-		this.value = 12345678;
-		this.object = new XConfigInteger(this.value);
-	}
-
-	@Test
-	public void testGetAsIntegerReturnsExpectedInteger() throws Exception {
-		Assert.assertEquals(value, object.getAsInteger());
+		this.value = 1.234f;
+		this.object = new XConfigFloat(value);
 	}
 
 	@Test
 	public void testGetAsFloatReturnsExpectedFloat() throws Exception {
-		Assert.assertEquals(new Float(value), object.getAsFloat());
+		assertEquals(value, object.getAsFloat());
+	}
+
+	@Test
+	public void testGetAsIntegerReturnsExpectedValue() throws Exception {
+		assertEquals(value.intValue(), object.getAsInteger().intValue());
 	}
 
 	@Test (expected = XConfigWrongTypeCastingException.class)
-	public void testGetAsStringReturnsExpectedString() throws Exception {
+	public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
 		object.getAsString();
 	}
 
@@ -53,5 +56,10 @@ public class XConfigIntegerUnitTest {
 	@Test (expected = XConfigWrongTypeCastingException.class)
 	public void testGetAsListThrowsWrongTypeCastingException() throws Exception {
 		object.getAsList();
+	}
+
+	@Test
+	public void testGetAsJavaObject() throws Exception {
+		assertEquals(this.object.getAsFloat(), this.object.getAsJavaObject());
 	}
 }

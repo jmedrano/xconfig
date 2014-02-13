@@ -9,57 +9,76 @@ package com.tuenti.xconfig.type;
 
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * XConfigFloat class.
  */
 public class XConfigFloat implements XConfigValue {
 
-    private Float value = null;
+	private Float value = null;
 
-    public XConfigFloat(float value) {
-        this.value = value;
-    }
+	public XConfigFloat(float value) {
+		this.value = value;
+	}
 
-    @Override
-    public Float getAsFloat() {
-        return this.value;
-    }
+	@Override
+	public Float getAsFloat() {
+		return this.value;
+	}
 
-    @Override
-    public String getAsString() throws XConfigWrongTypeCastingException {
-	    throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public String getAsString() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
+	@Override
 	public String toString() {
 		return "XConfigFloat [value=" + value + "]";
 	}
 
 	@Override
-    public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public Integer getAsInteger() {
-        return value.intValue();
-    }
+	@Override
+	public Integer getAsInteger() {
+		return value.intValue();
+	}
 
-    @Override
-    public Map<String, XConfigValue> getAsMap() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public XConfigMap getAsMap() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public List<XConfigValue> getAsList() throws XConfigWrongTypeCastingException {
-        throw new XConfigWrongTypeCastingException();
-    }
+	@Override
+	public XConfigList getAsList() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
 
-    @Override
-    public XConfigValueType getType() {
-        return XConfigValueType.FLOAT;
-    }
+	@Override
+	public XConfigValueType getType() {
+		return XConfigValueType.FLOAT;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		XConfigFloat that = (XConfigFloat) o;
+
+		if (!value.equals(that.value)) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		return value.hashCode();
+	}
+
+	@Override
+	public Float getAsJavaObject() {
+		return value;
+	}
 }

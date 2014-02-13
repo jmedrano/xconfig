@@ -14,6 +14,8 @@ import java.util.Map;
 
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
+import com.tuenti.xconfig.type.XConfigList;
+import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 
 /**
@@ -167,7 +169,7 @@ public final class XConfigJava implements XConfig {
 	 * @see com.tuenti.xconfig.XConfig#getAsList(java.lang.String)
 	 */
 	@Override
-	public List<XConfigValue> getAsList(final String key) throws XConfigKeyNotFoundException,
+	public XConfigList getAsList(final String key) throws XConfigKeyNotFoundException,
 			XConfigWrongTypeCastingException {
 		return this.getValue(key).getAsList();
 	}
@@ -179,7 +181,7 @@ public final class XConfigJava implements XConfig {
 	 * java.util.List)
 	 */
 	@Override
-	public List<XConfigValue> getAsList(final String key, final List<XConfigValue> defaultValue) {
+	public XConfigList getAsList(final String key, final XConfigList defaultValue) {
 		try {
 			return this.getValue(key).getAsList();
 		} catch (XConfigKeyNotFoundException ignored) {
@@ -195,7 +197,7 @@ public final class XConfigJava implements XConfig {
 	 * @see com.tuenti.xconfig.XConfig#getAsMap(java.lang.String)
 	 */
 	@Override
-	public Map<String, XConfigValue> getAsMap(final String key) throws XConfigKeyNotFoundException,
+	public XConfigMap getAsMap(final String key) throws XConfigKeyNotFoundException,
 			XConfigWrongTypeCastingException {
 		return this.getValue(key).getAsMap();
 	}
@@ -206,8 +208,8 @@ public final class XConfigJava implements XConfig {
 	 * @see com.tuenti.xconfig.XConfig#getAsMap(java.lang.String, java.util.Map)
 	 */
 	@Override
-	public Map<String, XConfigValue> getAsMap(final String key,
-			final Map<String, XConfigValue> defaultValue) {
+	public XConfigMap getAsMap(final String key,
+			final XConfigMap defaultValue) {
 		try {
 			return this.getValue(key).getAsMap();
 		} catch (XConfigKeyNotFoundException ignored) {

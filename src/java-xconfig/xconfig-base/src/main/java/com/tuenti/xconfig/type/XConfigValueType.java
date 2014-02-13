@@ -11,11 +11,11 @@ package com.tuenti.xconfig.type;
  * XConfigValueType enum.
  */
 public enum XConfigValueType {
-    BOOLEAN,
-    FLOAT,
-    INTEGER,
-    LIST,
-    MAP,
-    NULL,
-    STRING
+	BOOLEAN,
+	FLOAT,
+	INTEGER,
+	LIST,
+	MAP,
+	NULL,
+	STRING
 }

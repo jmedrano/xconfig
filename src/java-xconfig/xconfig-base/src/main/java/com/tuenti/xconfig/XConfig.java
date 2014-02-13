@@ -1,10 +1,9 @@
 package com.tuenti.xconfig;
 
-import java.util.List;
-import java.util.Map;
-
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
+import com.tuenti.xconfig.type.XConfigList;
+import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 
 public interface XConfig {
@@ -62,7 +61,7 @@ public interface XConfig {
 	 * @param key Config key
 	 * @return Value as a list of XConfigValues
 	 */
-	public abstract List<XConfigValue> getAsList(String key) throws XConfigKeyNotFoundException,
+	public abstract XConfigList getAsList(String key) throws XConfigKeyNotFoundException,
 			XConfigWrongTypeCastingException;
 
 	/**
@@ -71,14 +70,14 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a float
 	 */
-	public abstract List<XConfigValue> getAsList(String key, List<XConfigValue> defaultValue);
+	public abstract XConfigList getAsList(String key, XConfigList defaultValue);
 
 	/**
 	 * Tries to recover a given key as a XConfigValue's map indexed by keys.
 	 * @param key Config key
 	 * @return Value as a map of XConfigValues with its keys
 	 */
-	public abstract Map<String, XConfigValue> getAsMap(String key)
+	public abstract XConfigMap getAsMap(String key)
 			throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException;
 
 	/**
@@ -87,7 +86,7 @@ public interface XConfig {
 	 * @param defaultValue Default value
 	 * @return Value as a float
 	 */
-	public abstract Map<String, XConfigValue> getAsMap(String key, Map<String, XConfigValue> defaultValue);
+	public abstract XConfigMap getAsMap(String key, XConfigMap defaultValue);
 
 	/**
 	 * Tries to recover a given key as a string value.

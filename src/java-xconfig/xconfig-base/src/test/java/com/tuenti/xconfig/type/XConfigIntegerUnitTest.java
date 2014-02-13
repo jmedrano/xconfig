@@ -1,44 +1,45 @@
 /**
- * XConfigFloatUnitTest.java
+ * XConfigIntegerUnitTest.java
  *
  * Copyright (C) 2014 Tuenti Technologies S.L.
  *
  * This file can only be stored on servers belonging to Tuenti Technologies S.L.
  */
-package com.tuenti.xconfig;
+package com.tuenti.xconfig.type;
 
-import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
-import com.tuenti.xconfig.type.XConfigFloat;
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * XConfigFloatUnitTest test class
- */
-public class XConfigFloatUnitTest {
+import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 
-	private XConfigFloat object;
-	private Float value;
+/**
+ * XConfigIntegerUnitTest test class
+ */
+public class XConfigIntegerUnitTest {
+
+	private XConfigInteger object;
+	private Integer value;
 
 	@Before
 	public void setUp() throws Exception {
-		this.value = 1.234f;
-		this.object = new XConfigFloat(value);
+		this.value = 12345678;
+		this.object = new XConfigInteger(this.value);
+	}
+
+	@Test
+	public void testGetAsIntegerReturnsExpectedInteger() throws Exception {
+		assertEquals(value, object.getAsInteger());
 	}
 
 	@Test
 	public void testGetAsFloatReturnsExpectedFloat() throws Exception {
-		Assert.assertEquals(value, object.getAsFloat());
-	}
-
-	@Test
-	public void testGetAsIntegerReturnsExpectedValue() throws Exception {
-		Assert.assertEquals(value.intValue(), object.getAsInteger().intValue());
+		assertEquals(new Float(value), object.getAsFloat());
 	}
 
 	@Test (expected = XConfigWrongTypeCastingException.class)
-	public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
+	public void testGetAsStringReturnsExpectedString() throws Exception {
 		object.getAsString();
 	}
 
@@ -55,5 +56,10 @@ public class XConfigFloatUnitTest {
 	@Test (expected = XConfigWrongTypeCastingException.class)
 	public void testGetAsListThrowsWrongTypeCastingException() throws Exception {
 		object.getAsList();
+	}
+
+	@Test
+	public void testGetAsJavaObject() throws Exception {
+		assertEquals(this.object.getAsInteger(), this.object.getAsJavaObject());
 	}
 }

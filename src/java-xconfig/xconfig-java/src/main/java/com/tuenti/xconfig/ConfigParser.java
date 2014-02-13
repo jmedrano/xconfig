@@ -35,7 +35,7 @@ public class ConfigParser {
 		Object load = yaml.load(new FileInputStream(file));
 		try {
 			XConfigValue xMap = convertToXConfig(load);
-			Map<String, XConfigValue> asMap = xMap.getAsMap();
+			XConfigMap asMap = xMap.getAsMap();
 			Set<Entry<String, XConfigValue>> entrySet = asMap.entrySet();
 			for (Entry<String, XConfigValue> entry : entrySet) {
 				config.add(entry.getKey(), entry.getValue());
@@ -59,7 +59,7 @@ public class ConfigParser {
 	}
 
 	private XConfigValue getElement(XConfigMap conf, String path) throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
-		Map<String, XConfigValue> confAsMap = conf.getAsMap();
+		XConfigMap confAsMap = conf.getAsMap();
 
 		if (path.contains("/")) {
 			String[] split = path.split("/", 2);

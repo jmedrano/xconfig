@@ -4,7 +4,7 @@
 	<groupId>com.tuenti</groupId>
 	<artifactId>xconfig</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>xconfig</name>
 	<url>http://maven.apache.org</url>
 
@@ -19,19 +19,19 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 
-    <distributionManagement>
-        <repository>
-            <id>repo.nexus.tuenti</id>
-            <url>http://nexus.tuenti.local/nexus/content/repositories/releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>repo.nexus.tuenti</id>
-            <url>http://nexus.tuenti.local/nexus/content/repositories/snapshots</url>
-            <uniqueVersion>false</uniqueVersion>
-        </snapshotRepository>
-    </distributionManagement>
+	<distributionManagement>
+		<repository>
+			<id>repo.nexus.tuenti</id>
+			<url>http://nexus.tuenti.local/nexus/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>repo.nexus.tuenti</id>
+			<url>http://nexus.tuenti.local/nexus/content/repositories/snapshots</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+	</distributionManagement>
 
-    <build>
+	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -41,6 +41,32 @@
 					<source>1.6</source>
 					<target>1.6</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.9.1</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

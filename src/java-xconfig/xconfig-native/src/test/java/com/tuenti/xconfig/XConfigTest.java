@@ -10,17 +10,13 @@ package com.tuenti.xconfig;
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigNotConnectedException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
+import com.tuenti.xconfig.type.XConfigList;
+import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * XConfigTest class
@@ -131,7 +127,7 @@ public class XConfigTest {
 	public void testWalkThroughIntegersList() throws XConfigKeyNotFoundException,
 			XConfigWrongTypeCastingException {
 		XConfigValue value = xconfig.getValue("basic/integersList");
-		List<XConfigValue> list = value.getAsList();
+		XConfigList list = value.getAsList();
 		Assert.assertEquals(5, list.size());
 		for (int i = 0; i < 5; i++) {
 			Integer intValue = list.get(i).getAsInteger();
@@ -143,7 +139,7 @@ public class XConfigTest {
 	public void testPureMapBasicBehaviour() throws XConfigKeyNotFoundException,
 			XConfigWrongTypeCastingException {
 		XConfigValue value = xconfig.getValue("basic/pureMap");
-		Map<String, XConfigValue> map = value.getAsMap();
+		XConfigMap map = value.getAsMap();
 		Assert.assertEquals(3, map.keySet().size());
 		for (int i = 1; i <= 3; i++) {
 			String key = String.format("key%d", i);
@@ -156,7 +152,7 @@ public class XConfigTest {
 	public void testMixedMapBasicBehaviour() throws XConfigKeyNotFoundException,
 			XConfigWrongTypeCastingException {
 		XConfigValue value = xconfig.getValue("basic/mixedMap");
-		Map<String, XConfigValue> map = value.getAsMap();
+		XConfigMap map = value.getAsMap();
 		Assert.assertEquals(4, map.keySet().size());
 		value = map.get("key1");
 		Assert.assertEquals("test1", value.getAsString());
@@ -208,13 +204,13 @@ public class XConfigTest {
 
 	@Test
 	public void testGetAsListReturnsDefaultValueWhenTypeCastingMismatch() {
-		List<XConfigValue> testList = new ArrayList<XConfigValue>();
+		XConfigList testList = new XConfigList();
 		Assert.assertEquals(testList, xconfig.getAsList("basic/stringValue", testList));
 	}
 
 	@Test
 	public void testGetAsMapReturnsDefaultValueWhenTypeCastingMismatch() {
-		Map<String, XConfigValue> testMap = new HashMap<String, XConfigValue>();
+		XConfigMap testMap = new XConfigMap();
 		Assert.assertEquals(testMap, xconfig.getAsMap("basic/stringValue", testMap));
 	}
 }
