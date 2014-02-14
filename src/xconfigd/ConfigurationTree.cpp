@@ -45,6 +45,10 @@ ConfigurationTreeManager::ConfigurationTreeManager(QString path, int softTimeout
 	TDEBUG("New tree for %s", qPrintable(path));
 
 	iNotifyFd = inotify_init();
+	int flags = fcntl(iNotifyFd, F_GETFL, 0);
+	if (fcntl(iNotifyFd, F_SETFL, flags | O_NONBLOCK) < 0) {
+		TWARN("error settig inotify fd as non-blocking");
+	}
 	paths = path.split(':');
 	auto base = paths.takeFirst().split(';');
 	paths = base + paths;
@@ -83,38 +87,50 @@ ConfigurationTreeManager::~ConfigurationTreeManager() {
 
 void ConfigurationTreeManager::onINotify() {
 	TTRACE("onINotify");
-	struct inotify_event event;
-	event.len = 0;
-	int nread = read(iNotifyFd, iNotifyBuffer, sizeof(iNotifyBuffer));
 	bool somethingChanged = false;
-	for (size_t pos = 0; nread - pos > sizeof(event); pos += sizeof(event) + event.len) {
-		memcpy(&event, iNotifyBuffer + pos, sizeof(event));
-		QByteArray dirName = iWatchers[event.wd];
-
-		assert(dirName.length());
-
-		TTRACE("read from inotify %d %s", event.mask, dirName.data());
-		if (event.len) {
-			TTRACE("event.name %s", iNotifyBuffer + sizeof(event));
-			// filter out files with leading . (rsync)
-			if (iNotifyBuffer[sizeof(event)] == '.') {
-				continue;
-			}
-			QString fileName = dirName + '/' + QString(&iNotifyBuffer[sizeof(event)]);
-			// filter out non .yaml files
-			if (!fileName.endsWith(".yaml")) {
-				continue;
-			}
-			TDEBUG("inotify: modified fileName=[%s]", fileName.toLatin1().data());
-			dirtyFiles << fileName;
-			somethingChanged = true;
-		} else {
-			// event on dir itself
-			// adding dir to dirtyFiles will force a hard check
-			dirtyFiles << dirName;
+	for (;;) {	
+		struct inotify_event event;
+		event.len = 0;
+		int nread = read(iNotifyFd, iNotifyBuffer, sizeof(iNotifyBuffer));
+		if (nread <= 0) {
+			break;
 		}
+		for (size_t pos = 0; nread - pos > sizeof(event); pos += sizeof(event) + event.len) {
+			memcpy(&event, iNotifyBuffer + pos, sizeof(event));
+			if (event.mask & IN_Q_OVERFLOW) {
+				TWARN("inotify overflow");
+				// make a full reload soon
+				hardTimer->start(softTimeoutMsecs);
+				continue;
+			}
 
+			QByteArray dirName = iWatchers[event.wd];
+			assert(dirName.length());
+
+			TTRACE("read from inotify %d %s", event.mask, dirName.data());
+			if (event.len) {
+				TTRACE("event.name %s", iNotifyBuffer + sizeof(event));
+				// filter out files with leading . (rsync)
+				if (iNotifyBuffer[sizeof(event)] == '.') {
+					continue;
+				}
+				QString fileName = dirName + '/' + QString(&iNotifyBuffer[sizeof(event)]);
+				// filter out non .yaml files
+				if (!fileName.endsWith(".yaml")) {
+					continue;
+				}
+				TDEBUG("inotify: modified fileName=[%s]", fileName.toLatin1().data());
+				dirtyFiles << fileName;
+				somethingChanged = true;
+			} else {
+				// event on dir itself
+				// adding dir to dirtyFiles will force a hard check
+				dirtyFiles << dirName;
+			}
+
+		}
 	}
+
 	if (somethingChanged) {
 		softTimer->start(softTimeoutMsecs);
 	}
@@ -255,19 +271,30 @@ void ConfigurationTreeManager::merge() {
 
 void ConfigurationTreeManager::onHardCheck() {
 	TTRACE("onHardCheck");
-	if (!hardCheckFuture.isStarted() || hardCheckFuture.isFinished()) {
+	if (!checkFuture.isStarted() || checkFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
-		hardCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles, referenceHolder, false);
+		checkFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadAllFiles, referenceHolder, false);
+		if (hardTimer->interval() < hardTimeoutMsecs) {
+			TDEBUG("Resetting interval time hardCheck");
+			hardTimer->start(hardTimeoutMsecs);
+		}
+	} else {
+		TDEBUG("Check already running on onHardCheck");
+		// retry soon
+		hardTimer->start(softTimeoutMsecs);
 	}
 }
 
 void ConfigurationTreeManager::onSoftCheck() {
 	TTRACE("onSoftCheck");
-	if (!softCheckFuture.isStarted() || softCheckFuture.isFinished()) {
+	if (!checkFuture.isStarted() || checkFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
-		softCheckFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles.toList());
+		checkFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles.toList());
 		dirtyFiles.clear();
 		softTimer->stop();
+	} else {
+		TDEBUG("Check already running on onSoftCheck");
+		softTimer->start(softTimeoutMsecs);
 	}
 }
 

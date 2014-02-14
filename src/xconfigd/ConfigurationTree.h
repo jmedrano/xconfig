@@ -74,8 +74,7 @@ private:
 	QTimer* softTimer;
 	QTimer* lingerTimer;
 	boost::shared_ptr<ConfigurationTreeManager> lingerReference;
-	QFuture<void> hardCheckFuture;
-	QFuture<void> softCheckFuture;
+	QFuture<void> checkFuture;
 	QMap<int, QByteArray> iWatchers;
 	QMap<std::string, YamlParser*> filesMap;
 	QSet<QString> dirtyFiles;
