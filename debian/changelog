@@ -1,3 +1,9 @@
+xconfig (0.7.3-tuenti1) stable; urgency=low
+
+  * fix race on connection close
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Thu, 20 Feb 2014 12:26:18 +0200
+
 xconfig (0.7.2-tuenti1) stable; urgency=low
 
   * inotify improvements
