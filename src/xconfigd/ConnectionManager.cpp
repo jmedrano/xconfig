@@ -134,11 +134,14 @@ void ConnectionManager::receiveWatch(const char *buf, size_t len)
 void ConnectionManager::onNewTreeAvailable()
 {
 	TTRACE("onNewTreeAvailable");
-	assert(treeManager);
-	auto tree = treeManager->getConfigurationTree();
-	if (tree) {
-		TTRACE("got path %s", tree->path.toLatin1().data());
-		sendPush(tree->path, tree->fd);
+	if (treeManager) {
+		auto tree = treeManager->getConfigurationTree();
+		if (tree) {
+			TTRACE("got path %s", tree->path.toLatin1().data());
+			sendPush(tree->path, tree->fd);
+		}
+	} else {
+		TDEBUG("Connection already closed when new tree is available");
 	}
 }
 
