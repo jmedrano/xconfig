@@ -155,7 +155,7 @@ PHP_METHOD(XConfig, close)
 	obj->xconfig->close();
 }
 
-static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key) {
+static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key, bool nothrow = false) {
 	XConfigNode node;
 	try {
 		switch (Z_TYPE_P(z_key)) {
@@ -173,7 +173,7 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key) {
 				break;
 			}
 			case IS_STRING:
-				node = xc->getNode(string(Z_STRVAL_P(z_key), Z_STRLEN_P(z_key)));
+				node = xc->getNodeNoThrow(string(Z_STRVAL_P(z_key), Z_STRLEN_P(z_key)));
 				break;
 			case IS_ARRAY: {
 				HashTable *ht = HASH_OF(z_key);
@@ -187,19 +187,32 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key) {
 					keys[i] = string(Z_STRVAL_PP(data), Z_STRLEN_PP(data));
 					zend_hash_move_forward_ex(ht, &pos);
 				}
-				node = xc->getNode(keys);
+				node = xc->getNodeNoThrow(keys);
 				break;
 			}
 			default:
 				zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Wrong type for key");	
 				break;
 		}
-	} catch (const XConfigNotFound& e) {
-		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");	
 	} catch (const XConfigNotConnected& e) {
 		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"XConfig not connected");	
 	}
+	if (!node && !nothrow) {
+		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");	
+	}
 	return node;
+}
+
+PHP_METHOD(XConfig, exists)
+{
+	zval *z_key;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
+		RETURN_NULL();
+	}
+	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key, true);
+	RETURN_BOOL((bool) node);
 }
 
 PHP_METHOD(XConfig, getType)
@@ -391,6 +404,22 @@ PHP_METHOD(XConfig, getNode)
 	}
 }
 
+PHP_METHOD(XConfig, getNodeNoThrow)
+{
+	zval *z_key;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
+		RETURN_NULL();
+	}
+	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key, true);
+	object_init_ex(return_value, xconfignode_ce);
+
+	xconfignode_object *node_obj = (xconfignode_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+	node_obj->xconfig = obj->xconfig;
+	node_obj->xconfignode = node;
+}
+
 PHP_METHOD(XConfig, escapeString)
 {
 	zval *z_key;
@@ -409,6 +438,14 @@ PHP_METHOD(XConfig, escapeString)
 	} else {
 		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");	
 	}
+}
+
+PHP_METHOD(XConfigNode, exists)
+{
+	xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	const XConfigNode& node = obj->xconfignode;
+
+	RETURN_BOOL((bool) node);
 }
 
 PHP_METHOD(XConfigNode, getParent)
@@ -460,6 +497,7 @@ zend_function_entry xconfig_methods[] = {
 #endif
 	PHP_ME(XConfig, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
 	PHP_ME(XConfig, close, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(XConfig, exists, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getType, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getMtime, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getValue, NULL, ZEND_ACC_PUBLIC)
@@ -469,6 +507,7 @@ zend_function_entry xconfig_methods[] = {
 	PHP_ME(XConfig, getCount, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getMapKeys, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getNode, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(XConfig, getNodeNoThrow, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, escapeString, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	{NULL, NULL, NULL}
 };
@@ -478,6 +517,7 @@ function_entry xconfignode_methods[] = {
 #else
 zend_function_entry xconfignode_methods[] = {
 #endif
+	PHP_ME(XConfigNode, exists, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfigNode, getParent, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfigNode, getChildren, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfigNode, getName, NULL, ZEND_ACC_PUBLIC)
