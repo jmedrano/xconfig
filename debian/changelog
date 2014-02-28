@@ -1,3 +1,9 @@
+xconfig (0.8.0-tuenti1) stable; urgency=low
+
+  * php api without exceptions
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Fri, 28 Feb 2014 15:50:12 +0200
+
 xconfig (0.7.3-tuenti1) stable; urgency=low
 
   * fix race on connection close
