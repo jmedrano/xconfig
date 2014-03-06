@@ -1,0 +1,14 @@
+dbConfig:
+  scalarEntry: "somethign"
+  mapEntry:
+    key1: val1
+    key2: val2
+  listEntry: [1,2,3]
+  scalarEntry2: 1
+   
+   
+tree:
+  branch:
+    branch:
+      branch:
+        leaf1: leaf1

@@ -35,16 +35,35 @@ public class ConfigParser {
 		Object load = yaml.load(new FileInputStream(file));
 		try {
 			XConfigValue xMap = convertToXConfig(load);
-			XConfigMap asMap = xMap.getAsMap();
-			Set<Entry<String, XConfigValue>> entrySet = asMap.entrySet();
-			for (Entry<String, XConfigValue> entry : entrySet) {
-				config.add(entry.getKey(), entry.getValue());
-			}
+			XConfigMap otherMap = xMap.getAsMap();
+			merge(config, otherMap);
 			lastModified = Math.max(lastModified, file.lastModified());
 		} catch (XConfigWrongTypeCastingException e) {
 			throw new RuntimeException("File " + file + " has an incorrect fomat");
 		}
 
+	}
+
+	private void merge(XConfigMap thisMap, XConfigMap otherMap) {
+		Set<Entry<String, XConfigValue>> entrySet = otherMap.entrySet();
+		for (Entry<String, XConfigValue> entry : entrySet) {
+			XConfigValue value = entry.getValue();
+
+			String key = entry.getKey();
+			XConfigMap thisValue = null;
+			XConfigMap otherValueMap = null;
+			try {
+				thisValue = thisMap.get(key).getAsMap();
+				otherValueMap = value.getAsMap();
+			} catch (XConfigWrongTypeCastingException e) {
+			} catch (XConfigKeyNotFoundException e) {
+			}
+			if (thisValue != null && otherValueMap != null) {
+				merge(thisValue, otherValueMap);
+			} else {
+				thisMap.add(key, value);
+			}
+		}
 	}
 
 	public XConfigValue getElement(String path) throws XConfigKeyNotFoundException {
@@ -58,7 +77,8 @@ public class ConfigParser {
 		}
 	}
 
-	private XConfigValue getElement(XConfigMap conf, String path) throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	private XConfigValue getElement(XConfigMap conf, String path)
+			throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
 		XConfigMap confAsMap = conf.getAsMap();
 
 		if (path.contains("/")) {
