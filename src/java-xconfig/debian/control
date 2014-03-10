@@ -1,0 +1,13 @@
+Source: java-xconfig
+Section: unknown
+Priority: extra
+Maintainer: Stefan Wehner <stefan@tuenti.com>
+Build-Depends: debhelper (>= 7.0.0), libxconfig-dev
+Standards-Version: 3.9.4
+Homepage: 
+
+Package: java-xconfig
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libxconfig
+Description: XConfig package for java - include native library
+ XConfig package for java - include native library

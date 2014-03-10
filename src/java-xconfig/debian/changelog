@@ -1,0 +1,11 @@
+java-xconfig (1.0.3-1) unstable; urgency=low
+
+  * Add hasKey method 
+
+ -- Stefan Wehner <stefan@tuenti.com>  Tue, 11 Mar 2014 11:50:50 +0100
+
+java-xconfig (1.0.2-1) unstable; urgency=low
+
+  * Initial release 
+
+ -- Stefan Wehner <stefan@tuenti.com>  Mon, 10 Mar 2014 16:37:35 +0100
