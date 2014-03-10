@@ -342,7 +342,7 @@ PHP_METHOD(XConfig, isMap)
 	if (!node)
 		return;
 
-	RETURN_BOOL(obj->xconfig->isScalar(node));
+	RETURN_BOOL(obj->xconfig->isMap(node));
 }
 
 PHP_METHOD(XConfig, isSequence)
@@ -357,7 +357,7 @@ PHP_METHOD(XConfig, isSequence)
 	if (!node)
 		return;
 
-	RETURN_BOOL(obj->xconfig->isScalar(node));
+	RETURN_BOOL(obj->xconfig->isSequence(node));
 }
 
 PHP_METHOD(XConfig, getCount)
