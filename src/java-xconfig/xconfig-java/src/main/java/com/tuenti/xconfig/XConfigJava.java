@@ -291,4 +291,14 @@ public final class XConfigJava implements XConfig {
 		//but simply return the config's last time
 		return config.getLastModified();
 	}
+
+	@Override
+	public boolean hasKey(String key) {
+		try {
+			config.getElement(key);
+		} catch (XConfigKeyNotFoundException e) {
+			return false;
+		}
+		return true;
+	}
 }

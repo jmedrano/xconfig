@@ -264,4 +264,14 @@ public final class XConfigNative implements XConfig {
 	 */
 	@Override
 	public native long getLastModificationTime(String key) throws XConfigKeyNotFoundException;
+
+	@Override
+	public boolean hasKey(String key) {
+		try {
+			getValue(key);
+		} catch (XConfigKeyNotFoundException e) {
+			return false;
+		}
+		return true;
+	}
 }
