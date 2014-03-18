@@ -22,7 +22,7 @@ using xconfig::XConfigValueType;
 
 T_LOGGER_DEFINE(YamlParser, "YamlParser");
 
-YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), fd(-1), file(NULL), mtime{0, 0}
+YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), fd(-1), file(NULL), parser(NULL), mtime{0, 0}
 {
 }
 
