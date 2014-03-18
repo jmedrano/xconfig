@@ -1,3 +1,9 @@
+xconfig (0.8.1-tuenti1) stable; urgency=low
+
+  * fix segfault on heavy file creation/deletion environment
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Tue, 18 Mar 2014 17:42:48 +0200
+
 xconfig (0.8.0-tuenti1) stable; urgency=low
 
   * php api without exceptions
