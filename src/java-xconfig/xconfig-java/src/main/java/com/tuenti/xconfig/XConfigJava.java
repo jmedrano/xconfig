@@ -19,7 +19,7 @@ import com.tuenti.xconfig.type.XConfigValue;
 /**
  * XConfig class implementation for java.
  */
-public final class XConfigJava implements XConfig {
+public class XConfigJava implements XConfig {
 	private ConfigParser config = new ConfigParser();
 	private String[] paths;
 

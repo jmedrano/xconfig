@@ -16,7 +16,7 @@ import com.tuenti.xconfig.type.XConfigValue;
 /**
  * XConfig class implementation for java.
  */
-public final class XConfigNative implements XConfig {
+public class XConfigNative implements XConfig {
 	private long nativeHandle;
 	private boolean connected = false;
 
