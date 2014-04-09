@@ -170,16 +170,20 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create1(EPOLL_CLOEXEC);
 	sharedData->reloadCallback = 0;
-	if (pipe2(sharedData->closingPipe, O_CLOEXEC) < 0)
+	if (pipe2(sharedData->closingPipe, O_CLOEXEC) < 0) {
+		perror("pipe2");
 		abort();
+	}
 
 	struct epoll_event event;
 	memset(&event, 0, sizeof(event));
 	event.data.fd = sharedData->closingPipe[0];
 	event.events = EPOLLIN;
 	int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, sharedData->closingPipe[0], &event);
-	if (ctlResult < 0)
+	if (ctlResult < 0) {
+		perror("epoll_ctl");
 		abort();
+	}
 
 	eventLoopThread = boost::thread(eventLoop, weak_ptr<SharedData>(sharedData));
 }
@@ -261,8 +265,10 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 		event.data.fd = socketFd;
 		event.events = EPOLLIN;
 		int ctlResult = epoll_ctl(sharedData->epollFd, EPOLL_CTL_ADD, socketFd, &event);
-		if (ctlResult < 0)
+		if (ctlResult < 0) {
+			perror("epoll_ctl");
 			abort();
+		}
 	}
 
 	auto lingerProxy = accessor->second->sharedConn.lock();
@@ -315,8 +321,10 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 		key = fdAccessor->second;
 	if (!found || error) {
 		int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
-		if (ctlResult < 0)
+		if (ctlResult < 0) {
+			perror("epoll_ctl");
 			abort();
+		}
 		if (!found)
 			return;
 		fdMap.erase(fdAccessor);
@@ -370,8 +378,10 @@ void UnixConnectionPool::SharedData::checkLingerList() {
 		if (found && accessor->second->sharedConn.expired()) {
 			int fd = accessor->second->unixConn.getSockedFd();
 			int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
-		if (ctlResult < 0)
-			abort();
+			if (ctlResult < 0) {
+				perror("epoll_ctl");
+				abort();
+			}
 			fdMap.erase(fd);
 			hashMap.erase(accessor);
 		}
@@ -448,6 +458,7 @@ boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() co
 			event.events = EPOLLIN;
 			int ctlResult = epoll_ctl(lockedData->epollFd, EPOLL_CTL_ADD, newSocketFd, &event);
 			if (ctlResult < 0)
+				perror("epoll_ctl");
 				abort();
 		}
 	}
