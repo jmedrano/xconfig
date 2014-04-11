@@ -3,6 +3,7 @@ package com.tuenti.xconfig;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,7 +33,8 @@ public class ConfigParser {
 	}
 
 	public void addFile(File file) throws FileNotFoundException {
-		Object load = yaml.load(new FileInputStream(file));
+		FileInputStream fis = new FileInputStream(file);
+		Object load = yaml.load(fis);
 		try {
 			XConfigValue xMap = convertToXConfig(load);
 			XConfigMap otherMap = xMap.getAsMap();
@@ -40,8 +42,12 @@ public class ConfigParser {
 			lastModified = Math.max(lastModified, file.lastModified());
 		} catch (XConfigWrongTypeCastingException e) {
 			throw new RuntimeException("File " + file + " has an incorrect fomat");
+		} finally {
+			try {
+				fis.close();
+			} catch (IOException ignored) {
+			}
 		}
-
 	}
 
 	private void merge(XConfigMap thisMap, XConfigMap otherMap) {
