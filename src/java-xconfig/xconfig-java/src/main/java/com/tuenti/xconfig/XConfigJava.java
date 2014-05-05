@@ -34,7 +34,7 @@ public class XConfigJava implements XConfig {
 	 *            Whether automatic reload is enabled or not
 	 */
 	XConfigJava(final String path, final String socket, final boolean autoReload) {
-		this.paths = path.split(":");
+		this.paths = path.split(File.pathSeparator);
 		config = loadConfig();
 	}
 

@@ -1,8 +1,14 @@
-java-xconfig (1.0.4-SNAPSHOT-1) unstable; urgency=low
+java-xconfig (1.0.5-1) unstable; urgency=low
+
+  * Support pathSeparator instead of hardcoded ";" in xconfig-java 
+
+ -- Stefan Wehner <stefan@tuenti.com>  Mon, 05 May 2014 16:11:19 +0200
+
+java-xconfig (1.0.4-1) unstable; urgency=low
 
   * Remove final classifier on classes
 
- -- Stefan Wehner <stefan@ubuntu-stefan>  Tue, 08 Apr 2014 18:05:59 +0200
+ -- Stefan Wehner <stefan@tuenti.com>  Tue, 08 Apr 2014 18:05:59 +0200
 
 java-xconfig (1.0.3-1) unstable; urgency=low
 
