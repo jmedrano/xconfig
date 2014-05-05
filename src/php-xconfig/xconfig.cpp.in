@@ -155,6 +155,12 @@ PHP_METHOD(XConfig, close)
 	obj->xconfig->close();
 }
 
+PHP_METHOD(XConfig, reload)
+{
+	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	obj->xconfig->reload();
+}
+
 static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key, bool nothrow = false) {
 	XConfigNode node;
 	try {
@@ -507,6 +513,7 @@ zend_function_entry xconfig_methods[] = {
 #endif
 	PHP_ME(XConfig, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
 	PHP_ME(XConfig, close, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(XConfig, reload, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, exists, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getType, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfig, getMtime, NULL, ZEND_ACC_PUBLIC)
