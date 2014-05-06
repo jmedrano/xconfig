@@ -7,6 +7,7 @@
  */
 package com.tuenti.xconfig.type;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.junit.Before;
@@ -26,9 +27,14 @@ public class XConfigNullUnitTest {
 
 	@Test
 	public void testGetAsListReturnsExpectedList() throws Exception {
-		assertNull(this.object.getAsList());
+		assertEquals(0, this.object.getAsList().size());
 	}
 
+	@Test
+	public void testGetAsMapReturnsExpectedMap() throws Exception {
+		assertEquals(0, this.object.getAsMap().size());
+	}
+	
 	@Test
 	public void testGetAsStringReturnsExpectedString() throws Exception {
 		assertNull(this.object.getAsString());
@@ -45,7 +51,7 @@ public class XConfigNullUnitTest {
 	}
 
 	@Test
-	public void testGetAsIntegerReturnsExpectedBoolean() throws Exception {
+	public void testGetAsIntegerReturnsExpectedInteger() throws Exception {
 		assertNull(this.object.getAsInteger());
 	}
 

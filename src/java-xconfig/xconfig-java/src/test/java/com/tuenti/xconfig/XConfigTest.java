@@ -120,8 +120,8 @@ public class XConfigTest {
 		Assert.assertEquals(null, value.getAsString());
 		Assert.assertEquals(null, value.getAsFloat());
 		Assert.assertEquals(null, value.getAsBoolean());
-		Assert.assertEquals(null, value.getAsList());
-		Assert.assertEquals(null, value.getAsMap());
+		Assert.assertEquals(0, value.getAsList().size());
+		Assert.assertEquals(0, value.getAsMap().size());
 	}
 
 	@Test
