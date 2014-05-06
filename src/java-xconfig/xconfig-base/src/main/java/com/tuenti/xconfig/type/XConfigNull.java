@@ -1,6 +1,7 @@
 package com.tuenti.xconfig.type;
 
 
+
 /**
  * Created by aaron on 13/12/13.
  */
@@ -30,12 +31,12 @@ public class XConfigNull implements XConfigValue {
 
 	@Override
 	public XConfigMap getAsMap() {
-		return null;
+		return new XConfigMap();
 	}
 
 	@Override
 	public XConfigList getAsList() {
-		return null;
+		return new XConfigList();
 	}
 
 	@Override
