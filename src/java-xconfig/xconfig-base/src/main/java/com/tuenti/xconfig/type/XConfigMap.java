@@ -153,42 +153,48 @@ public class XConfigMap implements XConfigValue {
     public XConfigMap getAsMap(String key, XConfigMap defaultValue) {
         try {
             return get(key).getAsMap();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {}
-        return defaultValue;
+        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+            return defaultValue;
+        }
     }
 
     public Integer getAsInteger(String key, Integer defaultValue) {
         try {
             return get(key).getAsInteger();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {}
-        return defaultValue;
+        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+            return defaultValue;
+        }
     }
 
     public String getAsString(String key, String defaultValue) {
         try {
             return get(key).getAsString();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {}
-        return defaultValue;
+        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+            return defaultValue;
+        }
     }
 
     public Float getAsFloat(String key, Float defaultValue) {
         try {
             return get(key).getAsFloat();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {}
-        return defaultValue;
+        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+            return defaultValue;
+        }
     }
 
     public Boolean getAsBoolean(String key, Boolean defaultValue) {
         try {
             return get(key).getAsBoolean();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {}
-        return defaultValue;
+        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+            return defaultValue;
+        }
     }
 
     public XConfigList getAsList(String key, XConfigList defaultValue) {
         try {
             return get(key).getAsList();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {}
-        return defaultValue;
+        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+            return defaultValue;
+        }
     }
 }
