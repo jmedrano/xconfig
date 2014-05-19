@@ -1,3 +1,9 @@
+java-xconfig (1.0.6-1) unstable; urgency=low
+
+  * Add new methods for getting elements of a map
+
+ -- Stefan Wehner <stefan@ubuntu-stefan>  Mon, 19 May 2014 13:04:17 +0200
+
 java-xconfig (1.0.5-1) unstable; urgency=low
 
   * Support pathSeparator instead of hardcoded ";" in xconfig-java 
