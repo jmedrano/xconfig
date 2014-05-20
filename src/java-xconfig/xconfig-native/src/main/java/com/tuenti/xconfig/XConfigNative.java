@@ -56,11 +56,9 @@ public class XConfigNative implements XConfig {
 	public Boolean getAsBoolean(final String key, final Boolean defaultValue) {
 		try {
 			return this.getValue(key).getAsBoolean();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
 		}
-
-		return defaultValue;
 	}
 
     /*
@@ -84,11 +82,9 @@ public class XConfigNative implements XConfig {
 	public Float getAsFloat(final String key, final Float defaultValue) {
 		try {
 			return this.getValue(key).getAsFloat();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
 		}
-
-		return defaultValue;
 	}
 
 	/*
@@ -112,11 +108,9 @@ public class XConfigNative implements XConfig {
 	public Integer getAsInteger(final String key, final Integer defaultValue) {
 		try {
 			return this.getValue(key).getAsInteger();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
 		}
-
-		return defaultValue;
 	}
 
 	/*
@@ -140,11 +134,9 @@ public class XConfigNative implements XConfig {
 	public XConfigList getAsList(final String key, final XConfigList defaultValue) {
 		try {
 			return this.getValue(key).getAsList();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
 		}
-
-		return defaultValue;
 	}
 
 	/*
@@ -168,11 +160,9 @@ public class XConfigNative implements XConfig {
 			final XConfigMap defaultValue) {
 		try {
 			return this.getValue(key).getAsMap();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
 		}
-
-		return defaultValue;
 	}
 
 	/*
@@ -196,11 +186,9 @@ public class XConfigNative implements XConfig {
 	public String getAsString(final String key, final String defaultValue) {
 		try {
 			return this.getValue(key).getAsString();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
 		}
-
-		return defaultValue;
 	}
 
 	// Native methods from here
@@ -239,6 +227,7 @@ public class XConfigNative implements XConfig {
 	protected void finalize() throws Throwable {
 		close();
 		free();
+		super.finalize();
 	}
 
 	/*
