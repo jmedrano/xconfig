@@ -183,6 +183,9 @@ XConfigNode XConfig::getNodeNoThrow(const std::string& key) const
 
 XConfigNode XConfig::getNodeNoThrow(const std::vector<std::string>& key) const
 {
+	if(!hash)
+		return NULL_NODE;
+
 	return getNodeNoThrow(escapeKey(key));
 }
 
