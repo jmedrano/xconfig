@@ -37,9 +37,17 @@ void MappedFile::reset(int fd) {
 		munmap(blob, size);
 	if (fd >= 0) {
 		struct stat st;
-		fstat(fd, &st);
+		if (fstat(fd, &st) < 0) {
+			perror("fstat");
+			return;
+		}
+		void * mmaped = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+		if (mmaped == MAP_FAILED) {
+			perror("mmap");
+			return;
+		}
 		size = st.st_size;
-		blob = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+		blob = mmaped;
 	} else {
 		size = 0;
 		blob = 0;
