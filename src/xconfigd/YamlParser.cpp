@@ -245,7 +245,12 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 				currentBucket = insertBucket(nextPrefix);
 				currentBucket->name = name;
 				currentBucket->parent = parent;
-				currentBucket->type = XConfigValueType::TYPE_MAP;
+				if (event.data.mapping_start.tag && strcmp((char*)event.data.mapping_start.tag, "!mapoverride") == 0) {
+					TTRACE("mapoverride");
+					currentBucket->type = XConfigValueType::TYPE_MAP_OVERRIDED;
+				} else {
+					currentBucket->type = XConfigValueType::TYPE_MAP;
+				}
 				currentBucket->value._vectorial.child = bucketIdx + 1;
 				auto size = yamlParseNode(nextPrefix, false, true);
 				currentBucket = &buckets[currentBucketIdx];
