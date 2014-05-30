@@ -1,0 +1,25 @@
+base:override
+base/base.yaml
+---
+key1: "value1"
+key2:
+  key3: "value2"
+key3:
+  key4: "value3"
+...
+override/override.yaml
+---
+key2: !mapoverride
+  foo: "bar"
+key3:
+  foo: "bar"
+...
+expected
+---
+key1: !!str value1
+key2:
+  foo: !!str bar
+key3:
+  foo: !!str bar
+  key4: !!str value3
+...
