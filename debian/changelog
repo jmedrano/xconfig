@@ -1,3 +1,11 @@
+xconfig (0.8.2-tuenti1) stable; urgency=low
+
+  * add XConfig::reload() method to PHP extension
+  * Don't crash on getNodeNoThrow if not connected
+  * mapoverride tag support
+
+ -- Jaime Medrano <jmedrano@tuenti.com>  Fri, 30 May 2014 13:28:32 +0200
+
 xconfig (0.8.1-tuenti1) stable; urgency=low
 
   * fix segfault on heavy file creation/deletion environment
