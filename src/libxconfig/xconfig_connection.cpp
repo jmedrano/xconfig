@@ -465,9 +465,10 @@ boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() co
 			event.data.fd = newSocketFd;
 			event.events = EPOLLIN;
 			int ctlResult = epoll_ctl(lockedData->epollFd, EPOLL_CTL_ADD, newSocketFd, &event);
-			if (ctlResult < 0)
+			if (ctlResult < 0) {
 				perror("epoll_ctl");
 				abort();
+			}
 		}
 	}
 	return conn.getMap();
