@@ -434,8 +434,11 @@ void UnixConnectionPool::LingerProxy::close() {
 	boost::shared_ptr<SharedData> lockedData(sharedData.lock());
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
-	if (!found)
-		abort();
+	if (!found) {
+		// why?
+		fprintf(stderr, "LingerProxy::close(): Can't find key in hashmap");
+		return;
+	}
 	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.close();
 }
@@ -445,8 +448,11 @@ boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() co
 		return boost::shared_ptr<const MappedFile>();
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
-	if (!found)
-		abort();
+	if (!found) {
+		// why?
+		fprintf(stderr, "LingerProxy::getMap(): Can't find key in hashmap");
+		return boost::shared_ptr<const MappedFile>();
+	}
 	UnixConnection& conn = accessor->second->unixConn;
 	if (conn.getSockedFd() < 0) {
 		try {
@@ -457,8 +463,10 @@ boost::shared_ptr<const MappedFile> UnixConnectionPool::LingerProxy::getMap() co
 		int newSocketFd = conn.getSockedFd();
 		if (newSocketFd >= 0) {
 			bool insertedInFdMap = lockedData->fdMap.insert(std::pair<const int, KeyType>(newSocketFd, key));
-			if (!insertedInFdMap)
-				abort();
+			if (!insertedInFdMap) {
+				// why?
+				fprintf(stderr, "LingerProxy::getMap(): Not connected and can't insert");
+			}
 			// add socket to epoll
 			struct epoll_event event;
 			memset(&event, 0, sizeof(event));
