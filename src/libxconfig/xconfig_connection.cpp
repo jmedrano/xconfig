@@ -264,8 +264,10 @@ shared_ptr<UnixConnectionPool::LingerProxy> UnixConnectionPool::getSharedConnect
 		int socketFd = conn.getSockedFd();
 		// NOTE: hashMap and fdMap are both locked
 		bool insertedInFdMap = sharedData->fdMap.insert(std::pair<const int, KeyType>(socketFd, key));
-		if (!insertedInFdMap)
+		if (!insertedInFdMap) {
+			fprintf(stderr, "getSharedConnection(): can't insert in fdMap");
 			abort();
+		}
 
 		// add socket to epoll
 		struct epoll_event event;
@@ -331,7 +333,7 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 		int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
 		if (ctlResult < 0) {
 			perror("epoll_ctl");
-			abort();
+			return;
 		}
 		if (!found)
 			return;
@@ -342,8 +344,10 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 
 	SharedData::HashMap::accessor accessor;
 	found = hashMap.find(accessor, key);
-	if (!found)
-		abort();
+	if (!found) {
+		fprintf(stderr, "onReadEvent(): can't find in hashMap");
+		return;
+	}
 	UnixConnection& conn = accessor->second->unixConn;
 	accessor.release();
 
@@ -380,7 +384,8 @@ void UnixConnectionPool::SharedData::checkLingerList() {
 		bool found = hashMap.find(accessor, *it);
 		if (!found) {
 			// already deleted
-			abort();
+			fprintf(stderr, "checkLingerList(): Already deleted");
+			continue;
 		}
 		// we need to check if the entry has a new usage
 		if (found && accessor->second->sharedConn.expired()) {
@@ -388,7 +393,6 @@ void UnixConnectionPool::SharedData::checkLingerList() {
 			int ctlResult = epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, 0);
 			if (ctlResult < 0) {
 				perror("epoll_ctl");
-				abort();
 			}
 			fdMap.erase(fd);
 			hashMap.erase(accessor);
@@ -425,8 +429,10 @@ bool UnixConnectionPool::LingerProxy::connect() {
 		return false;
 	SharedData::HashMap::accessor accessor;
 	bool found = lockedData->hashMap.find(accessor, key);
-	if (!found)
-		abort();
+	if (!found) {
+		fprintf(stderr, "LingerProxy::connect(): can't find in hashMap");
+		return false;
+	}
 	XConfigConnection& conn = accessor->second->unixConn;
 	return conn.connect();
 }
