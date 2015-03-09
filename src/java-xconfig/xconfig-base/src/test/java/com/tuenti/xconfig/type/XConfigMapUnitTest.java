@@ -126,62 +126,109 @@ public class XConfigMapUnitTest {
 		assertEquals(expectedMap, this.object.getAsJavaObject());
 	}
 
-    @Test
-    public void testGetAsStringWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
-        object.add("key2", new XConfigString("string"));
-        assertEquals("string", object.getAsString("key2", null));
-    }
-    @Test
-    public void testGetAsIntegerWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
-        assertEquals((Integer) 1, object.getAsInteger("key1", null));
-    }
-    @Test
-    public void testGetAsFloatWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
-        object.add("key2", new XConfigFloat(1));
-        assertEquals((Float) 1f, object.getAsFloat("key2", null));
-    }
-    @Test
-    public void testGetAsBooleanWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
-        object.add("key2", new XConfigBoolean(true));
-        assertEquals((Boolean) true, object.getAsBoolean("key2", null));
-    }
-    @Test
-    public void testGetAsMApWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
-        XConfigMap map = new XConfigMap();
-        object.add("key2", map);
-        assertEquals(map, object.getAsMap("key2", null));
-    }
-    @Test
-    public void testGetAsListWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
-        XConfigList list = new XConfigList();
-        object.add("key2", list);
-        assertEquals(list, object.getAsList("key2", null));
-    }
+	@Test
+	public void testGetAsStringWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
+		object.add("key2", new XConfigString("string"));
+		assertEquals("string", object.getAsString("key2", null));
+	}
+	@Test
+	public void testGetAsIntegerWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
+		assertEquals((Integer) 1, object.getAsInteger("key1", null));
+	}
+	@Test
+	public void testGetAsFloatWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
+		object.add("key2", new XConfigFloat(1));
+		assertEquals((Float) 1f, object.getAsFloat("key2", null));
+	}
+	@Test
+	public void testGetAsBooleanWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
+		object.add("key2", new XConfigBoolean(true));
+		assertEquals((Boolean) true, object.getAsBoolean("key2", null));
+	}
+	@Test
+	public void testGetAsMApWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
+		XConfigMap map = new XConfigMap();
+		object.add("key2", map);
+		assertEquals(map, object.getAsMap("key2", null));
+	}
+	@Test
+	public void testGetAsListWithKeyAndDefaultValueReturnsInternalValue() throws Exception {
+		XConfigList list = new XConfigList();
+		object.add("key2", list);
+		assertEquals(list, object.getAsList("key2", null));
+	}
 
-    @Test
-    public void testGetAsStringWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
-        assertEquals("default", object.getAsString("key2", "default"));
-    }
-    @Test
-    public void testGetAsIntegerWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
-        assertEquals((Integer) 2, object.getAsInteger("key2", (Integer)2));
-    }
-    @Test
-    public void testGetAsFloatWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
-        assertEquals((Float) 2f, object.getAsFloat("key2", (Float)2f));
-    }
-    @Test
-    public void testGetAsBooleanWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
-        assertEquals((Boolean) false, object.getAsBoolean("key2", false));
-    }
-    @Test
-    public void testGetAsMapWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
-        XConfigMap map = new XConfigMap();
-        assertEquals(map, object.getAsMap("key2", map));
-    }
-    @Test
-    public void testGetAsListWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
-        XConfigList list = new XConfigList();
-        assertEquals(list, object.getAsList("key2", list));
-    }
+	@Test
+	public void testGetAsStringWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
+		assertEquals("default", object.getAsString("key2", "default"));
+	}
+	@Test
+	public void testGetAsIntegerWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
+		assertEquals((Integer) 2, object.getAsInteger("key2", (Integer)2));
+	}
+	@Test
+	public void testGetAsFloatWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
+		assertEquals((Float) 2f, object.getAsFloat("key2", (Float)2f));
+	}
+	@Test
+	public void testGetAsBooleanWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
+		assertEquals((Boolean) false, object.getAsBoolean("key2", false));
+	}
+	@Test
+	public void testGetAsMapWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
+		XConfigMap map = new XConfigMap();
+		assertEquals(map, object.getAsMap("key2", map));
+	}
+	@Test
+	public void testGetAsListWithMissingKeyAndDefaultValueReturnsDefaultValue() throws Exception {
+		XConfigList list = new XConfigList();
+		assertEquals(list, object.getAsList("key2", list));
+	}
+	
+	@Test
+	public void testOverrideWithNewKey() throws Exception {
+		XConfigMap mapOverride = new XConfigMap();
+		XConfigString key2Value = new XConfigString("asd");
+		mapOverride.add("key2", key2Value);
+		
+		object.overrideWith(mapOverride);
+		
+		assertEquals(integerValue, object.get("key1"));
+		assertEquals(key2Value, object.get("key2"));
+	}
+	
+	@Test
+	public void testOverrideWithExistentKey() throws Exception {
+		XConfigMap mapOverride = new XConfigMap();
+		XConfigInteger keyNewValue = new XConfigInteger(27);
+		mapOverride.add("key1", keyNewValue);
+		
+		object.overrideWith(mapOverride);
+		
+		assertEquals(keyNewValue, object.get("key1"));
+	}
+	
+	@Test
+	public void testNestedOverride() throws Exception {
+		XConfigMap currentChildMap = new XConfigMap();
+		XConfigString key1CurrentValue = new XConfigString("eo");
+		XConfigString key2CurrentValue = new XConfigString("asd");
+		currentChildMap.add("key1", key1CurrentValue);
+		currentChildMap.add("key2", key2CurrentValue);
+		object.add("parent", currentChildMap);
+		
+		XConfigMap newChildMap = new XConfigMap();
+		XConfigString key2NewValue = new XConfigString("fyisudy");
+		newChildMap.add("key2", key2NewValue);
+		XConfigMap mapOverride = new XConfigMap();
+		mapOverride.add("parent", newChildMap);
+		
+		object.overrideWith(mapOverride);
+		
+		assertEquals(object.get("key1"), integerValue);
+		XConfigMap resultMap = object.getAsMap("parent", null);
+		assertNotNull(resultMap);
+		assertEquals(key1CurrentValue, resultMap.get("key1"));
+		assertEquals(key2NewValue, resultMap.get("key2"));
+	}
 }

@@ -25,8 +25,8 @@ import com.tuenti.xconfig.type.XConfigValue;
 public class ConfigParser {
 	private long lastModified = 0;
 
-	Yaml yaml = new Yaml();
-	XConfigMap config = new XConfigMap();
+	private Yaml yaml = new Yaml();
+	private XConfigMap config = new XConfigMap();
 
 	public long getLastModified() {
 		return lastModified;
@@ -38,7 +38,7 @@ public class ConfigParser {
 		try {
 			XConfigValue xMap = convertToXConfig(load);
 			XConfigMap otherMap = xMap.getAsMap();
-			merge(config, otherMap);
+			config.overrideWith(otherMap);
 			lastModified = Math.max(lastModified, file.lastModified());
 		} catch (XConfigWrongTypeCastingException e) {
 			throw new RuntimeException("File " + file + " has an incorrect fomat");
@@ -46,28 +46,6 @@ public class ConfigParser {
 			try {
 				fis.close();
 			} catch (IOException ignored) {
-			}
-		}
-	}
-
-	private void merge(XConfigMap thisMap, XConfigMap otherMap) {
-		Set<Entry<String, XConfigValue>> entrySet = otherMap.entrySet();
-		for (Entry<String, XConfigValue> entry : entrySet) {
-			XConfigValue value = entry.getValue();
-
-			String key = entry.getKey();
-			XConfigMap thisValue = null;
-			XConfigMap otherValueMap = null;
-			try {
-				thisValue = thisMap.get(key).getAsMap();
-				otherValueMap = value.getAsMap();
-			} catch (XConfigWrongTypeCastingException e) {
-			} catch (XConfigKeyNotFoundException e) {
-			}
-			if (thisValue != null && otherValueMap != null) {
-				merge(thisValue, otherValueMap);
-			} else {
-				thisMap.add(key, value);
 			}
 		}
 	}

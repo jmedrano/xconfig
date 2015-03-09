@@ -147,54 +147,78 @@ public class XConfigMap implements XConfigValue {
 		return javaValues;
 	}
 
-    /*
-     * Additional methods to improve usability
-     */
-    public XConfigMap getAsMap(String key, XConfigMap defaultValue) {
-        try {
-            return get(key).getAsMap();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
-            return defaultValue;
-        }
-    }
+	/*
+	 * Additional methods to improve usability
+	 */
+	public XConfigMap getAsMap(String key, XConfigMap defaultValue) {
+		try {
+			return get(key).getAsMap();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
 
-    public Integer getAsInteger(String key, Integer defaultValue) {
-        try {
-            return get(key).getAsInteger();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
-            return defaultValue;
-        }
-    }
+	public Integer getAsInteger(String key, Integer defaultValue) {
+		try {
+			return get(key).getAsInteger();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
 
-    public String getAsString(String key, String defaultValue) {
-        try {
-            return get(key).getAsString();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
-            return defaultValue;
-        }
-    }
+	public String getAsString(String key, String defaultValue) {
+		try {
+			return get(key).getAsString();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
 
-    public Float getAsFloat(String key, Float defaultValue) {
-        try {
-            return get(key).getAsFloat();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
-            return defaultValue;
-        }
-    }
+	public Float getAsFloat(String key, Float defaultValue) {
+		try {
+			return get(key).getAsFloat();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
 
-    public Boolean getAsBoolean(String key, Boolean defaultValue) {
-        try {
-            return get(key).getAsBoolean();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
-            return defaultValue;
-        }
-    }
+	public Boolean getAsBoolean(String key, Boolean defaultValue) {
+		try {
+			return get(key).getAsBoolean();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
 
-    public XConfigList getAsList(String key, XConfigList defaultValue) {
-        try {
-            return get(key).getAsList();
-        } catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
-            return defaultValue;
-        }
-    }
+	public XConfigList getAsList(String key, XConfigList defaultValue) {
+		try {
+			return get(key).getAsList();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
+	
+	/**
+	 * Merges the entries in otherMap into this map, prioritizing the entries in otherMap in case of conflict.
+	 */
+	public void overrideWith(XConfigMap otherMap) {
+		Set<Entry<String, XConfigValue>> entrySet = otherMap.entrySet();
+		for (Entry<String, XConfigValue> entry : entrySet) {
+			XConfigValue value = entry.getValue();
+
+			String key = entry.getKey();
+			XConfigMap thisValue = null;
+			XConfigMap otherValueMap = null;
+			try {
+				thisValue = this.get(key).getAsMap();
+				otherValueMap = value.getAsMap();
+			} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException e) {
+			}
+			if (thisValue != null && otherValueMap != null) {
+				thisValue.overrideWith(otherValueMap);
+			} else {
+				this.add(key, value);
+			}
+		}
+	}
 }
