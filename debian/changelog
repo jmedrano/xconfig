@@ -1,3 +1,9 @@
+xconfig (0.8.5-tuenti1) stable; urgency=low
+
+  * Add retries to the MPHF generation 
+
+ -- Stefan Wehner <stefan@tuenti.com>  Wed, 11 Mar 2015 19:02:08 +0100
+
 xconfig (0.8.4-tuenti1) stable; urgency=low
 
   * More info on errors

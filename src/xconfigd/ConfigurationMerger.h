@@ -26,6 +26,7 @@ private:
 	std::vector<xconfig::XConfigBucket> dynamicBuckets;
 	std::vector<char> dynamicStringPool;
 	std::vector<char*> dynamicKeys;
+	static const int kPerfectHashMaxTries = 5;
 
 	void mergeNode(size_t blobId, size_t nodeId, size_t destBlobId, size_t parentInDestination);
 	void replace(size_t parentBlobId, size_t parentNodeId, size_t destBlobId, size_t destNodeId, size_t origBlob, size_t origNodeId);

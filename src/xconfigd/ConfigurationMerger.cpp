@@ -349,10 +349,12 @@ std::pair<string, int> ConfigurationMerger::dump()
 	TTRACE("config=%p", config);
 	cmph_t *hash_serialization = cmph_new(config);
 	if (!hash_serialization) {
-		TDEBUG("cannot generate hash");
+		TDEBUG("could not generate hash on first try - checking for duplicate keys...");
 		std::set<string> keysSet;
-		// change duplicated keys by random keys to avoid duplication
-		// insert random istring in a vector so they live until the
+		// If the MPHF can't be generated it's most likely due
+		// to duplicate keys.
+		// Change duplicated keys by enumerated keys to avoid duplication
+		// insert string in a vector so they live until the
 		// hash generation is done
 		std::vector<string> randomKeys;
 		for (size_t i=0; i<destKeys.size(); i++) {
@@ -363,13 +365,23 @@ std::pair<string, int> ConfigurationMerger::dump()
 			}
 			keysSet.insert(destKeys[i]);
 		}
+
 		// retry
-		cmph_config_destroy(config);
-		config = cmph_config_new(source);
-		cmph_config_set_algo(config, CMPH_CHM);
-		hash_serialization = cmph_new(config);
+		int tries = 0;
+		// Even without duplicate keys due to the random
+		// nature of the MPHF generation algorithm it might
+		// fail, so a few retries are done in case it's unable
+		// to generate a function
+		while (!hash_serialization && tries < kPerfectHashMaxTries) {
+			++tries;
+			TDEBUG("retrying MPHF generation (iteration: %d)...", tries);
+			cmph_config_destroy(config);
+			config = cmph_config_new(source);
+			cmph_config_set_algo(config, CMPH_CHM);
+			hash_serialization = cmph_new(config);
+		}
 		if (!hash_serialization) {
-			TERROR("cannot generate hash");
+			TERROR("could not generate a MPHF for the given keyset after %d tries", tries);
 			abort();
 		}
 	}
@@ -386,11 +398,6 @@ std::pair<string, int> ConfigurationMerger::dump()
 	size_t offset = 0;
 
 	TTRACE("hashSize=%ld numBuckets=%ld bucketSize=%ld stringPoolSize=%ld", hashSize, numBuckets, sizeof(XConfigBucket) * numBuckets, stringPoolSize);
-	//TTRACE("destStringPool [");
-	//for (size_t i = 0; i < stringPoolSize; i++) {
-	//	TTRACE("%c", destStringPool[i] > 0 ? destStringPool[i] : '\n');
-	//}
-	//TTRACE("]\n");
 
 	char xcFileName[] = "/tmp/xconfig-XXXXXX";
 	int xcFd = mkstemp(xcFileName);
@@ -736,7 +743,7 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 				} else {
 					firstChildId = newChildId;
 				}
-					
+
 				prevChildId = newChildId;
 				childId = childBucket->next;
 			}
