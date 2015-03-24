@@ -1,3 +1,9 @@
+xconfig (0.8.6-tuenti1) stable; urgency=low
+
+  * Add new setReloadCallbackInfo method
+
+ -- Ignacio Martínez <imartinez@tuenti.com>  Tue, 24 Mar 2015 18:35:52 +0100
+
 xconfig (0.8.5-tuenti1) stable; urgency=low
 
   * Add retries to the MPHF generation 

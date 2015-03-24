@@ -1,6 +1,6 @@
 TEMPLATE = lib
 TARGET = xconfig
-VERSION = 1.0.0
+VERSION = 1.0.1
 
 include($$TOP_SRCDIR/xconfig.pri)
 

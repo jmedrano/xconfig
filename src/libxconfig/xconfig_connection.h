@@ -86,9 +86,21 @@ public:
 
 	static const int DEFAULT_TIMEOUT = 30;
 
+	// Callback reasons
+	static const int CALLBACK_RELOAD = 1;
+	static const int CALLBACK_CLOSE = 2;
+
 	explicit UnixConnectionPool(int timeout = DEFAULT_TIMEOUT, bool localThreadCache = false);
 	~UnixConnectionPool();
+
+	// Deprecated: Use setCallbackInfo
 	void setReloadCallback(void (*reloadCallback)(void*), void* reloadCallbackData);
+
+	// Set a callback that receives information about why it's being called
+	// int: Indicates the reason of the call
+	// void*: We'll provide extra information depending on the reason
+	// void*: User-supplied pointer
+	void setCallbackInfo(void (*callbackInfo)(int, void*, void*), void* callbackData);
 	boost::shared_ptr<LinkedConnection> getConnection(const std::string& path, std::string socket = "");
 	void flushLocal();
 
@@ -115,7 +127,8 @@ private:
 		int epollFd;
 		int closingPipe[2];
 		void (*reloadCallback)(void*);
-		void* reloadCallbackData;
+		void (*callbackInfo)(int, void*, void*);
+		void* callbackData;
 
 		void checkLingerList();
 		void onReadEvent(int fd, bool error);

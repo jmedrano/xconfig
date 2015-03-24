@@ -178,6 +178,7 @@ UnixConnectionPool::UnixConnectionPool(int timeout, bool localThreadCache)
 	sharedData->timeout = timeout;
 	sharedData->epollFd = epoll_create1(EPOLL_CLOEXEC);
 	sharedData->reloadCallback = 0;
+	sharedData->callbackInfo = 0;
 	if (pipe2(sharedData->closingPipe, O_CLOEXEC) < 0) {
 		perror("pipe2");
 		abort();
@@ -212,10 +213,17 @@ UnixConnectionPool::~UnixConnectionPool() {
 
 void UnixConnectionPool::setReloadCallback(void (*reloadCallback)(void*), void* reloadCallbackData) {
 	sharedData->reloadCallback = reloadCallback;
-	sharedData->reloadCallbackData = reloadCallbackData;
+	sharedData->callbackData = reloadCallbackData;
+	sharedData->callbackInfo = NULL;
 }
 
-boost::shared_ptr<LinkedConnection> UnixConnectionPool::getConnection(const std::string& path, std::string socket) {
+void UnixConnectionPool::setCallbackInfo(void (*callbackInfo)(int, void*, void*), void *callbackData) {
+	sharedData->callbackInfo = callbackInfo;
+	sharedData->callbackData = callbackData;
+	sharedData->reloadCallback = NULL;
+}
+
+	boost::shared_ptr<LinkedConnection> UnixConnectionPool::getConnection(const std::string& path, std::string socket) {
 	boost::shared_ptr<LinkedConnection> ret;
 	if (socket.empty())
 		socket = UnixConnection::DEFAULT_SOCKET;
@@ -353,12 +361,24 @@ void UnixConnectionPool::SharedData::onReadEvent(int fd, bool error) {
 
 	// done without locks. no risk since deletes and calls to this method
 	// are only done from the event loop thread
-	if (error)
+	if (error) {
 		conn.close();
+		if (callbackInfo)
+			callbackInfo(CALLBACK_CLOSE, NULL, callbackData);
+	}
 	else {
-		conn.connect();
+		try {
+			conn.connect();
+		}
+		catch(const XConfigNotConnected& e) {
+			if (callbackInfo)
+				callbackInfo(CALLBACK_CLOSE, NULL, callbackData);
+			throw e;
+		}
 		if (reloadCallback)
-			reloadCallback(reloadCallbackData);
+				reloadCallback(callbackData);
+		if (callbackInfo)
+			callbackInfo(CALLBACK_RELOAD, NULL, callbackData);
 	}
 }
 
