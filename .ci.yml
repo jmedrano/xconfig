@@ -8,6 +8,6 @@ stages:
 
 plugins:
   versioning:
-    get_version: "mvn -f src/java-xconfig deploy -q com.tuenti.maven.plugins:tuentiversions-maven-plugin:show-current"
+    get_version: "mvn -f src/java-xconfig -q com.tuenti.maven.plugins:tuentiversions-maven-plugin:show-current"
     set_current_release_version: "mvn -f src/java-xconfig deploy com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release"
     set_next_development_version: "mvn -f src/java-xconfig com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel"
