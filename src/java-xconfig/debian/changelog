@@ -1,3 +1,9 @@
+java-xconfig (1.0.8-1) precise; urgency=low
+
+  * SIMIN-30 Refactor merge mechanism to method overrideWith in XConfigMap
+
+ -- aviedma <aviedma@ubuntu>  Thu, 26 Mar 2015 12:56:52 +0100
+
 java-xconfig (1.0.6-1) unstable; urgency=low
 
   * Add new methods for getting elements of a map
