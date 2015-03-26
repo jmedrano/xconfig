@@ -1,13 +1,15 @@
 platform: "mvne"
 
 workflows:
-  release: ["deploy_java", "package_java"]
+  release_java: ["deploy_java", "package_java"]
 
 stages:
   deploy_java: ["mvn -f src/java-xconfig deploy"]
   package_java: ["cd src/java-xconfig; ./makePackage.sh"]
 
 plugins:
+  artifacts:
+    include: ["source/src/java-xconfig/*.deb"]
   versioning:
     get_version: "mvn -f src/java-xconfig -q com.tuenti.maven.plugins:tuentiversions-maven-plugin:show-current"
     set_current_release_version: "mvn -f src/java-xconfig com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release"
