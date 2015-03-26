@@ -4,7 +4,7 @@
 	<groupId>com.tuenti</groupId>
 	<artifactId>xconfig</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0.7-SNAPSHOT</version>
+	<version>1.0.8-SNAPSHOT</version>
 	<name>xconfig</name>
 	<url>http://maven.apache.org</url>
 
