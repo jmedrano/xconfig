@@ -1,10 +1,11 @@
 platform: "mvne"
 
 workflows:
-  release: ["deploy_java"]
+  release: ["deploy_java", "package_java"]
 
 stages:
   deploy_java: ["mvn -f src/java-xconfig deploy"]
+  package_java: ["cd src/java-xconfig; ./makePackage.sh"]
 
 plugins:
   versioning:
