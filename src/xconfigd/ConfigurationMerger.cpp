@@ -685,8 +685,11 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 			// update timestamp to the max of all referenced buckets
 			updateMaxTimestamp(bucket, refBucket);
 			if (refBucket->type == xconfig::TYPE_STRING) {
-				TTRACE("found ref #%ld [%s]", n, getString(refBlobId, refBucket->value._string));
+				TTRACE("found ref #%ld string [%s]", n, getString(refBlobId, refBucket->value._string));
 				expanded = expanded.arg(getString(refBlobId, refBucket->value._string));
+			} else if (refBucket->type == xconfig::TYPE_INTEGER) {
+				TTRACE("found ref #%ld int [%lld]", n, refBucket->value._integer);
+				expanded = expanded.arg(refBucket->value._integer);
 			} else if (refBucket->type == xconfig::TYPE_EXPANDSTRING_EXPANDED) {
 				TTRACE("found expanded ref #%ld [%s]", n, &destStringPool[refBucket->value._string - 1]);
 				expanded = expanded.arg(&destStringPool[refBucket->value._string - 1]);
