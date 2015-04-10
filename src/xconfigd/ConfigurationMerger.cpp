@@ -317,6 +317,51 @@ void ConfigurationMerger::mergeNode(size_t blobId, size_t nodeId, size_t parentB
 	TTRACE("mergeNode exit");
 }
 
+// Update the timestamp of currentMaxBucket if the timestamp of compareBucket is newer
+// Returns true if the timestamp was updated
+bool ConfigurationMerger::updateMaxTimestamp(XConfigBucket* currentMaxBucket, XConfigBucket* compareBucket)
+{
+	if (compareBucket->mtimeSecs > currentMaxBucket->mtimeSecs
+		|| (compareBucket->mtimeSecs == currentMaxBucket->mtimeSecs
+			&& compareBucket->mtimeNsecs > currentMaxBucket->mtimeNsecs)) {
+		currentMaxBucket->mtimeSecs = compareBucket->mtimeSecs;
+		currentMaxBucket->mtimeNsecs = compareBucket->mtimeNsecs;
+		return true;
+	}
+	return false;
+}
+
+// Make sure the timestamp of parent nodes is the maximum of the timestamp of its child nodes
+void ConfigurationMerger::fixParentTimestamps(size_t blobId, size_t nodeId)
+{
+	canonicalIds(&blobId, &nodeId);
+
+	XConfigBucket* currentBucket = getBucket(blobId, nodeId);
+
+	switch(currentBucket->type){
+	case xconfig::TYPE_SEQUENCE:
+	case xconfig::TYPE_MAP: {
+		// iterate childen and call fixtimestamp on them
+		size_t i = 0;
+		size_t childId = currentBucket->value._vectorial.child;
+		for (i = 0; i < currentBucket->value._vectorial.size && childId; i++) {
+			XConfigBucket* childBucket = getBucket(blobId, childId);
+			// get the latest timestamp for the child node
+			fixParentTimestamps(blobId, childId);
+			// if any child has a newer timestamp update this node's timestamp
+			if (updateMaxTimestamp(currentBucket, childBucket)) {
+				TTRACE("updated timestamp for %ld %ld %s %d", blobId, decodeNodeId(nodeId), getKey(blobId, nodeId),  currentBucket->mtimeSecs);
+			}
+			childId = childBucket->next;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+
 void ConfigurationMerger::merge()
 {
 	// First Blob is #1
@@ -335,6 +380,7 @@ std::pair<string, int> ConfigurationMerger::dump()
 	dynamicStringPool.push_back(0);
 
 	expandRefs();
+	fixParentTimestamps(1, 1);
 
 	// First Blob is #1
 	dumpNode(composeNodeId(1, 1), true);
@@ -569,6 +615,9 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 			childId = childBucket->next;
 		}
 		TTRACE("found");
+
+		// update timestamp if ref is newer
+		updateMaxTimestamp(bucket, getBucket(refBlobId, refNodeId));
 		// deep copy. keys need to be regenerated
 		auto newChildId = deepCopy(refNodeId, /*inMap=*/true, getKey(blobId, nodeId));
 		bucket = getBucket(blobId, nodeId);
@@ -633,6 +682,8 @@ void ConfigurationMerger::expandRef(size_t blobId, size_t nodeId)
 					break;
 				}
 			}
+			// update timestamp to the max of all referenced buckets
+			updateMaxTimestamp(bucket, refBucket);
 			if (refBucket->type == xconfig::TYPE_STRING) {
 				TTRACE("found ref #%ld [%s]", n, getString(refBlobId, refBucket->value._string));
 				expanded = expanded.arg(getString(refBlobId, refBucket->value._string));
