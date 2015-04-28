@@ -189,16 +189,13 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key, bool nothrow = fals
 
 				zend_hash_internal_pointer_reset_ex(ht, &pos);
 				for (int i = 0; zend_hash_get_current_data_ex(ht, (void **) &data, &pos) == SUCCESS; i++) {
-					zval *varcopy;
-
 					if (Z_TYPE_P(*data) != IS_STRING) {
-						ALLOC_INIT_ZVAL(varcopy);
-						*varcopy = **data;
-						INIT_PZVAL(varcopy); /* reset refcount and clear is_ref */
-						zval_copy_ctor(varcopy);
-						convert_to_string(varcopy);
-						keys[i] = string(Z_STRVAL_PP(&varcopy), Z_STRLEN_PP(&varcopy));
-						zval_ptr_dtor(&varcopy);
+						zval varcopy;
+						varcopy = **data;
+						zval_copy_ctor(&varcopy);
+						convert_to_string(&varcopy);
+						keys[i] = string(Z_STRVAL(varcopy), Z_STRLEN(varcopy));
+						zval_dtor(&varcopy);
 					} else {
 						keys[i] = string(Z_STRVAL_PP(data), Z_STRLEN_PP(data));
 					}
