@@ -1,3 +1,9 @@
+xconfig (0.8.9-tuenti1) stable; urgency=low
+
+  * Minor fix on zval creation to avoid dynamic allocations
+
+ -- Daniel Pañeda <dpaneda@.tuenti.com>  Wed, 29 Apr 2015 11:53:35 +0200
+
 xconfig (0.8.8-tuenti1) stable; urgency=low
 
   * Change the way we cast the key parts when we use an array as the key
