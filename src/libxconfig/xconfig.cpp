@@ -172,6 +172,9 @@ std::vector<XConfigNode> XConfig::getChildren(const XConfigNode& node) const
 
 XConfigNode XConfig::getNodeNoThrow(const std::string& key) const
 {
+	if (!hash)
+		throw XConfigNotConnected();
+
 	// idx is 1-based so that 0 means null node
 	XConfigNode node = XConfigNode(this, cmph_search_packed(const_cast<void*>(hash), key.c_str(), key.size()) + 1);
 
