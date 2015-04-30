@@ -1,3 +1,9 @@
+xconfig (0.8.10-tuenti1) stable; urgency=low
+
+  * Fixed segfault on getNodeNoThrow when using a XConfig object after close
+
+ -- Daniel Pañeda <dpaneda@tuenti.com>  Thu, 30 Apr 2015 18:04:52 +0200
+
 xconfig (0.8.9-tuenti1) stable; urgency=low
 
   * Minor fix on zval creation to avoid dynamic allocations
