@@ -88,6 +88,13 @@ struct timespec XConfig::getMtime(const XConfigNode& node) const
 	return {bucket->mtimeSecs, bucket->mtimeNsecs}; // NOLINT(readability/braces)
 }
 
+uint64_t XConfig::getChecksum(const XConfigNode& node) const
+{
+	const XConfigBucket* bucket = getBucket(node);
+        uint64_t checksum = bucket->mtimeSecs;
+        return (checksum << 32) | bucket->mtimeNsecs;
+}
+
 std::string XConfig::getString(const XConfigNode& node) const
 {
 	const XConfigBucket* bucket = getBucket(node);

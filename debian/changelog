@@ -1,3 +1,9 @@
+xconfig (0.9.0-tuenti1) stable; urgency=medium
+
+  * Use checksums instead of timestamp values
+
+ -- Stefan Wehner <stefan@tuenti.com>  Wed, 24 Jun 2015 16:45:03 +0200
+
 xconfig (0.8.10-tuenti1) stable; urgency=low
 
   * Fixed segfault on getNodeNoThrow when using a XConfig object after close

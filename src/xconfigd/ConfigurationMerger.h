@@ -29,8 +29,9 @@ private:
 	static const int kPerfectHashMaxTries = 5;
 
 	void mergeNode(size_t blobId, size_t nodeId, size_t destBlobId, size_t parentInDestination);
-	void fixParentTimestamps(size_t blobId, size_t nodeId);
-	bool updateMaxTimestamp(xconfig::XConfigBucket* currentMaxBucket, xconfig::XConfigBucket* compareBucket);
+	uint64_t checksumNode(size_t idx);
+	void debugNode(size_t idx, int indent=0);
+
 	void replace(size_t parentBlobId, size_t parentNodeId, size_t destBlobId, size_t destNodeId, size_t origBlob, size_t origNodeId);
 	void insert(size_t parentBlob, size_t parentNodeId, size_t origBlob, size_t origNodeId);
 	void erase(size_t parentBlobId, size_t parentNodeId, size_t destBlobId, size_t destNodeId);

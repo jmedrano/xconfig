@@ -30,8 +30,12 @@ public:
 	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
 	enum XConfigValueType getType(const std::vector<std::string>& key) const;
 	enum XConfigValueType getType(const std::vector<std::string>& key);
+	// deprecated
 	struct timespec getMtime(const std::vector<std::string>& key) const;
+	// deprecated
 	struct timespec getMtime(const std::vector<std::string>& key);
+	uint64_t getChecksum(const std::vector<std::string>& key) const;
+	uint64_t getChecksum(const std::vector<std::string>& key);
 	bool isScalar(const std::vector<std::string>& key) const;
 	bool isScalar(const std::vector<std::string>& key);
 	bool isMap(const std::vector<std::string>& key) const;
@@ -55,8 +59,12 @@ public:
 	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
 	enum XConfigValueType getType(const std::string& key) const;
 	enum XConfigValueType getType(const std::string& key);
+	//deprecated
 	struct timespec getMtime(const std::string& key) const;
+	//deprecated
 	struct timespec getMtime(const std::string& key);
+	uint64_t getChecksum(const std::string& key) const;
+	uint64_t getChecksum(const std::string& key);
 	bool isScalar(const std::string& key) const;
 	bool isScalar(const std::string& key);
 	bool isMap(const std::string& key) const;
@@ -80,7 +88,9 @@ public:
 	// configuration updates invalidate node objects
 	// all these methods could throw XConfigNotConnected, XConfigNotFound or XConfigWrongType
 	enum XConfigValueType getType(const XConfigNode& node) const;
+	//deprecated
 	struct timespec getMtime(const XConfigNode& node) const;
+	uint64_t getChecksum(const XConfigNode& node) const;
 	bool isScalar(const XConfigNode& node) const;
 	bool isMap(const XConfigNode& node) const;
 	bool isSequence(const XConfigNode& node) const;
@@ -133,7 +143,9 @@ public:
 	operator bool() const { return bucketIdx; }
 
 	enum XConfigValueType getType() const;
+	//deprecated method
 	struct timespec getMtime() const;
+	uint64_t getChecksum() const;
 	bool isScalar() const;
 	bool isMap() const;
 	bool isSequence() const;

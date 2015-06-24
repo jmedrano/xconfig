@@ -23,6 +23,9 @@ inline enum XConfigValueType XConfig::getType(const std::vector<std::string>& ke
 inline struct timespec XConfig::getMtime(const std::vector<std::string>& key) const {
 	return getMtime(escapeKey(key));
 }
+inline uint64_t XConfig::getChecksum(const std::vector<std::string>& key) const {
+	return getChecksum(escapeKey(key));
+}
 inline bool XConfig::isScalar(const std::vector<std::string>& key) const {
 	return isScalar(escapeKey(key));
 }
@@ -57,6 +60,9 @@ inline enum XConfigValueType XConfig::getType(const std::vector<std::string>& ke
 inline struct timespec XConfig::getMtime(const std::vector<std::string>& key) {
 	return getMtime(escapeKey(key));
 }
+inline uint64_t XConfig::getChecksum(const std::vector<std::string>& key) {
+	return getChecksum(escapeKey(key));
+}
 inline bool XConfig::isScalar(const std::vector<std::string>& key) {
 	return isScalar(escapeKey(key));
 }
@@ -90,6 +96,9 @@ inline enum XConfigValueType XConfig::getType(const std::string& key) const {
 }
 inline struct timespec XConfig::getMtime(const std::string& key) const {
 	return getMtime(getNode(key));
+}
+ inline uint64_t XConfig::getChecksum(const std::string& key) const {
+	return getChecksum(getNode(key));
 }
 inline bool XConfig::isScalar(const std::string& key) const {
 	return isScalar(getNode(key));
@@ -158,6 +167,10 @@ inline struct timespec XConfig::getMtime(const std::string& key) {
 	mightReload();
 	return const_cast<const XConfig*>(this)->getMtime(key);
 }
+inline uint64_t XConfig::getChecksum(const std::string& key) {
+	mightReload();
+	return const_cast<const XConfig*>(this)->getChecksum(key);
+}
 inline bool XConfig::isScalar(const std::string& key) {
 	mightReload();
 	return const_cast<const XConfig*>(this)->isScalar(key);
@@ -208,6 +221,9 @@ inline enum XConfigValueType XConfigNode::getType() const {
 }
 inline struct timespec XConfigNode::getMtime() const {
 	return xc->getMtime(*this);
+}
+inline uint64_t XConfigNode::getChecksum() const {
+	return xc->getChecksum(*this);
 }
 inline bool XConfigNode::isScalar() const {
 	return xc->isScalar(*this);

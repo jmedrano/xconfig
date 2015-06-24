@@ -24,7 +24,8 @@ HEADERS += \
 	ConfigurationTree.h \
 	ConfigurationPool.h \
 	YamlParser.h \
-	ConfigurationMerger.h
+	ConfigurationMerger.h \
+	crc/crc64.h
 
 SOURCES += \
 	TApplication.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
 	ConfigurationTree.cpp \
 	ConfigurationPool.cpp \
 	YamlParser.cpp \
-	ConfigurationMerger.cpp
+	ConfigurationMerger.cpp \
+	crc/crc64.c
 
 INCLUDEPATH += $$TOP_SRCDIR/src/libxconfig

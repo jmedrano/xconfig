@@ -22,12 +22,25 @@ using xconfig::XConfigValueType;
 
 T_LOGGER_DEFINE(YamlParser, "YamlParser");
 
+/**
+ * Parse yaml files into configuration trees.
+ *
+ * Each parser represents a blob, that contains all nodes present in
+ * this file. All nodes are stored as XConfigBuckets one after the
+ * other in the bucket list.
+ *
+ * All strings are concatenated together (including \0s) in the
+ * stringPool and all references in the XConfigBucket refer to indices
+ * in this pool.
+ */
+
 YamlParser::YamlParser(string path) : path(path), bucketIdx(0), stringOffset(0), fd(-1), file(NULL), parser(NULL), mtime{0, 0}
 {
 }
 
 YamlParser::~YamlParser()
 {
+
 	for	(auto key = keys.begin(); key != keys.end(); ++key) {
 		free(*key);
 	}
@@ -395,6 +408,7 @@ int YamlParser::yamlParseNode(const string& prefix, bool isDocumentRoot, bool is
 	return numBuckets;
 }
 
+
 bool YamlParser::parse() {
 	fd = ::open(path.c_str(), O_RDONLY);
 	if (fd < 0) {
@@ -427,6 +441,7 @@ bool YamlParser::parse() {
 	bucketIdx = 0;
 	stringPool.push_back(0);
 	stringOffset = 1;
+
 
 	file = fdopen(fd, "rb");
 	fd = -1;
@@ -489,6 +504,7 @@ xconfig::XConfigBucket* YamlParser::insertBucket(const std::string& key)
 	buckets.resize(buckets.size()+1);
 	bucketIdx++;
 	XConfigBucket* bucket = &buckets.back();
+
 	bucket->mtimeSecs = mtime.tv_sec;
 	bucket->mtimeNsecs = mtime.tv_nsec;
 	return bucket;

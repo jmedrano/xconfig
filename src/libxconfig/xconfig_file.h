@@ -24,6 +24,20 @@ enum XConfigValueType : uint32_t {
 	TYPE_EXPANDSTRING_EXPANDED,
 };
 
+
+/**
+ * Each bucket contains the type information (scalar types, sequences,
+ * references, etc...).
+ * Numeric scalar values are stored directly in the value union
+ * structure in the bucket.
+ *
+ * Strings are stored elsewhere and the starting offset of the string
+ * is referenced from the XConfigBuckets (both for .name and .value._string).
+ *
+ * In case of sequences (lists and maps) _vectorial.size is the length
+ * of the sequence, and ._vectorial.child points to the first child.
+ * Childs are chained together using the .next field.
+ */
 struct XConfigBucket {
 	union {
 		bool _boolean;
