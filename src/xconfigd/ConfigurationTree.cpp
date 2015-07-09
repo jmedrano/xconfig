@@ -59,6 +59,12 @@ ConfigurationTreeManager::ConfigurationTreeManager(QString path, int softTimeout
 		}
 		auto dirByteArray = dirName->toLocal8Bit();
 		int watcher = inotify_add_watch(iNotifyFd, dirByteArray.data(), IN_MODIFY | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE);
+
+		if (watcher < 0) {
+			TERROR("inotify_add_watch: %s", strerror(errno));
+			abort();
+		}
+
 		TTRACE("inotify_add_watch %s", dirByteArray.data());
 		iWatchers.insert(watcher, dirByteArray);
 	}
