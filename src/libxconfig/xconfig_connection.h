@@ -11,6 +11,25 @@
 #include <boost/thread.hpp>
 #include <tbb/concurrent_hash_map.h>
 
+/**
+ * The XConfig connection needs to be a Unix Socket because the file
+ * descriptor for the dumped XConfig Tree will be passed over the
+ * socket.
+ *
+ * When the client connects, it'll issue a watch message telling the
+ * server what directories it needs to read the config from.
+ * The server will answer with a filedescriptor containing the whole
+ * config tree so that the client can mmap it and use it.
+ *
+ * When new versions of the tree are available the server will push an
+ * update message with the new fd descriptor.
+ * The current config tree is closed and unlinked so that once all
+ * clients close it will be deleted.
+ *
+ * If the client uses manual reloads, as soon as reload is called the
+ * client will read all pending messages and close all received FDs
+ * except the last one, which will become the current config tree.
+ */
 namespace xconfig {
 
 class MappedFile : private boost::noncopyable {
