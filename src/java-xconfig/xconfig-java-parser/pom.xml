@@ -8,20 +8,21 @@
 	</parent>
 
     <groupId>com.tuenti.xconfig</groupId>
-	<artifactId>xconfig-java</artifactId>
+	<artifactId>xconfig-java-parser</artifactId>
 	<packaging>jar</packaging>
-	<name>xconfig-java</name>
+	<name>xconfig-java parser</name>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.tuenti.xconfig</groupId>
-			<artifactId>xconfig-java-parser</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.tuenti.xconfig</groupId>
 			<artifactId>xconfig-base</artifactId>
 			<version>${project.version}</version>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>1.13</version>
 		</dependency>
 	</dependencies>
 </project>

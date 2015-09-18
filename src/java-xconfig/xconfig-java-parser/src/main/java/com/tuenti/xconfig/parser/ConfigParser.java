@@ -1,4 +1,9 @@
-package com.tuenti.xconfig;
+/*
+ * Copyright (C) 2015 Tuenti Technologies S.L.
+ * This file can only be stored on servers belonging to Tuenti Technologies S.L.
+ */
+
+package com.tuenti.xconfig.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,6 +52,22 @@ public class ConfigParser {
 				fis.close();
 			} catch (IOException ignored) {
 			}
+		}
+	}
+	
+	public void addYamlString(String yamlString) {
+		Object load = yaml.load(yamlString);
+		addYamlFromJavaObject(load);
+	}
+
+	public void addYamlFromJavaObject(Object javaObject) {
+		try {
+			XConfigValue xMap = convertToXConfig(javaObject);
+			XConfigMap otherMap = xMap.getAsMap();
+			config.overrideWith(otherMap);
+			
+		} catch (XConfigWrongTypeCastingException e) {
+			throw new RuntimeException("Yaml has an incorrect fomat");
 		}
 	}
 
@@ -137,5 +158,5 @@ public class ConfigParser {
 		}
 		throw new RuntimeException("Unexpected value " + element + " of type " + element.getClass());
 	}
-
+	
 }

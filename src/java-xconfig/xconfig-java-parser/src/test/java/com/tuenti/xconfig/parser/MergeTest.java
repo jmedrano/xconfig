@@ -1,4 +1,4 @@
-package com.tuenti.xconfig;
+package com.tuenti.xconfig.parser;
 
 import static org.junit.Assert.assertEquals;
 
@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
+import com.tuenti.xconfig.parser.ConfigParser;
 import com.tuenti.xconfig.type.XConfigInteger;
 import com.tuenti.xconfig.type.XConfigList;
 import com.tuenti.xconfig.type.XConfigString;

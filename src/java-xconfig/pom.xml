@@ -10,6 +10,7 @@
 
 	<modules>
 		<module>xconfig-base</module>
+		<module>xconfig-java-parser</module>
 		<module>xconfig-java</module>
 		<module>xconfig-native</module>
 	</modules>
