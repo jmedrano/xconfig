@@ -1,3 +1,9 @@
+xconfig (0.9.1-tuenti1) stable; urgency=low
+
+  * Remove -march=native compilation flag
+
+ -- stefan <stefan@tuenti.com>  Tue, 22 Mar 2016 14:30:53 +0100
+
 xconfig (0.9.0-tuenti1) stable; urgency=medium
 
   * Use checksums instead of timestamp values
