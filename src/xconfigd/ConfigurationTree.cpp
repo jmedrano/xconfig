@@ -62,7 +62,6 @@ ConfigurationTreeManager::ConfigurationTreeManager(QString path, int softTimeout
 
 		if (watcher < 0) {
 			TERROR("inotify_add_watch: %s", strerror(errno));
-			abort();
 		}
 
 		TTRACE("inotify_add_watch %s", dirByteArray.data());
