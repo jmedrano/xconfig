@@ -1,10 +1,16 @@
+xconfig (0.9.2-tuenti1) stable; urgency=low
+
+  * Require a more recent libboost
+
+ -- Stefan Wehner <stefan@tuenti.com>  Tue, 29 Mar 2016 10:34:22 +0200
+
 xconfig (0.9.1-tuenti1) stable; urgency=low
 
   * Remove -march=native compilation flag
 
- -- stefan <stefan@tuenti.com>  Tue, 22 Mar 2016 14:30:53 +0100
+ -- Stefan Wehner <stefan@tuenti.com>  Tue, 22 Mar 2016 14:30:53 +0100
 
-xconfig (0.9.0-tuenti1) stable; urgency=medium
+xconfig (0.9.0-tuenti1) stable; urgency=low
 
   * Use checksums instead of timestamp values
 
