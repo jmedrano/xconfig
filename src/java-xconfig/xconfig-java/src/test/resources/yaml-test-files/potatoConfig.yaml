@@ -1,0 +1,57 @@
+potatoConfig:
+  names:
+    a: adrian
+    b: bob
+  scores:
+    a: [1, 2, 3]
+    b: [4, 4, 4]
+  details:
+    a:
+      age: 4
+      hobby: sitting
+
+potatoTestResults:
+  getWithOneOverride:
+    age: secret
+    hobby: sitting
+  getWithTwoOverrides:
+    age: 5
+    hobby: sleeping
+  getBaseWithRecursiveOverrides:
+    names:
+      a: adriana
+      b: barbarianna
+      d: dani
+    scores:
+      a: [1, 2, 3]
+      b: [6, 7]
+    details:
+      a:
+        age: 5
+        hobby: sleeping
+      b:
+        age: 6
+
+potatoConfig_breeds:
+  country:
+    potatolandia:
+      names:
+        a: adrianno
+      scores:
+        b: [6, 7]
+      details:
+        a:
+          age: secret
+  environment:
+    potato-pre:
+      names:
+        a: adriana
+        b: barbarianna
+        d: dani
+      details:
+        a:
+          age: 5
+          hobby: sleeping
+        b:
+          age: 6
+

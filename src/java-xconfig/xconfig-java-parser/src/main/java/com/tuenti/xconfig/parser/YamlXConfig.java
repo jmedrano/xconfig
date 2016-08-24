@@ -5,18 +5,15 @@
 
 package com.tuenti.xconfig.parser;
 
-import com.tuenti.xconfig.XConfig;
+import com.tuenti.xconfig.XConfigBase;
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
-import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
-import com.tuenti.xconfig.type.XConfigList;
-import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 
 /**
  * XConfig class implementation from Yaml data. This class isn't intended to be registered as
  * a XConfig provider, but rather for testing purposes.
  */
-public class YamlXConfig implements XConfig {
+public class YamlXConfig extends XConfigBase {
 
 	private ConfigParser config;
 	
@@ -45,109 +42,6 @@ public class YamlXConfig implements XConfig {
 
 	protected void setConfig(ConfigParser config) {
 		this.config = config;
-	}
-
-	@Override
-	public Boolean getAsBoolean(final String key) throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		return this.getValue(key).getAsBoolean();
-	}
-
-	@Override
-	public Boolean getAsBoolean(final String key, final Boolean defaultValue) {
-		try {
-			return this.getValue(key).getAsBoolean();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
-		}
-
-		return defaultValue;
-	}
-
-	@Override
-	public Float getAsFloat(final String key) throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		return this.getValue(key).getAsFloat();
-	}
-
-	@Override
-	public Float getAsFloat(final String key, final Float defaultValue) {
-		try {
-			return this.getValue(key).getAsFloat();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
-		}
-
-		return defaultValue;
-	}
-
-	@Override
-	public Integer getAsInteger(final String key) throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		return this.getValue(key).getAsInteger();
-	}
-
-	@Override
-	public Integer getAsInteger(final String key, final Integer defaultValue) {
-		try {
-			return this.getValue(key).getAsInteger();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
-		}
-
-		return defaultValue;
-	}
-
-	@Override
-	public XConfigList getAsList(final String key) throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		return this.getValue(key).getAsList();
-	}
-
-	@Override
-	public XConfigList getAsList(final String key, final XConfigList defaultValue) {
-		try {
-			return this.getValue(key).getAsList();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
-		}
-
-		return defaultValue;
-	}
-
-	@Override
-	public XConfigMap getAsMap(final String key) throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		return this.getValue(key).getAsMap();
-	}
-
-	@Override
-	public XConfigMap getAsMap(final String key,
-			final XConfigMap defaultValue) {
-		try {
-			return this.getValue(key).getAsMap();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
-		}
-
-		return defaultValue;
-	}
-
-	@Override
-	public String getAsString(final String key) throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		return this.getValue(key).getAsString();
-	}
-
-	@Override
-	public String getAsString(final String key, final String defaultValue) {
-		try {
-			return this.getValue(key).getAsString();
-		} catch (XConfigKeyNotFoundException ignored) {
-		} catch (XConfigWrongTypeCastingException ignored) {
-		}
-
-		return defaultValue;
 	}
 
 	@Override
