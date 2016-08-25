@@ -1,5 +1,5 @@
 /**
- * XConfigBreedsTest.java
+ * BreedsXConfigTest.java
  *
  * Copyright (C) 2016 Tuenti Technologies S.L.
  *
@@ -37,52 +37,47 @@ public class BreedXConfigTest {
 
 	@Test
 	public void testGetWithoutOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
-		XConfigMap map1 = getConfig("potatoConfig/details/a", "unknown", "unknown").getAsMap();
-		XConfigMap map2 = xconfig.getAsMap("potatoConfig/details/a");
-		Assert.assertEquals(map1, map2);
+		XConfigMap actualMap = getConfig("potatoConfig/details/a", "unknown", "unknown").getAsMap();
+		XConfigMap expectedMap = xconfig.getAsMap("potatoConfig/details/a");
+		Assert.assertEquals(expectedMap, actualMap);
 	}
 
 	@Test
 	public void testGetWithOneOverride() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
-		XConfigMap map1 = getConfig("potatoConfig/details/a", "potatolandia", "unknown").getAsMap();
-		XConfigMap map2 = xconfig.getAsMap("potatoTestResults/getWithOneOverride");
-		Assert.assertEquals(map1, map2);
+		XConfigMap actualMap = getConfig("potatoConfig/details/a", "potatolandia", "unknown").getAsMap();
+		XConfigMap expectedMap = xconfig.getAsMap("potatoTestResults/getWithOneOverride");
+		Assert.assertEquals(expectedMap, actualMap);
 	}
 
 	@Test
 	public void testGetWithTwoOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
-		XConfigMap map1 = getConfig("potatoConfig/details/a", "potatolandia", "potato-pre").getAsMap();
-		XConfigMap map2 = xconfig.getAsMap("potatoTestResults/getWithTwoOverrides");
-		Assert.assertEquals(map1, map2);
+		XConfigMap actualMap = getConfig("potatoConfig/details/a", "potatolandia", "potato-pre").getAsMap();
+		XConfigMap expectedMap = xconfig.getAsMap("potatoTestResults/getWithTwoOverrides");
+		Assert.assertEquals(expectedMap, actualMap);
 	}
 
 	@Test
 	public void testGetWithTwoSimpleOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
-		String name = getConfig("potatoConfig/names/a", "potatolandia", "potato-pre").getAsString();
-		Assert.assertEquals("adriana", name);
+		String actualName = getConfig("potatoConfig/names/a", "potatolandia", "potato-pre").getAsString();
+		Assert.assertEquals("adriana", actualName);
 	}
 
-	@Test
+	@Test(expected = XConfigKeyNotFoundException.class)
 	public void testMissingKeyThrowsException() throws Exception {
-		try {
-			getConfig("potatoConfig/names/c", "potatolandia", "potato-pre").getAsString();
-			throw new Exception("A XConfigKeyNotFoundException exception was expected");
-		} catch (XConfigKeyNotFoundException e) {
-			// Exception was expected
-		}
+		getConfig("potatoConfig/names/c", "potatolandia", "potato-pre").getAsString();
 	}
 
 	@Test
 	public void testGetOverridedMissingKey() throws Exception {
-		String name = getConfig("potatoConfig/names/d", "potatolandia", "potato-pre").getAsString();
-		Assert.assertEquals("dani", name);
+		String actualName = getConfig("potatoConfig/names/d", "potatolandia", "potato-pre").getAsString();
+		Assert.assertEquals("dani", actualName);
 	}
 
 	@Test
 	public void testGetBaseWithRecursiveOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
-		XConfigMap map1 = getConfig("potatoConfig", "potatolandia", "potato-pre").getAsMap();
-		XConfigMap map2 = xconfig.getAsMap("potatoTestResults/getBaseWithRecursiveOverrides");
-		Assert.assertEquals(map1, map2);
+		XConfigMap actualMap = getConfig("potatoConfig", "potatolandia", "potato-pre").getAsMap();
+		XConfigMap expectedMap = xconfig.getAsMap("potatoTestResults/getBaseWithRecursiveOverrides");
+		Assert.assertEquals(expectedMap, actualMap);
 	}
 
 	private XConfigValue getConfig(String key, String country, String environment) throws XConfigKeyNotFoundException {

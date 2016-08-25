@@ -1,7 +1,5 @@
 package com.tuenti.xconfig;
 
-import java.util.Collections;
-
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigMap;
