@@ -36,34 +36,21 @@ public class BreedXConfig extends XConfigBase {
 	@Override
 	public XConfigValue getValue(String key) throws XConfigKeyNotFoundException {
 		XConfigValue value = null;
+		boolean isMap = true;
 		boolean found = false;
 
 		String[] breedKeys = getBreedKeys(key);
 		
 		// Iterate the keys in reverse order
-		for (int i=breedKeys.length-1; i>=0; i--) {
+		// We only continue iterating if we received a map
+		for (int i=breedKeys.length-1; i>=0 && isMap; i--) {
 			String breedKey = breedKeys[i];
 			
 			try {
 				XConfigValue newValue = xconfig.getValue(breedKey);
-				boolean isMap = newValue instanceof XConfigMap;
-
-				// We only continue iterating if we received a map 
-				if (!found) {
-					found = true;
-					if (isMap) {
-						value = newValue;
-					}
-					else {
-						return newValue;
-					}
-				} else {
-					if (isMap) {
-						value = calculateOverride(newValue, value);
-					} else {
-						return value;
-					}
-				}
+				isMap = newValue instanceof XConfigMap;
+				value = found ? calculateOverride(newValue, value) : newValue;
+				found = true;
 			} catch (XConfigKeyNotFoundException e) { }
 		}
 
