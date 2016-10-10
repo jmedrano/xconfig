@@ -104,18 +104,18 @@ public class BreedXConfig extends XConfigBase {
 		return keys;
 	}
 
-	private XConfigValue calculateOverride(XConfigValue oldValue, XConfigValue newValue) {
-		if (oldValue != null && newValue != null) {
+	private XConfigValue calculateOverride(XConfigValue baseValue, XConfigValue overrideValue) {
+		if (baseValue != null && overrideValue != null) {
 			try {
-				XConfigMap oldMap = oldValue.getAsMap();
-				XConfigMap newMap = newValue.getAsMap();
+				XConfigMap baseMap = baseValue.getAsMap();
+				XConfigMap overrideMap = overrideValue.getAsMap();
 
-				if (oldMap != null && newMap != null) {
-					oldMap.overrideWith(newMap);
-					return oldMap;
+				if (baseMap != null && overrideMap != null) {
+					baseMap.overrideWith(overrideMap);
+					return baseMap;
 				}
 			} catch (XConfigWrongTypeCastingException e) { }
 		}
-		return newValue;
+		return overrideValue;
 	}
 }
