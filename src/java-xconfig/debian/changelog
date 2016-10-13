@@ -1,3 +1,9 @@
+java-xconfig (1.1.0-1) precise; urgency=low
+
+  * Add support for config breeds
+
+ -- Jakub <jakub@it-latitude-e6440>  Tue, 11 Oct 2016 12:39:29 +0200
+
 java-xconfig (1.0.8-1) precise; urgency=low
 
   * SIMIN-30 Refactor merge mechanism to method overrideWith in XConfigMap
