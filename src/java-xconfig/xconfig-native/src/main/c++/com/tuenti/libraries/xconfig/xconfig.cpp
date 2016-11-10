@@ -1,5 +1,6 @@
 #include <string>
 #include <xconfig/xconfig.h>
+#include <boost/algorithm/string.hpp>
 #include "com_tuenti_xconfig_XConfigNative.h"
 #include "handle.h"
 
@@ -46,6 +47,12 @@ jstring getJstringFromString(JNIEnv* environment, string originalString) {
   jstring newString;
   newString = environment->NewStringUTF(originalString.c_str());
   return newString;
+}
+
+vector<string> getXConfigVectorFromString(const string& str) {
+  vector<string> result;
+  result = boost::split(result, str, boost::is_any_of("/"));
+  return result;
 }
 
 /**
@@ -188,8 +195,9 @@ JNIEXPORT jobject JNICALL Java_com_tuenti_xconfig_XConfigNative_getValue
 (JNIEnv * environment, jobject object, jstring inputKey) {
   XConfig *instance = getXConfig(environment, object);
   string key = getStringFromJstring(environment, inputKey);
+  vector<string> keyVector = getXConfigVectorFromString(key);
   try {
-    XConfigNode node = instance->getNode(key);
+    XConfigNode node = instance->getNode(keyVector);
     // Generate object depending on value's type
     return getJobjectFromXConfigNode(environment, node);
   } catch (XConfigNotFound e) {
@@ -205,8 +213,9 @@ JNIEXPORT jlong JNICALL Java_com_tuenti_xconfig_XConfigNative_getLastModificatio
 (JNIEnv * environment, jobject object, jstring inputKey) {
   XConfig *instance = getXConfig(environment, object);
   string key = getStringFromJstring(environment, inputKey);
+  vector<string> keyVector = getXConfigVectorFromString(key);
   try {
-    struct timespec tm = instance->getMtime(key);
+    struct timespec tm = instance->getMtime(keyVector);
     return tm.tv_sec * 1000LL + tm.tv_nsec / 1000000;
   } catch (XConfigNotFound e) {
     throwJavaException(environment, "com/tuenti/xconfig/exception/XConfigKeyNotFoundException", key);

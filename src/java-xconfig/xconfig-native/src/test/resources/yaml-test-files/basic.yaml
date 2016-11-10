@@ -20,4 +20,5 @@ basic:
       "key2": 2
       "key3": 1.16
       "key4": true
+    "#specialKey": true
 ...

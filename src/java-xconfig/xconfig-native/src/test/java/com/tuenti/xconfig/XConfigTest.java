@@ -213,4 +213,11 @@ public class XConfigTest {
 		XConfigMap testMap = new XConfigMap();
 		Assert.assertEquals(testMap, xconfig.getAsMap("basic/stringValue", testMap));
 	}
+
+	@Test
+	public void testRetrieveKeyWithSpecialCharacter() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+		String key = "basic/#specialKey";
+		boolean expectedValue = true;
+		Assert.assertEquals(expectedValue, xconfig.getAsBoolean(key));
+	}
 }
