@@ -1,3 +1,9 @@
+java-xconfig (1.1.1-1) precise; urgency=low
+
+  * Fix special chars (#) support
+
+ -- Jakub <jakub@it-latitude-e6440>  Mon, 14 Nov 2016 10:49:57 +0100
+
 java-xconfig (1.1.0-1) precise; urgency=low
 
   * Add support for config breeds
