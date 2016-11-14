@@ -1,7 +1,7 @@
 VERSION=$(shell dpkg-parsechangelog -n1 | grep Version | grep -Eo '([0-9]+[.]?)*' | head -n1)
 
 build:
-	mvn clean install
+	mvn clean package
 
 install: 
 	mkdir -p $(DESTDIR)/usr/share/java
