@@ -202,4 +202,13 @@ public class XConfigTest {
 		XConfigMap testMap = new XConfigMap();
 		Assert.assertEquals(testMap, xconfig.getAsMap("basic/stringValue", testMap));
 	}
+
+	@Test
+	public void testCreationWithUnexistingPathDoesNotCrash() {
+		XConfig xconfig = new XConfigJavaProvider().create("/unexisting/path");
+
+		Assert.assertFalse(xconfig.hasKey("somekey"));
+
+		xconfig.close();
+	}
 }

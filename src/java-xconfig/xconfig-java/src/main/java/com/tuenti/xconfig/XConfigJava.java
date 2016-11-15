@@ -21,7 +21,7 @@ public class XConfigJava extends YamlXConfig {
 
 	/**
 	 * Private constructor.
-	 * 
+	 *
 	 * @param path
 	 *            Config entry path
 	 * @param socket
@@ -48,11 +48,11 @@ public class XConfigJava extends YamlXConfig {
 	}
 
 	private File[] getFiles(String dir) {
+		File[] files = new File[0];
 		File folder = new File(dir);
-		if (!folder.exists()) {
-			throw new RuntimeException("Directory " + folder + " doesn't exist");
+		if (folder.exists()) {
+			files = folder.listFiles();
 		}
-		File[] files = folder.listFiles();
 		return files;
 	}
 
