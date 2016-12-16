@@ -36,14 +36,14 @@ zend_object_handlers xconfignode_object_handlers;
 #define CONSTANT_TYPE_SEQUENCE "TYPE_SEQUENCE"
 
 struct xconfig_object {
-	zend_object std;
 	XConfig *xconfig;
+	zend_object std;
 };
 
 struct xconfignode_object {
-	zend_object std;
 	XConfig *xconfig;
 	XConfigNode xconfignode;
+	zend_object std;
 };
 
 void xconfig_free_storage(void *object TSRMLS_DC)
@@ -67,50 +67,40 @@ void xconfignode_free_storage(void *object TSRMLS_DC)
 	efree(obj);
 }
 
-zend_object_value xconfig_create_handler(zend_class_entry *type TSRMLS_DC)
+zend_object * xconfig_create_handler(zend_class_entry *type TSRMLS_DC)
 {
-	zend_object_value retval;
+	xconfig_object *obj = (xconfig_object *) ecalloc(1,
+            sizeof(xconfig_object) +
+            zend_object_properties_size(type));
+    zend_object_std_init(&obj->std, type TSRMLS_CC);
 
-	xconfig_object *obj = (xconfig_object *)emalloc(sizeof(xconfig_object));
-	memset(obj, 0, sizeof(xconfig_object));
-	obj->std.ce = type;
-
+    // TODO Check this
 	ALLOC_HASHTABLE(obj->std.properties);
 	zend_hash_init(obj->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-#if PHP_VERSION_ID < 50399
-	zval *tmp;
-	zend_hash_copy(obj->std.properties, &type->default_properties, (copy_ctor_func_t)zval_add_ref, (void *)&tmp, sizeof(zval *));
-#else
-	object_properties_init((zend_object*) &(obj->std), type);
-#endif
 
-	retval.handle = zend_objects_store_put(obj, NULL, xconfig_free_storage, NULL TSRMLS_CC);
-	retval.handlers = &xconfig_object_handlers;
+    xconfig_object_handlers.offset = XtOffsetOf(struct xconfig_object, std);
+    xconfig_object_handlers.free_obj = (zend_object_free_obj_t) xconfig_free_storage;
+    obj->std.handlers = &xconfig_object_handlers;
 
-	return retval;
+    return &obj->std;
 }
  
-zend_object_value xconfignode_create_handler(zend_class_entry *type TSRMLS_DC)
+zend_object * xconfignode_create_handler(zend_class_entry *type TSRMLS_DC)
 {
-	zend_object_value retval;
+    xconfignode_object *obj = (xconfignode_object *) ecalloc(1,
+             sizeof(xconfignode_object) +
+             zend_object_properties_size(type));
+    zend_object_std_init(&obj->std, type TSRMLS_CC);
 
-	xconfignode_object *obj = (xconfignode_object *)emalloc(sizeof(xconfignode_object));
-	memset(obj, 0, sizeof(xconfignode_object));
-	obj->std.ce = type;
-
+    // TODO Check this
 	ALLOC_HASHTABLE(obj->std.properties);
 	zend_hash_init(obj->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-#if PHP_VERSION_ID < 50399
-	zval *tmp;
-	zend_hash_copy(obj->std.properties, &type->default_properties, (copy_ctor_func_t)zval_add_ref, (void *)&tmp, sizeof(zval *));
-#else
-	object_properties_init((zend_object*) &(obj->std), type);
-#endif
 
-	retval.handle = zend_objects_store_put(obj, NULL, xconfignode_free_storage, NULL TSRMLS_CC);
-	retval.handlers = &xconfignode_object_handlers;
+    xconfignode_object_handlers.offset = XtOffsetOf(struct xconfignode_object, std);
+    xconfig_object_handlers.free_obj = (zend_object_free_obj_t) xconfignode_free_storage;
+    obj->std.handlers = &xconfignode_object_handlers;
 
-	return retval;
+	return &obj->std;
 }
  
 extern zend_module_entry xconfig_module_entry;
@@ -124,6 +114,18 @@ zend_class_entry *xconfig_notconnectedxception_ce;
 
 UnixConnectionPool* xconfig_pool;
 
+
+static inline struct xconfig_object * php_xconfig_object_fetch_object(zend_object *obj) {
+    return (struct xconfig_object *)((char *)obj - XtOffsetOf(struct xconfig_object, std));
+}
+
+static inline struct xconfignode_object * php_xconfignode_object_fetch_object(zend_object *obj) {
+    return (struct xconfignode_object *)((char *)obj - XtOffsetOf(struct xconfignode_object, std));
+}
+ 
+#define Z_XCONFIG_OBJ_P(zv) php_xconfig_object_fetch_object(Z_OBJ_P(zv));
+#define Z_XCONFIGNODE_OBJ_P(zv) php_xconfignode_object_fetch_object(Z_OBJ_P(zv));
+
 PHP_METHOD(XConfig, __construct)
 {
 	char* path;
@@ -135,7 +137,8 @@ PHP_METHOD(XConfig, __construct)
 		RETURN_NULL();
 	}
 
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+
 	try {
 		if (!xconfig_pool)
 			xconfig_pool = new UnixConnectionPool;
@@ -151,23 +154,23 @@ PHP_METHOD(XConfig, __construct)
 
 PHP_METHOD(XConfig, close)
 {
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
 	obj->xconfig->close();
 }
 
 PHP_METHOD(XConfig, reload)
 {
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
 	obj->xconfig->reload();
 }
 
-static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key, bool nothrow = false) {
+static XConfigNode getNodeFromZVal(XConfig* xc, zval z_key, bool nothrow = false) {
 	XConfigNode node;
 	try {
-		switch (Z_TYPE_P(z_key)) {
+		switch (Z_TYPE(z_key)) {
 			case IS_OBJECT: {
-				if (instanceof_function(Z_OBJCE_P(z_key), xconfignode_ce TSRMLS_CC)) {
-					xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(z_key TSRMLS_CC);
+				if (instanceof_function(Z_OBJCE(z_key), xconfignode_ce TSRMLS_CC)) {
+	                xconfignode_object *obj = Z_XCONFIGNODE_OBJ_P(&z_key);
 					if (obj->xconfig  == xc) {
 						node = obj->xconfignode;
 					} else {
@@ -179,29 +182,29 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval *z_key, bool nothrow = fals
 				break;
 			}
 			case IS_STRING:
-				node = xc->getNodeNoThrow(string(Z_STRVAL_P(z_key), Z_STRLEN_P(z_key)));
+				node = xc->getNodeNoThrow(string(Z_STRVAL(z_key), Z_STRLEN(z_key)));
 				break;
 			case IS_ARRAY: {
-				HashTable *ht = HASH_OF(z_key);
-				HashPosition pos;
-				zval **data;
-				vector<string> keys(zend_hash_num_elements(ht));
+				HashTable *ht = HASH_OF(&z_key); // TODO
+                ulong num_key;
+                zend_string *key;
+				zval *data;
 
-				zend_hash_internal_pointer_reset_ex(ht, &pos);
-				for (int i = 0; zend_hash_get_current_data_ex(ht, (void **) &data, &pos) == SUCCESS; i++) {
-					if (Z_TYPE_P(*data) != IS_STRING) {
-						zval varcopy;
-						varcopy = **data;
+				vector<string> keys(zend_hash_num_elements(ht));
+                
+                ZEND_HASH_FOREACH_KEY_VAL(ht, num_key, key, data) {
+                    if (key) { //HASH_KEY_IS_STRING
+						keys[num_key] = string(Z_STRVAL_P(data), Z_STRLEN_P(data));
+                    } else {
+   						zval varcopy;
+						varcopy = *data;
 						zval_copy_ctor(&varcopy);
 						convert_to_string(&varcopy);
-						keys[i] = string(Z_STRVAL(varcopy), Z_STRLEN(varcopy));
+						keys[num_key] = string(Z_STRVAL(varcopy), Z_STRLEN(varcopy));
 						zval_dtor(&varcopy);
-					} else {
-						keys[i] = string(Z_STRVAL_PP(data), Z_STRLEN_PP(data));
-					}
+                    }
+                } ZEND_HASH_FOREACH_END();
 
-					zend_hash_move_forward_ex(ht, &pos);
-				}
 				node = xc->getNodeNoThrow(keys);
 				break;
 			}
@@ -225,8 +228,8 @@ PHP_METHOD(XConfig, exists)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key, true);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key, true);
 	RETURN_BOOL((bool) node);
 }
 
@@ -237,8 +240,8 @@ PHP_METHOD(XConfig, getType)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 	RETURN_LONG(obj->xconfig->getType(node));
@@ -251,8 +254,8 @@ PHP_METHOD(XConfig, getMtime)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 
@@ -263,49 +266,48 @@ PHP_METHOD(XConfig, getMtime)
 	add_next_index_long(return_value, ts.tv_nsec);
 }
 
-static void getValueToZval(XConfig* xc, const XConfigNode& node, zval **z)
+static void getValueToZval(XConfig* xc, const XConfigNode& node, zval *z)
 {
-	MAKE_STD_ZVAL(*z);
 	switch (xc->getType(node)) {
 		case xconfig::TYPE_NULL:
-			ZVAL_NULL(*z);
+			ZVAL_NULL(z);
 			return;
 		case xconfig::TYPE_BOOLEAN:
-			ZVAL_BOOL(*z, xc->getBool(node));
+			ZVAL_BOOL(z, xc->getBool(node));
 			return;
 		case xconfig::TYPE_INTEGER:
-			ZVAL_LONG(*z, xc->getInt(node));
+			ZVAL_LONG(z, xc->getInt(node));
 			return;
 		case xconfig::TYPE_FLOAT:
-			ZVAL_DOUBLE(*z, xc->getFloat(node));
+			ZVAL_DOUBLE(z, xc->getFloat(node));
 			return;
 		case xconfig::TYPE_STRING:
 		{
 			string val = xc->getString(node);
-			ZVAL_STRINGL(*z, val.c_str(), val.length(), 1);
+			ZVAL_STRINGL(z, val.c_str(), val.length());
 			return;
 		}
 		case xconfig::TYPE_SEQUENCE: {
 			vector<XConfigNode> children = xc->getChildren(node);
-			array_init(*z);
+			array_init(z);
 			for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
-				zval *item;
+				zval item;
 				getValueToZval(xc, *it, &item);
-				add_next_index_zval(*z, item);
+				add_next_index_zval(z, &item);
 			}
 			return;
 		}
 		case xconfig::TYPE_MAP: {
 			vector<XConfigNode> children = xc->getChildren(node);
-			array_init(*z);
+			array_init(z);
 			for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
-				zval *item;
+				zval item;
 				string name(xc->getName(*it));
 				getValueToZval(xc, *it, &item);
 				if (name.length())
-					add_assoc_zval_ex(*z, name.c_str(), name.length() + 1, item);
+					add_assoc_zval_ex(z, name.c_str(), name.length() + 1, &item);
 				else
-					add_assoc_zval_ex(*z, "", 0, item);
+					add_assoc_zval_ex(z, "", 0, &item);
 			}
 			return;
 		}
@@ -317,17 +319,17 @@ static void getValueToZval(XConfig* xc, const XConfigNode& node, zval **z)
 PHP_METHOD(XConfig, getValue)
 {
 	zval *z_key;
-	zval *z_ret;
+	zval z_ret;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 	getValueToZval(obj->xconfig, node, &z_ret);
-	RETURN_ZVAL(z_ret, false, true);
+	RETURN_ZVAL(&z_ret, false, true);
 }
 
 PHP_METHOD(XConfig, isScalar)
@@ -337,8 +339,8 @@ PHP_METHOD(XConfig, isScalar)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 
@@ -352,8 +354,8 @@ PHP_METHOD(XConfig, isMap)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 
@@ -367,8 +369,8 @@ PHP_METHOD(XConfig, isSequence)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 
@@ -382,8 +384,8 @@ PHP_METHOD(XConfig, getCount)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 
@@ -397,8 +399,8 @@ PHP_METHOD(XConfig, getMapKeys)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 	XConfig* xc = obj->xconfig;
@@ -407,7 +409,7 @@ PHP_METHOD(XConfig, getMapKeys)
 	array_init(return_value);
 	for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
 		string name(xc->getName(*it));
-		add_next_index_stringl(return_value, name.c_str(), name.length(), 1);
+		add_next_index_stringl(return_value, name.c_str(), name.length());
 	}
 }
 
@@ -418,13 +420,13 @@ PHP_METHOD(XConfig, getNode)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (!node)
 		return;
 	object_init_ex(return_value, xconfignode_ce);
 
-	xconfignode_object *node_obj = (xconfignode_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+	xconfignode_object *node_obj = Z_XCONFIGNODE_OBJ_P(return_value);
 	node_obj->xconfig = obj->xconfig;
 	node_obj->xconfignode = node;
 }
@@ -436,11 +438,11 @@ PHP_METHOD(XConfig, getNodeNoThrow)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key, true);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key, true);
 	object_init_ex(return_value, xconfignode_ce);
 
-	xconfignode_object *node_obj = (xconfignode_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+	xconfignode_object *node_obj = Z_XCONFIGNODE_OBJ_P(return_value);
 	node_obj->xconfig = obj->xconfig;
 	node_obj->xconfignode = node;
 }
@@ -452,12 +454,12 @@ PHP_METHOD(XConfig, escapeString)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &z_key) == FAILURE) {
 		RETURN_NULL();
 	}
-	xconfig_object *obj = (xconfig_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
-	XConfigNode node = getNodeFromZVal(obj->xconfig, z_key);
+	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
+	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
 	if (node) {
 		object_init_ex(return_value, xconfignode_ce);
 
-		xconfignode_object *node_obj = (xconfignode_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+	    xconfignode_object *node_obj = Z_XCONFIGNODE_OBJ_P(return_value);
 		node_obj->xconfig = obj->xconfig;
 		node_obj->xconfignode = node;
 	} else {
@@ -467,7 +469,7 @@ PHP_METHOD(XConfig, escapeString)
 
 PHP_METHOD(XConfigNode, exists)
 {
-	xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfignode_object *obj = Z_XCONFIGNODE_OBJ_P(getThis());
 	const XConfigNode& node = obj->xconfignode;
 
 	RETURN_BOOL((bool) node);
@@ -475,44 +477,42 @@ PHP_METHOD(XConfigNode, exists)
 
 PHP_METHOD(XConfigNode, getParent)
 {
-	xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfignode_object *obj = Z_XCONFIGNODE_OBJ_P(getThis());
 	const XConfigNode& node = obj->xconfignode;
 	XConfig* xc = obj->xconfig;
 
 	object_init_ex(return_value, xconfignode_ce);
-	xconfignode_object *new_obj = (xconfignode_object *)zend_object_store_get_object(return_value TSRMLS_CC);
+	xconfignode_object *new_obj = Z_XCONFIGNODE_OBJ_P(return_value);
 	new_obj->xconfig = obj->xconfig;
 	new_obj->xconfignode = xc->getParent(node);
 }
 
 PHP_METHOD(XConfigNode, getChildren)
 {
-	xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfignode_object *obj = Z_XCONFIGNODE_OBJ_P(getThis());
 	const XConfigNode& node = obj->xconfignode;
 	XConfig* xc = obj->xconfig;
 
 	vector<XConfigNode> children = xc->getChildren(node);
 	array_init(return_value);
 	for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
-		zval *z_node;
-		MAKE_STD_ZVAL(z_node);
-		Z_TYPE_P(z_node) = IS_OBJECT;
-		object_init_ex(z_node, xconfignode_ce);
-		xconfignode_object *new_obj = (xconfignode_object *)zend_object_store_get_object(z_node TSRMLS_CC);
+		zval z_node;
+		object_init_ex(&z_node, xconfignode_ce);
+	    xconfignode_object *new_obj = Z_XCONFIGNODE_OBJ_P(&z_node);
 		new_obj->xconfig = obj->xconfig;
 		new_obj->xconfignode = *it;
-		add_next_index_zval(return_value, z_node);
+		add_next_index_zval(return_value, &z_node);
 	}
 }
 
 PHP_METHOD(XConfigNode, getName)
 {
-	xconfignode_object *obj = (xconfignode_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	xconfignode_object *obj = Z_XCONFIGNODE_OBJ_P(getThis());
 	const XConfigNode& node = obj->xconfignode;
 	XConfig* xc = obj->xconfig;
 
 	string ret(xc->getName(node));
-	RETURN_STRINGL(ret.c_str(), ret.length(), 1);
+	RETURN_STRINGL(ret.c_str(), ret.length());
 }
 
 #if PHP_VERSION_ID < 50399
@@ -538,11 +538,7 @@ zend_function_entry xconfig_methods[] = {
 	{NULL, NULL, NULL}
 };
 
-#if PHP_VERSION_ID < 50399
-function_entry xconfignode_methods[] = {
-#else
 zend_function_entry xconfignode_methods[] = {
-#endif
 	PHP_ME(XConfigNode, exists, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfigNode, getParent, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(XConfigNode, getChildren, NULL, ZEND_ACC_PUBLIC)
@@ -555,9 +551,7 @@ PHP_MSHUTDOWN_FUNCTION(xconfig);
  
 // the following code creates an entry for the module and registers it with Zend.
 zend_module_entry xconfig_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
     STANDARD_MODULE_HEADER,
-#endif
     PHP_XCONFIG_EXTNAME,
     NULL, // functions
 	PHP_MINIT(xconfig),
@@ -565,9 +559,7 @@ zend_module_entry xconfig_module_entry = {
     NULL, // name of the RINIT function or NULL if not applicable
     NULL, // name of the RSHUTDOWN function or NULL if not applicable
     NULL, // name of the MINFO function or NULL if not applicable
-#if ZEND_MODULE_API_NO >= 20010901
     PHP_XCONFIG_VERSION,
-#endif
     STANDARD_MODULE_PROPERTIES
 };
  
@@ -605,16 +597,16 @@ PHP_MINIT_FUNCTION(xconfig)
 	xconfignode_object_handlers.clone_obj = NULL;
 
 	INIT_CLASS_ENTRY(ce, "XConfigException", NULL);
-	xconfig_exception_ce = zend_register_internal_class_ex(&ce, zend_exception_get_default(TSRMLS_C), NULL TSRMLS_CC);
+	xconfig_exception_ce = zend_register_internal_class_ex(&ce, zend_exception_get_default(TSRMLS_C));
 
 	INIT_CLASS_ENTRY(ce, "XConfigNotFoundException", NULL);
-	xconfig_notfoundexception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
+	xconfig_notfoundexception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce);
 
 	INIT_CLASS_ENTRY(ce, "XConfigWrongTypeException", NULL);
-	xconfig_wrongtypeexception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
+	xconfig_wrongtypeexception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce);
 
 	INIT_CLASS_ENTRY(ce, "XConfigNotConnectedException", NULL);
-	xconfig_notconnectedxception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce, NULL TSRMLS_CC);
+	xconfig_notconnectedxception_ce = zend_register_internal_class_ex(&ce, xconfig_exception_ce);
 
 	xconfig_pool = 0;
 

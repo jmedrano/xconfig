@@ -1,2 +1,2 @@
-/usr/lib/php5/*/xconfig.so
-/etc/php5/conf.d/xconfig.ini
+/usr/lib/php/20151012/xconfig.so
+/etc/php/conf.d/xconfig.ini
