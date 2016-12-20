@@ -46,9 +46,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: XConfig utils
  Utility commands for the XConfig configuration system
 
-Package: php5-xconfig
+Package: php7-xconfig
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: XConfig PHP extension
- PHP extension for the XConfig configuration system
+ PHP7 extension for the XConfig configuration system
 
