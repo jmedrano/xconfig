@@ -15,11 +15,12 @@ using xconfig::XConfig;
 using xconfig::XConfigNode;
 using xconfig::XConfigNotFound;
 using xconfig::XConfigNotConnected;
+using xconfig::XConfigWrongType;
 using xconfig::UnixConnectionPool;
 using xconfig::UnixConnection;
 using std::string;
 using std::vector;
- 
+
 #define PHP_XCONFIG_VERSION "1.0"
 #define PHP_XCONFIG_EXTNAME "xconfig"
 
@@ -46,25 +47,17 @@ struct xconfignode_object {
 	zend_object std;
 };
 
-void xconfig_free_storage(void *object TSRMLS_DC)
+void xconfig_free_storage(zend_object *object TSRMLS_DC)
 {
-	xconfig_object *obj = (xconfig_object *)object;
-	delete obj->xconfig; 
-
-	zend_hash_destroy(obj->std.properties);
-	FREE_HASHTABLE(obj->std.properties);
-
-	efree(obj);
+	xconfig_object *obj = (xconfig_object *)((char*)object - XtOffsetOf(xconfig_object, std));
+	delete obj->xconfig;
+	zend_object_std_dtor(object);
 }
 
-void xconfignode_free_storage(void *object TSRMLS_DC)
+void xconfignode_free_storage(zend_object *object TSRMLS_DC)
 {
-	xconfignode_object *obj = (xconfignode_object *)object;
-
-	zend_hash_destroy(obj->std.properties);
-	FREE_HASHTABLE(obj->std.properties);
-
-	efree(obj);
+	xconfignode_object *obj = (xconfignode_object *)((char*)object - XtOffsetOf(xconfignode_object, std));
+	zend_object_std_dtor(object);
 }
 
 zend_object * xconfig_create_handler(zend_class_entry *type TSRMLS_DC)
@@ -74,17 +67,13 @@ zend_object * xconfig_create_handler(zend_class_entry *type TSRMLS_DC)
             zend_object_properties_size(type));
     zend_object_std_init(&obj->std, type TSRMLS_CC);
 
-    // TODO Check this
-	ALLOC_HASHTABLE(obj->std.properties);
-	zend_hash_init(obj->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-
     xconfig_object_handlers.offset = XtOffsetOf(struct xconfig_object, std);
     xconfig_object_handlers.free_obj = (zend_object_free_obj_t) xconfig_free_storage;
     obj->std.handlers = &xconfig_object_handlers;
 
     return &obj->std;
 }
- 
+
 zend_object * xconfignode_create_handler(zend_class_entry *type TSRMLS_DC)
 {
     xconfignode_object *obj = (xconfignode_object *) ecalloc(1,
@@ -92,17 +81,13 @@ zend_object * xconfignode_create_handler(zend_class_entry *type TSRMLS_DC)
              zend_object_properties_size(type));
     zend_object_std_init(&obj->std, type TSRMLS_CC);
 
-    // TODO Check this
-	ALLOC_HASHTABLE(obj->std.properties);
-	zend_hash_init(obj->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-
     xconfignode_object_handlers.offset = XtOffsetOf(struct xconfignode_object, std);
-    xconfig_object_handlers.free_obj = (zend_object_free_obj_t) xconfignode_free_storage;
+    xconfignode_object_handlers.free_obj = (zend_object_free_obj_t) xconfignode_free_storage;
     obj->std.handlers = &xconfignode_object_handlers;
 
 	return &obj->std;
 }
- 
+
 extern zend_module_entry xconfig_module_entry;
 
 zend_class_entry *xconfig_ce;
@@ -122,7 +107,7 @@ static inline struct xconfig_object * php_xconfig_object_fetch_object(zend_objec
 static inline struct xconfignode_object * php_xconfignode_object_fetch_object(zend_object *obj) {
     return (struct xconfignode_object *)((char *)obj - XtOffsetOf(struct xconfignode_object, std));
 }
- 
+
 #define Z_XCONFIG_OBJ_P(zv) php_xconfig_object_fetch_object(Z_OBJ_P(zv));
 #define Z_XCONFIGNODE_OBJ_P(zv) php_xconfignode_object_fetch_object(Z_OBJ_P(zv));
 
@@ -148,7 +133,7 @@ PHP_METHOD(XConfig, __construct)
 			obj->xconfig = new XConfig(xconfig_pool->getConnection(string(path, path_len)), autoreload);
 		}
 	} catch (const XConfigNotConnected& e) {
-		zend_throw_exception_ex(xconfig_notconnectedxception_ce, 0 TSRMLS_CC, (char*)"XConfig not connected");	
+		zend_throw_exception_ex(xconfig_notconnectedxception_ce, 0 TSRMLS_CC, (char*)"XConfig not connected");
 	}
 }
 
@@ -174,7 +159,7 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval z_key, bool nothrow = false
 					if (obj->xconfig  == xc) {
 						node = obj->xconfignode;
 					} else {
-						zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"XConfigNode object belongs to another XConfig instance");	
+						zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"XConfigNode object belongs to another XConfig instance");
 					}
 				} else {
 					zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Expected XConfigNode object");
@@ -191,7 +176,7 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval z_key, bool nothrow = false
 				zval *data;
 
 				vector<string> keys(zend_hash_num_elements(ht));
-                
+
                 ZEND_HASH_FOREACH_KEY_VAL(ht, num_key, key, data) {
                     if (key) { //HASH_KEY_IS_STRING
 						keys[num_key] = string(Z_STRVAL_P(data), Z_STRLEN_P(data));
@@ -209,15 +194,15 @@ static XConfigNode getNodeFromZVal(XConfig* xc, zval z_key, bool nothrow = false
 				break;
 			}
 			default:
-				zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Wrong type for key");	
+				zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Wrong type for key");
 				break;
 		}
 	} catch (const XConfigNotConnected& e) {
-		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"XConfig not connected");	
+		zend_throw_exception_ex(xconfig_notconnectedxception_ce, 0 TSRMLS_CC, (char*)"XConfig not connected");
 	}
-	if (!node && !nothrow) {
-		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");	
-	}
+    if (!EG(exception) && !node && !nothrow) {
+        zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");
+    }
 	return node;
 }
 
@@ -305,14 +290,14 @@ static void getValueToZval(XConfig* xc, const XConfigNode& node, zval *z)
 				string name(xc->getName(*it));
 				getValueToZval(xc, *it, &item);
 				if (name.length())
-					add_assoc_zval_ex(z, name.c_str(), name.length() + 1, &item);
+					add_assoc_zval_ex(z, name.c_str(), name.length(), &item);
 				else
 					add_assoc_zval_ex(z, "", 0, &item);
 			}
 			return;
 		}
 		default:
-			zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Wrong Type");	
+			zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Wrong Type");
 	}
 }
 
@@ -386,10 +371,14 @@ PHP_METHOD(XConfig, getCount)
 	}
 	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
 	XConfigNode node = getNodeFromZVal(obj->xconfig, *z_key);
-	if (!node)
-		return;
 
-	RETURN_LONG(obj->xconfig->getCount(node));
+    if (!EG(exception)) {
+        try {
+            RETURN_LONG(obj->xconfig->getCount(node));
+        } catch (const XConfigWrongType& e) {
+            zend_throw_exception_ex(xconfig_wrongtypeexception_ce, 0 TSRMLS_CC, (char*)"Wrong Type");
+        }
+	}
 }
 
 PHP_METHOD(XConfig, getMapKeys)
@@ -463,7 +452,7 @@ PHP_METHOD(XConfig, escapeString)
 		node_obj->xconfig = obj->xconfig;
 		node_obj->xconfignode = node;
 	} else {
-		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");	
+		zend_throw_exception_ex(xconfig_notfoundexception_ce, 0 TSRMLS_CC, (char*)"Key not found");
 	}
 }
 
@@ -548,7 +537,7 @@ zend_function_entry xconfignode_methods[] = {
 
 PHP_MINIT_FUNCTION(xconfig);
 PHP_MSHUTDOWN_FUNCTION(xconfig);
- 
+
 // the following code creates an entry for the module and registers it with Zend.
 zend_module_entry xconfig_module_entry = {
     STANDARD_MODULE_HEADER,
