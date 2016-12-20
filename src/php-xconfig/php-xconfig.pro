@@ -33,7 +33,7 @@ TARGET = build/modules/xconfig.so
 extensions.path = /usr/lib/php/20151012/
 extensions.files = build/modules/xconfig.so
 extensions.CONFIG = no_check_exist
-ini.path = /etc/php/conf.d/
+ini.path = /etc/php/7.0/mods-available/
 ini.files = xconfig.ini
 
 INSTALLS += extensions ini

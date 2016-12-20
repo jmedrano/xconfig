@@ -1,2 +1,2 @@
 /usr/lib/php/20151012/xconfig.so
-/etc/php/conf.d/xconfig.ini
+/etc/php/7.0/mods-available/xconfig.ini
