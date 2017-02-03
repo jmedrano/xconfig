@@ -30,10 +30,10 @@ QMAKE_LINK = make -C build && true
 OBJECTS = build/Makefile
 TARGET = build/modules/xconfig.so
 
-extensions.path = /usr/lib/php/20160303/
+extensions.path = "$$system(php -r \"echo ini_get(\'extension_dir\');\")"
 extensions.files = build/modules/xconfig.so
 extensions.CONFIG = no_check_exist
-ini.path = /etc/php/7.1/conf.d/
+ini.path = "$$system(php -r \"echo dirname(php_ini_loaded_file()) . \'/conf.d\';\")"
 ini.files = xconfig.ini
 
 INSTALLS += extensions ini
