@@ -1,5 +1,7 @@
 package com.tuenti.xconfig;
 
+import static org.apache.commons.lang3.StringUtils.split;
+
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigMap;
@@ -16,7 +18,7 @@ public class BreedXConfig extends XConfigBase {
 	private String[][] breed;
 
 	public BreedXConfig(XConfig xconfig, String[][] breed) {
-		if (xconfig instanceof BreedXConfig) {	
+		if (xconfig instanceof BreedXConfig) {
 			throw new RuntimeException("You can't pass a BreedsXConfig to another BreedsXConfig");
 		}
 		this.xconfig = xconfig;
@@ -40,12 +42,12 @@ public class BreedXConfig extends XConfigBase {
 		boolean found = false;
 
 		String[] breedKeys = getBreedKeys(key);
-		
+
 		// Iterate the keys in reverse order
 		// We only continue iterating if we received a map
 		for (int i=breedKeys.length-1; i>=0 && isMap; i--) {
 			String breedKey = breedKeys[i];
-			
+
 			try {
 				XConfigValue newValue = xconfig.getValue(breedKey);
 				isMap = newValue instanceof XConfigMap;
@@ -75,7 +77,7 @@ public class BreedXConfig extends XConfigBase {
 
 	@Override
 	public long getLastModificationTime(String key) throws XConfigKeyNotFoundException {
-		// Still not 
+		// Still not
 		return 0;
 	}
 
@@ -88,7 +90,7 @@ public class BreedXConfig extends XConfigBase {
 		int keyCount = breed.length + 1;
 		String[] keys = new String[keyCount];
 
-		String[] originalPath = originalKey.split("/", 2);
+		String[] originalPath = split(originalKey, "/", 2);
 		String oldHead = originalPath[0];
 		String newHead = oldHead + "_breeds";
 

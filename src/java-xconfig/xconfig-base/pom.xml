@@ -12,4 +12,13 @@
 	<packaging>jar</packaging>
 	<name>xconfig-base</name>
 	<url>http://maven.apache.org</url>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
 </project>

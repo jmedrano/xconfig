@@ -7,6 +7,8 @@
  */
 package com.tuenti.xconfig;
 
+import static org.apache.commons.lang3.StringUtils.replace;
+
 /**
  * XConfigPath class. This class has a unique public method in order to generate
  * a valid XConfig path giving the key per parts.
@@ -77,6 +79,6 @@ public class XConfigPath {
 	 * @return Escaped string
 	 */
 	private static final String escape(String string) {
-		return string.replace("\\", "\\\\").replace("/", "\\/").replace("#", "\\#");
+		return replace(replace(replace(string, "\\", "\\\\"), "/", "\\/"), "#", "\\#");
 	}
 }
