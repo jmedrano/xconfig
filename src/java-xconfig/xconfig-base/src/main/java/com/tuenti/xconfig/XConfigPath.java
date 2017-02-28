@@ -7,7 +7,7 @@
  */
 package com.tuenti.xconfig;
 
-import static org.apache.commons.lang3.StringUtils.replace;
+import static com.tuenti.xconfig.utils.StringUtils.replace;
 
 /**
  * XConfigPath class. This class has a unique public method in order to generate

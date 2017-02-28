@@ -1,6 +1,6 @@
 package com.tuenti.xconfig;
 
-import static org.apache.commons.lang3.StringUtils.split;
+import static com.tuenti.xconfig.utils.StringUtils.split;
 
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
