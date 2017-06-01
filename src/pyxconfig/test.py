@@ -1,8 +1,18 @@
+import os, sys
+sys.path.append('./build/lib.linux-x86_64-2.7')
 import xconfig
-xconfig.init("/srv/tuenti/tuenti-dev-config/")
 
-xconfig.getValue("databaseConfig/0/tu_mgm_daily_notifications/partition_type")  ## int
-xconfig.getValue("killPhotos/numberOfPhotosRequiredForTheVideo")                ## int
-xconfig.getValue("serviceConfig/services/Api4FileStorage/service_protocol")     ## string
+xconfig.init(os.getcwd() + "/config")
 
-xconfig.getValue("serviceConfig/services/Push")
+assert xconfig.getValue("testConfig/sampleInt") == 1
+assert xconfig.getValue("testConfig/sampleBool") == True
+assert xconfig.getValue("testConfig/sampleNull") is None
+assert xconfig.getValue("testConfig/sampleString") == "test"
+assert xconfig.getValue("testConfig/sampleList") == [1, 2, []]
+assert xconfig.getValue("testConfig/sampleMap") == {"a": 1, "b": [{"x": []}], "c": "test"}
+
+try:
+    xconfig.getValue("missingConfig")
+    assert False
+except xconfig.XConfigNotFoundException as e:
+    pass
