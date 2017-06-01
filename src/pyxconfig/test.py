@@ -30,3 +30,8 @@ for wrong_key in wrong_keys:
         assert False
     except xconfig.XConfigWrongTypeException as e:
         pass
+
+mtime = xconfig.getMTime(["testConfig"])
+assert len(mtime) == 2
+xconfig.reload()
+assert mtime == xconfig.getMTime(["testConfig"])

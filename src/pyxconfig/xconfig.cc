@@ -8,12 +8,19 @@ using xconfig::XConfig;
 using xconfig::XConfigNode;
 using xconfig::XConfigNotConnected;
 using xconfig::UnixConnection;
+using xconfig::UnixConnectionPool;
 
 static XConfig* xc = NULL;
 static PyObject *XConfigWrongTypeException = NULL;
 static PyObject *XConfigNotFoundException = NULL;
 static PyObject *XConfigNotConnectedException = NULL;
+static UnixConnectionPool* xconfig_pool = NULL;
 
+/**
+ * Get a python value for an xconfig node
+ * @param node the node
+ * @return the parsed value
+ */
 static PyObject* getValue(const XConfigNode node) {
     switch (node.getType()) {
         case xconfig::TYPE_NULL:
@@ -30,7 +37,9 @@ static PyObject* getValue(const XConfigNode node) {
             PyObject *list = PyList_New(0);
             std::vector<XConfigNode> children = node.getChildren();
             for (XConfigNode child : node.getChildren()) {
-                PyList_Append(list, getValue(child));
+                PyObject* childValue = getValue(child);
+                PyList_Append(list, childValue);
+                Py_DECREF(childValue);
             }
             return list;
         }
@@ -38,7 +47,9 @@ static PyObject* getValue(const XConfigNode node) {
             PyObject *dict = PyDict_New();
             std::vector<XConfigNode> children = node.getChildren();
             for (XConfigNode child : node.getChildren()) {
-                PyDict_SetItemString(dict, child.getName().c_str(), getValue(child));
+                PyObject* childValue = getValue(child);
+                PyDict_SetItemString(dict, child.getName().c_str(), childValue);
+                Py_DECREF(childValue);
             }
             return dict;
         }
@@ -48,26 +59,37 @@ static PyObject* getValue(const XConfigNode node) {
     }
 }
 
+/**
+ * xconfig.xconfig_init(config_path)
+ * Create an xconfig connection and set the config paths
+ * @param self
+ * @param args
+ * @return null
+ */
 static PyObject* xconfig_init(PyObject *self, PyObject *args) {
     char *path;
-    PyArg_ParseTuple(args, "s", &path);
 
-    try {
-        const boost::shared_ptr<UnixConnection> unix_connection = boost::shared_ptr<UnixConnection>(new UnixConnection(path, ""));
-        xc = new XConfig(unix_connection, true);
-    } catch (const XConfigNotConnected& e) {
-        PyErr_SetString(XConfigNotConnectedException, "XConfig not connected");
-        return NULL;
-	}
-
-
-    return Py_BuildValue("z", NULL);
+    if (PyArg_ParseTuple(args, "s", &path)) {
+        try {
+            if (!xconfig_pool) {
+                xconfig_pool = new UnixConnectionPool;
+            }
+            xc = new XConfig(xconfig_pool->getConnection(path), true);
+            return Py_BuildValue("z", NULL);
+        } catch (const XConfigNotConnected &e) {
+            PyErr_SetString(XConfigNotConnectedException, "XConfig not connected");
+            return NULL;
+        }
+    }
 }
 
-static PyObject* xconfig_test(PyObject *self, PyObject *args) {
-    return Py_BuildValue("i", 42);
-}
-
+/**
+ * xconfig.xconfig.getValue(key)
+ * Get the xconfig value for a given key (specified as a list)
+ * @param self
+ * @param args
+ * @return the python value
+ */
 static PyObject* xconfig_getValue(PyObject *self, PyObject *args) {
     if (!xc) {
         PyErr_SetString(XConfigNotConnectedException, "XConfig not connected");
@@ -82,8 +104,14 @@ static PyObject* xconfig_getValue(PyObject *self, PyObject *args) {
         vector <string> keys(size);
 
         for (int i=0; i<size; i++) {
-            const char* keyPart = PyString_AsString(PyObject_Str(PySequence_GetItem(keysParam, i)));
+            PyObject* item = PySequence_GetItem(keysParam, i);
+            PyObject* itemStr = PyObject_Str(item);
+
+            const char* keyPart = PyString_AsString(itemStr);
             keys[i] = (string) keyPart;
+
+            Py_DECREF(item);
+            Py_DECREF(itemStr);
         }
 
         node = xc->getNodeNoThrow(keys);
@@ -100,25 +128,56 @@ static PyObject* xconfig_getValue(PyObject *self, PyObject *args) {
 }
 
 
-//static PyObject* xconfig_getMTime(PyObject *self, PyObject *args) {
-//}
+static PyObject* xconfig_getMTime(PyObject *self, PyObject *args) {
+    if (!xc) {
+        PyErr_SetString(XConfigNotConnectedException, "XConfig not connected");
+        return NULL;
+    }
 
-//static PyObject* xconfig_reload(PyObject *self, PyObject *args) {
-//}
+    PyObject* keysParam;
+    XConfigNode node;
 
-//static PyObject* xconfig_getMTime(PyObject *self, PyObject *args) {
-//}
+    if (PyArg_ParseTuple(args, "O", &keysParam) && PySequence_Check(keysParam)) {
+        int size = PySequence_Size(keysParam);
+        vector <string> keys(size);
 
-//static PyObject* xconfig_getMTime(PyObject *self, PyObject *args) {
-//}
+        for (int i = 0; i < size; i++) {
+            const char *keyPart = PyString_AsString(PyObject_Str(PySequence_GetItem(keysParam, i)));
+            keys[i] = (string) keyPart;
+        }
+
+        node = xc->getNodeNoThrow(keys);
+        if (!node) {
+            PyErr_SetString(XConfigNotFoundException, "Key not found");
+            return NULL;
+        }
+
+        timespec ts = xc->getMtime(node);
+        return PyTuple_Pack(2, PyInt_FromLong(ts.tv_sec), PyInt_FromLong(ts.tv_nsec));
+    }
+
+    PyErr_SetString(XConfigWrongTypeException, "Wrong type for key");
+    return NULL;
+}
+
+static PyObject* xconfig_reload(PyObject *self, PyObject *args) {
+    if (!xc) {
+        PyErr_SetString(XConfigNotConnectedException, "XConfig not connected");
+        return NULL;
+    }
+    xc->reload();
+    return Py_BuildValue("z", NULL);
+}
 
 static PyMethodDef XConfigMethods[] = {
         {"init",  xconfig_init, METH_VARARGS,
                         "Initialize XConfig module."},
-        {"test",  xconfig_test, METH_VARARGS,
-                        "Test method."},
+        {"reload",  xconfig_reload, METH_VARARGS,
+                        "Reload XConfig connection."},
         {"getValue",  xconfig_getValue, METH_VARARGS,
                         "Gets a config value for a node specification."},
+        {"getMTime",  xconfig_getMTime, METH_VARARGS,
+                        "Gets a tuple (secs, nsecs) with the modification time of a key."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -142,4 +201,3 @@ PyMODINIT_FUNC initxconfig(void) {
     Py_INCREF(XConfigNotConnectedException);
     PyModule_AddObject(m, "XConfigNotConnectedException", XConfigNotConnectedException);
 }
-
