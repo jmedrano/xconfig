@@ -69,17 +69,34 @@ static PyObject* xconfig_test(PyObject *self, PyObject *args) {
 }
 
 static PyObject* xconfig_getValue(PyObject *self, PyObject *args) {
-    char* key;
-    XConfigNode node;
-    PyArg_ParseTuple(args, "s", &key);
-    node = xc->getNodeNoThrow(string(key));
-
-    if (!node) {
-        PyErr_SetString(XConfigNotFoundException, "Key not found");
+    if (!xc) {
+        PyErr_SetString(XConfigNotConnectedException, "XConfig not connected");
         return NULL;
     }
 
-    return getValue(node);
+    PyObject* keysParam;
+    XConfigNode node;
+
+    if (PyArg_ParseTuple(args, "O", &keysParam) && PySequence_Check(keysParam)) {
+        int size = PySequence_Size(keysParam);
+        vector <string> keys(size);
+
+        for (int i=0; i<size; i++) {
+            const char* keyPart = PyString_AsString(PyObject_Str(PySequence_GetItem(keysParam, i)));
+            keys[i] = (string) keyPart;
+        }
+
+        node = xc->getNodeNoThrow(keys);
+        if (!node) {
+            PyErr_SetString(XConfigNotFoundException, "Key not found");
+            return NULL;
+        } else {
+            return getValue(node);
+        }
+    }
+
+    PyErr_SetString(XConfigWrongTypeException, "Wrong type for key");
+    return NULL;
 }
 
 
