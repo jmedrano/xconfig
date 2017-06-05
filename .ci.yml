@@ -28,6 +28,8 @@ workflows:
   # Meant to be executed with cigen
   build_java_deb_package:
     stages: [docker_up, install_extra_packages, build_java_deb_package, docker_down]
+  build:
+    stages: [build]
 
 stages:
   docker_up: ["docker-compose pull", "docker-compose up -d"]
@@ -44,3 +46,10 @@ stages:
     - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && mk-build-deps --install -t \"apt-get -y\""'
     - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && ./makePackage.sh"'
 
+  build:
+    - 'docker-compose up -d php-builder'
+    - 'docker-compose exec php-builder apt-get update'
+    - 'docker-compose exec php-builder apt-get install -y packaging-dev debian-keyring devscripts equivs'
+    - 'docker-compose exec php-builder bash -c "cd /source && mk-build-deps --install --remove -t \"apt-get -y\""'
+    - 'docker-compose exec php-builder bash -c "cd /source &&  dpkg-buildpackage -uc -us -b"'
+    - 'docker-compose exec php-builder bash -c "cp ../*.deb ."'

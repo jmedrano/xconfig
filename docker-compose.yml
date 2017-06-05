@@ -6,3 +6,8 @@ services:
       - "./:/source"
       # so the docker plugin can build images
       - "${DOCKER_SOCK_FILE}:/var/run/docker.sock"
+
+  php-builder:
+    image: "docker.tuenti.io/service-inf/php-builder:7.0.16-tuenti3"
+    volumes:
+      - "./:/source"

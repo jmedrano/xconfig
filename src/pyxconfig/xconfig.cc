@@ -1,5 +1,5 @@
 #include <Python.h>
-#include <xconfig/xconfig.h>
+#include <xconfig.h>
 #include <iostream>
 
 using std::string;
