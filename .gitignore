@@ -43,4 +43,5 @@ src/php-xconfig/run-tests.php
 src/php-xconfig/xconfig.cpp
 src/php-xconfig/xconfig.h
 src/pyxconfig/Makefile
+src/pyxconfig/config/tmp.yaml
 .idea

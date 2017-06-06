@@ -1,24 +1,18 @@
-import os, sys
+import os, sys, time, resource, gc
 sys.path.append('./build/lib.linux-x86_64-2.7')
 import xconfig
 
-try:
-    xconfig.getValue(["notConnected"])
-    assert False
-except xconfig.XConfigNotConnectedException as e:
-    pass
+xc = xconfig.XConfig(os.getcwd() + "/config")
 
-xconfig.init(os.getcwd() + "/config")
-
-assert xconfig.getValue(["testConfig", "sampleInt"]) == 1
-assert xconfig.getValue(["testConfig", "sampleBool"]) == True
-assert xconfig.getValue(["testConfig", "sampleNull"]) is None
-assert xconfig.getValue(["testConfig", "sampleString"]) == "test"
-assert xconfig.getValue(["testConfig", "sampleList"]) == [1, 2, []]
-assert xconfig.getValue(["testConfig", "sampleMap"]) == {"a": 1, "b": [{"x": []}], "c": "test"}
+assert xc.getValue(["testConfig", "sampleInt"]) == 1
+assert xc.getValue(["testConfig", "sampleBool"]) == True
+assert xc.getValue(["testConfig", "sampleNull"]) is None
+assert xc.getValue(["testConfig", "sampleString"]) == "test"
+assert xc.getValue(["testConfig", "sampleList"]) == [1, 2, []]
+assert xc.getValue(["testConfig", "sampleMap"]) == {"a": 1, "b": [{"x": []}], "c": "test"}
 
 try:
-    xconfig.getValue(["missingConfig"])
+    xc.getValue(["missingConfig"])
     assert False
 except xconfig.XConfigNotFoundException as e:
     pass
@@ -26,12 +20,55 @@ except xconfig.XConfigNotFoundException as e:
 wrong_keys = [None, {}, True, 123]
 for wrong_key in wrong_keys:
     try:
-        xconfig.getValue(wrong_key)
+        xc.getValue(wrong_key)
         assert False
     except xconfig.XConfigWrongTypeException as e:
         pass
 
-mtime = xconfig.getMTime(["testConfig"])
+mtime = xc.getMTime(["testConfig"])
 assert len(mtime) == 2
-xconfig.reload()
-assert mtime == xconfig.getMTime(["testConfig"])
+xc.reload()
+assert mtime == xc.getMTime(["testConfig"])
+
+print 'Basic tests OK'
+
+
+xc2 = xconfig.XConfig(os.getcwd() + "/noconfig")
+try:
+    xc2.getValue(["testConfig"])
+except xconfig.XConfigNotFoundException as e:
+    pass
+
+xc.getValue(["testConfig"])
+
+xc3 = xconfig.XConfig(os.getcwd() + "/config")
+xc3.getValue(["testConfig"])
+
+print 'Multiple instances tests OK'
+
+
+for i in xrange(10):
+    yaml = "tmp: %d" % i
+    with open('config/tmp.yaml','w') as f:
+        f.write(yaml)
+
+    # 100ms seems too low to ensure a reload
+    time.sleep(1)
+    xc.reload()
+    assert xc.getValue(['tmp']) == i
+
+print 'Reload tests OK'
+
+
+original_memory_usage = memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+print 'Memory usage: %d' % memory_usage
+for i in xrange(10):
+    for j in xrange(100000):
+        xc = xconfig.XConfig(os.getcwd() + "/config")
+        xc.getValue(['testConfig'])
+    gc.collect()
+    memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print 'Memory usage: %d' % memory_usage
+
+if original_memory_usage - memory_usage < 100:
+    print 'Memory tests OK'
