@@ -4,6 +4,7 @@ import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigList;
 import com.tuenti.xconfig.type.XConfigMap;
+import com.tuenti.xconfig.type.XConfigValueType;
 
 abstract public class XConfigBase implements XConfig {
 
@@ -161,5 +162,10 @@ abstract public class XConfigBase implements XConfig {
 		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
 			return defaultValue;
 		}
+	}
+
+	@Override
+	public boolean hasValidKey(String key, XConfigValueType type) {
+		return hasKey(key) && getValue(key).getType() == type;
 	}
 }

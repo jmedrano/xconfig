@@ -23,14 +23,14 @@ import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
  */
 public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 
-	private List<XConfigValue> values = null;
+	private List<XConfigValue> values;
 
 	public XConfigList() {
-		this.values = new ArrayList<XConfigValue>();
+		this.values = new ArrayList<>();
 	}
 
 	public XConfigList(List<XConfigValue> list) {
-		this.values = new ArrayList<XConfigValue>();
+		this.values = new ArrayList<>();
 		this.values.addAll(list);
 	}
 
@@ -165,7 +165,7 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 
 	@Override
 	public List<Object> getAsJavaObject() {
-		List<Object> javaValues = new LinkedList<Object>();
+		List<Object> javaValues = new LinkedList<>();
 		for (XConfigValue v : values) {
 			javaValues.add(v.getAsJavaObject());
 		}

@@ -1,6 +1,6 @@
 package com.tuenti.xconfig.exception;
 
-public class XConfigKeyNotFoundException extends Exception {
+public class XConfigKeyNotFoundException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
     private String key;

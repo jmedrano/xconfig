@@ -5,6 +5,7 @@ import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigList;
 import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
+import com.tuenti.xconfig.type.XConfigValueType;
 
 public interface XConfig {
 
@@ -140,7 +141,13 @@ public interface XConfig {
 	 */
 	String getAsString(String key, String defaultValue);
 
-	// Native methods from here
+	/**
+	 * Checks if the given key exists and has the given type
+	 */
+	boolean hasValidKey(String key, XConfigValueType type);
+
+
+	// Native methods from here -----------------------------------------------------------------------------------------
 
 	/**
 	 * Close connection and free all native instances created.
@@ -166,17 +173,11 @@ public interface XConfig {
 
 	/**
 	 * Checks if the given key exists
-	 * 
-	 * @param key
-	 * @return
 	 */
 	boolean hasKey(String key);
 
 	/**
 	 * Get last modification time for a given key in milliseconds.
-	 * 
-	 * @param key
-	 *            Config key
 	 * @return Timestamp in milliseconds
 	 */
 	long getLastModificationTime(String key) throws XConfigKeyNotFoundException;

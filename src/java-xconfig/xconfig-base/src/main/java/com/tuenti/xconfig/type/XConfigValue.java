@@ -13,12 +13,12 @@ import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
  * XConfigValue interface.
  */
 public interface XConfigValue {
-	public Integer getAsInteger() throws XConfigWrongTypeCastingException;
-	public String getAsString() throws XConfigWrongTypeCastingException;
-	public Float getAsFloat() throws XConfigWrongTypeCastingException;
-	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException;
-	public XConfigMap getAsMap() throws XConfigWrongTypeCastingException;
-	public XConfigList getAsList() throws XConfigWrongTypeCastingException;
-	public XConfigValueType getType();
-	public Object getAsJavaObject();
+	Integer getAsInteger() throws XConfigWrongTypeCastingException;
+	String getAsString() throws XConfigWrongTypeCastingException;
+	Float getAsFloat() throws XConfigWrongTypeCastingException;
+	Boolean getAsBoolean() throws XConfigWrongTypeCastingException;
+	XConfigMap getAsMap() throws XConfigWrongTypeCastingException;
+	XConfigList getAsList() throws XConfigWrongTypeCastingException;
+	XConfigValueType getType();
+	Object getAsJavaObject();
 }
