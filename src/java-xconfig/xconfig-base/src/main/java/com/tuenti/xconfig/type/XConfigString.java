@@ -27,7 +27,11 @@ public class XConfigString implements XConfigValue {
 
 	@Override
 	public Integer getAsInteger() throws XConfigWrongTypeCastingException {
-		throw new XConfigWrongTypeCastingException();
+		try {
+			return Integer.parseInt(this.value);
+		} catch (NumberFormatException e) {
+			throw new XConfigWrongTypeCastingException();
+		}
 	}
 
 	@Override
