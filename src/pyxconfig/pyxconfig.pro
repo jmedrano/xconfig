@@ -1,4 +1,4 @@
-QMAKE_LINK = CPPFLAGS=-I$$TOP_SRCDIR/src/libxconfig LDFLAGS=-L$$TOP_BUILDDIR/target/lib python setup.py build && true
+QMAKE_LINK = LDFLAGS=-L$$TOP_BUILDDIR/target/lib python setup.py build && true
 
 extension.path = /usr/lib/python2.7/dist-packages
 extension.files = build/lib.linux-x86_64-2.7/xconfig.so

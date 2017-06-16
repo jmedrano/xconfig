@@ -4,12 +4,15 @@ import xconfig
 
 xc = xconfig.XConfig(os.getcwd() + "/config")
 
-assert xc.getValue(["testConfig", "sampleInt"]) == 1
-assert xc.getValue(["testConfig", "sampleBool"]) == True
+assert xc.getValue(["testConfig", "sampleInt"]) is 1
+assert xc.getValue(["testConfig", "sampleBool"]) is True
 assert xc.getValue(["testConfig", "sampleNull"]) is None
 assert xc.getValue(["testConfig", "sampleString"]) == "test"
 assert xc.getValue(["testConfig", "sampleList"]) == [1, 2, []]
 assert xc.getValue(["testConfig", "sampleMap"]) == {"a": 1, "b": [{"x": []}], "c": "test"}
+
+assert xc.exists(["testConfig", "sampleMap"]) is True
+assert xc.exists(["testConfig", "missing"]) is False
 
 try:
     xc.getValue(["missingConfig"])
@@ -17,7 +20,7 @@ try:
 except xconfig.XConfigNotFoundException as e:
     pass
 
-wrong_keys = [None, {}, True, 123]
+wrong_keys = [None, {}, True, 123, 'abc']
 for wrong_key in wrong_keys:
     try:
         xc.getValue(wrong_key)
@@ -25,10 +28,9 @@ for wrong_key in wrong_keys:
     except xconfig.XConfigWrongTypeException as e:
         pass
 
-mtime = xc.getMTime(["testConfig"])
-assert len(mtime) == 2
+checksum = xc.getChecksum(["testConfig"])
 xc.reload()
-assert mtime == xc.getMTime(["testConfig"])
+assert checksum == xc.getChecksum(["testConfig"])
 
 print 'Basic tests OK'
 
@@ -66,6 +68,13 @@ for i in xrange(10):
     for j in xrange(100000):
         xc = xconfig.XConfig(os.getcwd() + "/config")
         xc.getValue(['testConfig'])
+        try:
+            xc.getValue(['testConfig2'])
+        except xconfig.XConfigNotFoundException as e:
+            pass
+    for j in xrange(100):
+        xc.close()
+        xc.reload()
     gc.collect()
     memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     print 'Memory usage: %d' % memory_usage
