@@ -26,7 +26,7 @@ public class XConfigInteger implements XConfigValue {
 	}
 
 	@Override
-	public String getAsString() throws XConfigWrongTypeCastingException {
+	public String getAsString() {
 		return this.value.toString();
 	}
 

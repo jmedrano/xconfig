@@ -33,9 +33,9 @@ public class XConfigBooleanUnitTest {
 		assertEquals(value, object.getAsBoolean());
 	}
 
-	@Test (expected = XConfigWrongTypeCastingException.class)
+	@Test
 	public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
-		object.getAsString();
+		assertEquals("true", object.getAsString());
 	}
 
 	@Test (expected = XConfigWrongTypeCastingException.class)

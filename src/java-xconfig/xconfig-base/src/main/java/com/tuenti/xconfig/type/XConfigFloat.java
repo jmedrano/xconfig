@@ -26,8 +26,8 @@ public class XConfigFloat implements XConfigValue {
 	}
 
 	@Override
-	public String getAsString() throws XConfigWrongTypeCastingException {
-		throw new XConfigWrongTypeCastingException();
+	public String getAsString() {
+		return this.value.toString();
 	}
 
 	@Override

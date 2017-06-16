@@ -38,9 +38,9 @@ public class XConfigIntegerUnitTest {
 		assertEquals(new Float(value), object.getAsFloat());
 	}
 
-	@Test (expected = XConfigWrongTypeCastingException.class)
+	@Test
 	public void testGetAsStringReturnsExpectedString() throws Exception {
-		object.getAsString();
+		assertEquals("12345678", object.getAsString());
 	}
 
 	@Test (expected = XConfigWrongTypeCastingException.class)

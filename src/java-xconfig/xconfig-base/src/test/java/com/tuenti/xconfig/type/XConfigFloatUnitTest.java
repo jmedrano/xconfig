@@ -38,9 +38,9 @@ public class XConfigFloatUnitTest {
 		assertEquals(value.intValue(), object.getAsInteger().intValue());
 	}
 
-	@Test (expected = XConfigWrongTypeCastingException.class)
+	@Test
 	public void testGetAsStringThrowsWrongTypeCastingException() throws Exception {
-		object.getAsString();
+		assertEquals("1.234", object.getAsString());
 	}
 
 	@Test (expected = XConfigWrongTypeCastingException.class)

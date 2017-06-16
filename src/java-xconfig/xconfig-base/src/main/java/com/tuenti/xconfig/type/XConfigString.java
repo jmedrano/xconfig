@@ -36,11 +36,23 @@ public class XConfigString implements XConfigValue {
 
 	@Override
 	public Float getAsFloat() throws XConfigWrongTypeCastingException {
-		throw new XConfigWrongTypeCastingException();
+		try {
+			return Float.parseFloat(value);
+		} catch (NumberFormatException e) {
+			throw new XConfigWrongTypeCastingException();
+		}
 	}
 
 	@Override
 	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
+		if (value.equals("false")) {
+			return false;
+		}
+
+		if (value.equals("true")) {
+			return true;
+		}
+
 		throw new XConfigWrongTypeCastingException();
 	}
 

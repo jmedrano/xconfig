@@ -184,7 +184,7 @@ public class XConfigTest {
 
 	@Test
 	public void testGetAsStringReturnsDefaultValueWhenTypeCastingMismatch() {
-		Assert.assertEquals("test", xconfig.getAsString("basic/integerValue", "test"));
+		Assert.assertEquals("test", xconfig.getAsString("basic/integersList", "test"));
 	}
 
 	@Test
