@@ -58,7 +58,7 @@ public class DatabaseConfig {
     $ git commit -am"Bump pom.xml to new release version"
     $ git tag xconfig-java-utils-X.X.X
     $ git push origin YOUR_RELEASE_BRANCH
-    $ git push xconfig-java-utils-X.X.X
+    $ git push origin xconfig-java-utils-X.X.X
     ```
 1. Deploy to nexus using tu-ci:
     ```bash
