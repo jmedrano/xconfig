@@ -6,7 +6,7 @@
 	<artifactId>xconfig-java-utils</artifactId>
 	<packaging>jar</packaging>
 	<name>XConfigJavaUtils</name>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 
 	<properties>
 		<java.version>1.8</java.version>
