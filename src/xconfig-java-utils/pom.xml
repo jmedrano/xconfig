@@ -13,6 +13,18 @@
 		<xconfig.version>1.1.2</xconfig.version>
 	</properties>
 
+	<distributionManagement>
+		<repository>
+			<id>repo.nexus.tuenti</id>
+			<url>https://nexus.tuenti.io/nexus/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>repo.nexus.tuenti</id>
+			<url>https://nexus.tuenti.io/nexus/content/repositories/snapshots</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+	</distributionManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.tuenti.xconfig</groupId>
