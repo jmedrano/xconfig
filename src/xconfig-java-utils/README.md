@@ -60,9 +60,11 @@ public class DatabaseConfig {
     $ git push origin YOUR_RELEASE_BRANCH
     $ git push origin xconfig-java-utils-X.X.X
     ```
-1. Deploy to nexus using tu-ci:
+1. Deploy to nexus using docker-compose:
     ```bash
-    $ tu-ci deploy_java_utils
+    $ docker-compose pull && docker-compose up -d
+    $ docker-compose exec -T builder mvn -B deploy -f src/xconfig-java-utils
+    $ docker-compose down
     ```
 1. Once jenkins has finished, set the new development version:
     ```bash

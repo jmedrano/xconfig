@@ -1,0 +1,8 @@
+version: '2'
+services:
+  builder:
+    image: "docker.tuenti.io/service-inf/java-builder:1.1"
+    volumes:
+      - "./:/source"
+      # so the docker plugin can build images
+      - "${DOCKER_SOCK_FILE}:/var/run/docker.sock"
