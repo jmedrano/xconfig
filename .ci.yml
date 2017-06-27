@@ -4,11 +4,19 @@ workflows:
   release_java: ["deploy_java", "package_java"]
   package_java: ["package_java"]
   deploy_java_utils: ["deploy_java_utils"]
+  build_java: ["build_java"]
 
 stages:
   deploy_java: ["mvn -f src/java-xconfig deploy"]
   package_java: ["cd src/java-xconfig; ./makePackage.sh"]
   deploy_java_utils: ["mvn -f src/xconfig-java-utils deploy"]
+  build_java:
+    - 'DOCKER_SOCK_FILE=/var/run/docker.sock docker-compose up -d builder'
+    - 'docker-compose exec builder apt-get update'
+    - 'docker-compose exec builder apt-get install -y packaging-dev debian-keyring devscripts equivs xconfigd'
+    - 'docker-compose exec builder /etc/init.d/xconfigd start'
+    - 'docker-compose exec builder bash -c "cd /source/src/java-xconfig && mk-build-deps --install -t \"apt-get -y\""'
+    - 'docker-compose exec builder bash -c "cd /source/src/java-xconfig && ./makePackage.sh"'
 
 plugins:
   artifacts:
