@@ -18,25 +18,29 @@ defaults:
       set_next_development_version: "mvn -f src/java-xconfig com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel"
 
 workflows:
+  verify_java:
+    stages: [docker_up, install_extra_packages, verify_java, docker_down]
   release_java:
-    stages: [docker_up, deploy_java, docker_down]
+    stages: [docker_up, install_extra_packages, deploy_java, docker_down]
   deploy_java_utils:
     stages: [docker_up, deploy_java_utils, docker_down]
 
   # Meant to be executed with cigen
   build_java_deb_package:
-    stages: [docker_up, build_java_deb_package, docker_down]
+    stages: [docker_up, install_extra_packages, build_java_deb_package, docker_down]
 
 stages:
   docker_up: ["docker-compose pull", "docker-compose up -d"]
   docker_down: ["docker-compose down"]
+  verify_java: ["docker-compose exec -T builder mvn -B verify -f src/java-xconfig"]
   deploy_java: ["docker-compose exec -T builder mvn -B deploy -f src/java-xconfig"]
   deploy_java_utils: ["docker-compose exec -T builder mvn -B deploy -f src/xconfig-java-utils"]
 
-  build_java_deb_package:
+  install_extra_packages:
     - 'docker-compose exec -T builder apt-get update'
-    - 'docker-compose exec -T builder apt-get install -y packaging-dev debian-keyring devscripts equivs xconfigd'
+    - 'docker-compose exec -T builder apt-get install -y packaging-dev debian-keyring devscripts equivs xconfigd libxconfig-dev'
     - 'docker-compose exec -T builder /etc/init.d/xconfigd start'
+  build_java_deb_package:
     - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && mk-build-deps --install -t \"apt-get -y\""'
     - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && ./makePackage.sh"'
 
