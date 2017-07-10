@@ -7,10 +7,8 @@ if [ -z "$VERSION" ]; then
 	exit 1
 fi
 
-mvn versions:set -DnewVersion=$VERSION
+mvn versions:set -DnewVersion=$VERSION-SNAPSHOT
 dch -v $VERSION-1
 
-echo "Don't forget to commit the changes and tag this version"
-echo "git commit -a -m \"Published version $VERSION\""
-echo "git tag java-xconfig-$VERSION"
-echo "git push origin"
+echo "Don't forget to commit and push the changes"
+echo "Make an Automated Release and come back to the release branch to make the debian package with cigen"

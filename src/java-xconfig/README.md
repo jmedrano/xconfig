@@ -20,8 +20,8 @@ be included in the application classpath. It's already a standard in Tomcat.
 must be specified in `java.library.path` when running the application.
 
 ## Release
-Prior to release, please remember to update the debian package changelog using
-`dch -n`.
+Prior to release, please remember to set the version with `newVersion.sh`,
+that will update the debian package changelog using `dch -n`.
 
 All the modules jars must be built and deployed through a standard *automated
 release*. Check Flow for specific details.
