@@ -34,7 +34,7 @@ stages:
   docker_down: ["docker-compose down"]
   verify_java: ["docker-compose exec -T builder mvn -B verify -f src/java-xconfig"]
   deploy_java: ["docker-compose exec -T builder mvn -B deploy -f src/java-xconfig"]
-  deploy_java_utils: ["docker-compose exec -T builder mvn -B deploy -f src/xconfig-java-utils"]
+  deploy_java_utils: ["docker-compose exec -T builder mvn -B deploy -f src/java-xconfig-utils"]
 
   install_extra_packages:
     - 'docker-compose exec -T builder apt-get update'

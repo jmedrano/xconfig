@@ -1,4 +1,4 @@
-# xconfig-java-utils
+# java-xconfig-utils
 
 This library contains utils that simplify dealing with xconfig.
 It requires java 1.8 
@@ -51,24 +51,24 @@ public class DatabaseConfig {
 
 1. Set the new release version:
     ```bash
-    $ mvn -f src/xconfig-java-utils com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release
+    $ mvn -f src/java-xconfig-utils com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release
     ```
 1. Commit, push, and tag:
     ```bash
     $ git commit -am"Bump pom.xml to new release version"
-    $ git tag xconfig-java-utils-X.X.X
+    $ git tag java-xconfig-utils-X.X.X
     $ git push origin YOUR_RELEASE_BRANCH
-    $ git push origin xconfig-java-utils-X.X.X
+    $ git push origin java-xconfig-utils-X.X.X
     ```
 1. Deploy to nexus using docker-compose:
     ```bash
     $ docker-compose pull && docker-compose up -d
-    $ docker-compose exec -T builder mvn -B deploy -f src/xconfig-java-utils
+    $ docker-compose exec -T builder mvn -B deploy -f src/java-xconfig-utils
     $ docker-compose down
     ```
 1. Once jenkins has finished, set the new development version:
     ```bash
-    $ mvn -f src/xconfig-java-utils com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel
+    $ mvn -f src/java-xconfig-utils com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel
     $ git commit -am"Bump pom.xml to next development version"
     $ git push origin YOUR_RELEASE_BRANCH
     $ git checkout master
