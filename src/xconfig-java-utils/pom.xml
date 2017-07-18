@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.tuenti.xconfig</groupId>
-	<artifactId>xconfig-java-utils</artifactId>
+	<artifactId>java-xconfig-utils</artifactId>
 	<packaging>jar</packaging>
 	<name>XConfigJavaUtils</name>
 	<version>1.0.0</version>
