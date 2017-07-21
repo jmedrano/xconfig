@@ -7,7 +7,18 @@ It requires java 1.8
 
 This is a class that wraps the XConfig interface simplifying it, and taking advantage of java 1.8 features.
 
-This is an example of usage reading a databaseConfig.yaml:
+To use it just add the maven dependency:
+
+```xml
+<dependency>
+    <groupId>com.tuenti.xconfig</groupId>
+    <artifactId>java-xconfig-utils</artifactId>
+    <version>${java-xconfig-utils.version}</version>
+</dependency>
+```
+
+
+Here is an example of usage reading a databaseConfig.yaml:
 
 ```java
 import com.tuenti.xconfig.XConfigNode;
@@ -31,6 +42,11 @@ public class DatabaseConfig {
 		return config.getSubNode("pools", pool)
 				.getBoolean("testConnectionOnCheckout")
 				.orElse(true);
+	}
+	
+	public Boolean getLoggingPoolClusterId() {
+		return config.getInteger("pools", "logging", "clusterId")
+				.orElseThrow(new RuntimeException("Cluster id not found!"));
 	}
 }
 ```
