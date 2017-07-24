@@ -1,9 +1,8 @@
 package com.tuenti.xconfig;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -13,17 +12,13 @@ import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import static com.tuenti.xconfig.XConfigPath.XCConcat;
-
-import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigList;
 import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 
 public final class XConfigNode {
-	private final Provider<XConfig> xConfigProvider;
-	private final String[] rootPath;
+	private final XConfigPointer pointer;
 
 	public static class Factory {
 		private final Provider<XConfig> provider;
@@ -38,105 +33,141 @@ public final class XConfigNode {
 		}
 	}
 
+	private XConfigNode(XConfigPointer pointer) {
+		this.pointer = pointer;
+	}
+
 	public XConfigNode(Provider<XConfig> xConfigProvider, String... rootPath) {
-		this.xConfigProvider = xConfigProvider;
-		this.rootPath = rootPath;
+		this.pointer = new XConfigPointer.RootPointer(xConfigProvider, rootPath);
 	}
 
 	public Optional<String> getString(String... path) {
-		return Optional.ofNullable(xConfigProvider.get().getAsString(concat(path), null));
+		return pointer.getValue(path).map(this::toString);
 	}
 
 	public Optional<Integer> getInteger(String... path) {
-		return Optional.ofNullable(xConfigProvider.get().getAsInteger(concat(path), null));
+		return pointer.getValue(path).map(this::toInteger);
+	}
+
+	public Optional<Long> getLong(String... path) {
+		return pointer.getValue(path).map(this::toLong);
 	}
 
 	public Optional<Boolean> getBoolean(String... path) {
-		return Optional.ofNullable(xConfigProvider.get().getAsBoolean(concat(path), null));
+		return pointer.getValue(path).map(this::toBoolean);
 	}
 
 	public Optional<BigDecimal> getBigDecimal(String... path) {
-		return Optional.ofNullable(xConfigProvider.get().getAsString(concat(path), null))
-				.map(this::toBigDecimal);
+		return pointer.getValue(path).map(this::toBigDecimal);
 	}
 
-	private BigDecimal toBigDecimal(String input) {
-		try {
-			return new BigDecimal(input);
-		} catch (NumberFormatException e) {
-			return null;
-		}
+	public String getRequiredString(String... path) {
+		return require(getString(path), path);
+	}
+
+	public int getRequiredInteger(String... path) {
+		return require(getInteger(path), path);
+	}
+
+	public long getRequiredLong(String... path) {
+		return require(getLong(path), path);
+	}
+
+	public boolean getRequiredBoolean(String... path) {
+		return require(getBoolean(path), path);
+	}
+
+	public BigDecimal getRequiredBigDecimal(String... path) {
+		return require(getBigDecimal(path), path);
 	}
 
 	/**
 	 * Get a new XConfigNode(newRootPath), being newRootPath = previousRootPath + path
 	 */
 	public XConfigNode getSubNode(String... path) {
-		return new XConfigNode(xConfigProvider, concat(path));
+		return new XConfigNode(new XConfigPointer.ChildPointer(pointer.getValue(path)));
 	}
 
 	public Stream<Integer> getIntegerStream(String... path) {
-		Function<XConfigValue, Integer> mapper = (i) -> {
-			try {
-				return i.getAsInteger();
-			} catch (XConfigWrongTypeCastingException e) {
-				return null;
-			}
-		};
-		return getStream(mapper, path).filter(Objects::nonNull);
+		return getStream(this::toInteger, path).filter(Objects::nonNull);
+	}
+
+	public Stream<Long> getLongStream(String... path) {
+		return getStream(this::toLong, path).filter(Objects::nonNull);
+	}
+
+	public Stream<XConfigNode> getSubNodeStream(String... path) {
+		return getStream(this::toNode, path).filter(Objects::nonNull);
 	}
 
 	public Stream<BigDecimal> getBigDecimalStream(String... path) {
-		Function<XConfigValue, BigDecimal> mapper = (i) -> {
-			try {
-				return toBigDecimal(i.getAsString());
-			} catch (XConfigWrongTypeCastingException e) {
-				return null;
-			}
-		};
-
-		return getStream(mapper, path).filter(Objects::nonNull);
+		return getStream(this::toBigDecimal, path).filter(Objects::nonNull);
 	}
 
 	public Stream<String> getStringStream(String... path) {
-		Function<XConfigValue, String> mapper = (i) -> {
-			try {
-				return i.getAsString();
-			} catch (XConfigWrongTypeCastingException e) {
-				return null;
-			}
-		};
-		return getStream(mapper, path).filter(Objects::nonNull);
+		return getStream(this::toString, path).filter(Objects::nonNull);
 	}
 
 	public Map<String, XConfigNode> getMapOfNodes(String... path) {
-		XConfigMap map = null;
 		try {
-			map = xConfigProvider.get().getAsMap(concat(path));
-		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException e) {
-			return new HashMap<>();
+			return pointer.getValue(path).orElse(new XConfigMap())
+					.getAsMap().entrySet()
+					.stream()
+					.collect(Collectors.toMap(
+							entry -> entry.getKey(), entry -> toNode(entry.getValue())));
+			
+		} catch (XConfigWrongTypeCastingException e) {
+			return Collections.emptyMap();
 		}
+	}
 
-		Function<Entry<String, Object>, XConfigNode> toXConfigNode = i ->
-				new XConfigNode(xConfigProvider, concat(XCConcat(path), i.getKey()));
+	private <T> T require(Optional<T> value, String... path) {
+		return value.orElseThrow(() -> new InvalidConfigException("Required config value not found or invalid in "
+					+ String.join("/", path)));
+	}
 
-		return map.getAsJavaObject()
-				.entrySet()
-				.stream()
-				.collect(Collectors.toMap(i -> i.getKey(), toXConfigNode));
+	private String toString(XConfigValue input) {
+		return valueOrNullIfError(input, (it -> it.getAsString()));
+	}
+
+	private BigDecimal toBigDecimal(XConfigValue input) {
+		return valueOrNullIfError(input, (it -> new BigDecimal(it.getAsString())));
+	}
+
+	private Long toLong(XConfigValue input) {
+		return valueOrNullIfError(input, (it -> Long.valueOf(it.getAsString())));
+	}
+
+	private Integer toInteger(XConfigValue input) {
+		return valueOrNullIfError(input, (it -> Integer.valueOf(it.getAsString())));
+	}
+
+	private Boolean toBoolean(XConfigValue input) {
+		return valueOrNullIfError(input, (it -> it.getAsBoolean()));
+	}
+	
+	private <T> T valueOrNullIfError(XConfigValue input, Function<XConfigValue, T> valueFunction) {
+		try {
+			return valueFunction.apply(input);
+		} catch (NumberFormatException | XConfigWrongTypeCastingException e) {
+			return null;
+		}
+	}
+
+	private XConfigNode toNode(XConfigValue value) {
+		return new XConfigNode(new XConfigPointer.ChildPointer(Optional.of(value)));
 	}
 
 	private <T> Stream<T> getStream(Function<XConfigValue, T> mapper, String... path) {
-		XConfigList xconfigList = xConfigProvider.get().getAsList(concat(path), null);
-		if (xconfigList == null || xconfigList.isEmpty()) {
+		try {
+			XConfigList xconfigList = pointer.getValue(path)
+					.map(value -> value.getAsList())
+					.orElse(new XConfigList());
+	
+			return StreamSupport.stream(xconfigList.spliterator(), false).map(mapper);
+			
+		} catch (XConfigWrongTypeCastingException e) {
 			return Stream.empty();
 		}
-
-		Stream<XConfigValue> xConfigValueStream = StreamSupport.stream(xconfigList.spliterator(), false);
-		return xConfigValueStream.map(mapper);
-	}
-
-	private String concat(String... parts) {
-		return XCConcat(XCConcat(rootPath), XCConcat(parts));
 	}
 }
