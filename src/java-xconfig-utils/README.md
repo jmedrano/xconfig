@@ -52,6 +52,19 @@ public class DatabaseConfig {
 }
 ```
 
+And here is an example using breeds:
+
+```java
+public class DatabaseConfig {
+	(...)
+	public int getPort(... enough info to obtain the breeds ...) {
+		return config.getBreededNode(breeds)
+			.getInteger("port")
+			.orElse(DEFAULT_PORT);
+	}
+}
+```
+
 ## Release a new version of the library
 
 1. Integrate your branch into master (if it's not done yet)

@@ -41,6 +41,24 @@ public final class XConfigNode {
 		this.pointer = new XConfigPointer.RootPointer(xConfigProvider, rootPath);
 	}
 
+	/**
+	 * Returns the same node but with the content customized by the given breeds, received as an array.
+	 * Should only be used with root nodes, as no correct behavior is guaranteed otherwise.
+	 */
+	public XConfigNode getBreededNode(String[][] breeds) {
+		return new XConfigNode(pointer.getBreededPointer(breeds));
+	}
+
+	/**
+	 * Returns the same node but with the content customized by the given breeds, received as a Map.
+	 * Should only be used with root nodes, as no correct behavior is guaranteed otherwise.
+	 */
+	public XConfigNode getBreededNode(Map<String, String> breeds) {
+		return getBreededNode(breeds.entrySet().stream()
+				.map(e -> new String[] {e.getKey(), e.getValue()})
+				.toArray(size -> new String[size][2]));
+	}
+
 	public Optional<String> getString(String... path) {
 		return pointer.getValue(path).map(this::toString);
 	}
@@ -88,16 +106,19 @@ public final class XConfigNode {
 		return new XConfigNode(new XConfigPointer.ChildPointer(pointer.getValue(path)));
 	}
 
+	/**
+	 * Get a stream of XConfigNode objects with their root in each child element of a XConfig list path.
+	 */
+	public Stream<XConfigNode> getSubNodeStream(String... path) {
+		return getStream(this::toNode, path).filter(Objects::nonNull);
+	}
+
 	public Stream<Integer> getIntegerStream(String... path) {
 		return getStream(this::toInteger, path).filter(Objects::nonNull);
 	}
 
 	public Stream<Long> getLongStream(String... path) {
 		return getStream(this::toLong, path).filter(Objects::nonNull);
-	}
-
-	public Stream<XConfigNode> getSubNodeStream(String... path) {
-		return getStream(this::toNode, path).filter(Objects::nonNull);
 	}
 
 	public Stream<BigDecimal> getBigDecimalStream(String... path) {

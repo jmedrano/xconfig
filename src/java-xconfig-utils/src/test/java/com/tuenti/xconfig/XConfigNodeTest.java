@@ -1,6 +1,7 @@
 package com.tuenti.xconfig;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -16,6 +17,10 @@ import com.tuenti.xconfig.parser.YamlXConfig;
 public class XConfigNodeTest {
 
 	private static final String ROOT_NODE = "rootNode";
+	private static final String[][] BREEDS_ARRAY = {{"breedKey", "breedValue"}};
+	private static final String[][] OTHER_BREEDS_ARRAY = {{"breedKey2", "breedValue2"}};
+	private static final Map<String, String> BREEDS_MAP = Collections.singletonMap("breedKey", "breedValue");
+	private static final Map<String, String> OTHER_BREEDS_MAP = Collections.singletonMap("breedKey2", "breedValue2");
 
 	@Test
 	public void testIntegerFromString() throws Exception {
@@ -509,11 +514,92 @@ public class XConfigNodeTest {
 		assertEquals(0, result.count());
 	}
 
+	@Test
+	public void testGetBreededNodeForBreededValue() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValueAndBreed("1234", "5678"));
+
+		XConfigNode breededNode = xConfigNode.getBreededNode(BREEDS_ARRAY);
+		String result = breededNode.getString("subnode", "value").get();
+
+		assertEquals("5678", result);
+	}
+	
+	@Test
+	public void testGetBreededNodeForNotBreededValue() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("1234"));
+
+		XConfigNode breededNode = xConfigNode.getBreededNode(BREEDS_ARRAY);
+		String result = breededNode.getString("subnode", "value").get();
+
+		assertEquals("1234", result);
+	}
+	
+	@Test
+	public void testGetBreededNodeForDifferentlyBreededValue() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("1234"));
+
+		XConfigNode breededNode = xConfigNode.getBreededNode(OTHER_BREEDS_ARRAY);
+		String result = breededNode.getString("subnode", "value").get();
+
+		assertEquals("1234", result);
+	}
+	
+	@Test
+	public void testGetBreededNodeWithMapForBreededValue() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValueAndBreed("1234", "5678"));
+
+		XConfigNode breededNode = xConfigNode.getBreededNode(BREEDS_MAP);
+		String result = breededNode.getString("subnode", "value").get();
+
+		assertEquals("5678", result);
+	}
+	
+	@Test(expected=UnsupportedOperationException.class)
+	public void testGetBreededNodeWithMapForStreamChildNode() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("[{\"integer\":123}, {\"string\": \"hello\"}]"));
+		
+		XConfigNode breededNode = xConfigNode.getBreededNode(BREEDS_MAP);
+		breededNode.getSubNodeStream("subnode", "value")
+				.findFirst().get()
+				.getBreededNode(BREEDS_MAP);
+	}
+	
+	@Test
+	public void testGetBreededNodeWithMapForNotBreededValue() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("1234"));
+
+		XConfigNode breededNode = xConfigNode.getBreededNode(BREEDS_MAP);
+		String result = breededNode.getString("subnode", "value").get();
+
+		assertEquals("1234", result);
+	}
+	
+	@Test
+	public void testGetBreededNodeWithMapForDifferentlyBreededValue() throws Exception {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("1234"));
+
+		XConfigNode breededNode = xConfigNode.getBreededNode(OTHER_BREEDS_MAP);
+		String result = breededNode.getString("subnode", "value").get();
+
+		assertEquals("1234", result);
+	}
+	
 	
 	private String yamlWithValue(String value) {
 		return "rootNode:\n" +
 				"  subnode:\n" +
 				"    value: " + value;
+	}
+
+	private String yamlWithValueAndBreed(String defaultValue, String breededValue) {
+		return "rootNode:\n" +
+				"  subnode:\n" +
+				"    value: " + defaultValue + "\n" +
+				"rootNode_breeds:\n" +
+				"  breedKey:\n" +
+				"    breedValue:\n" +
+				"      subnode:\n" +
+				"        value: " + breededValue;
 	}
 
 	private XConfigNode createXConfigNode(String yamlString) {
