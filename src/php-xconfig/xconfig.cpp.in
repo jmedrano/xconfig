@@ -66,6 +66,7 @@ zend_object * xconfig_create_handler(zend_class_entry *type TSRMLS_DC)
             sizeof(xconfig_object) +
             zend_object_properties_size(type));
     zend_object_std_init(&obj->std, type TSRMLS_CC);
+    object_properties_init(&obj->std, type TSRMLS_CC);
 
     xconfig_object_handlers.offset = XtOffsetOf(struct xconfig_object, std);
     xconfig_object_handlers.free_obj = (zend_object_free_obj_t) xconfig_free_storage;
@@ -80,6 +81,7 @@ zend_object * xconfignode_create_handler(zend_class_entry *type TSRMLS_DC)
              sizeof(xconfignode_object) +
              zend_object_properties_size(type));
     zend_object_std_init(&obj->std, type TSRMLS_CC);
+    object_properties_init(&obj->std, type TSRMLS_CC);
 
     xconfignode_object_handlers.offset = XtOffsetOf(struct xconfignode_object, std);
     xconfignode_object_handlers.free_obj = (zend_object_free_obj_t) xconfignode_free_storage;
