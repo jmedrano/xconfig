@@ -12,7 +12,7 @@ static const int VERSION = 1;
 static struct { const char *name; size_t len; ConnectionManager::Capability capability; } CAPABILITIES[] = {
 	{ DECLARE_CAP("FD_PASS"), ConnectionManager::CAP_FD_PASS }
 };
-static const int MAX_DGRAM = 1024;
+static const int MAX_DGRAM = 10240;
 static const char* HANDSHAKE_EXPECTED = "CAPABILITIES (";
 static const int HANDSHAKE_EXPECTED_LEN = strlen(HANDSHAKE_EXPECTED);
 

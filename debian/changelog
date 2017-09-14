@@ -1,3 +1,9 @@
+xconfig (0.9.4-tuenti1) stable; urgency=low
+
+  * Increase config paths length limit to 10kB
+
+ -- Jakub Holubansky <jakub@tuenti.com>  Thu, 14 Sep 2017 17:05:24 +0200
+
 xconfig (0.9.2-tuenti1) stable; urgency=low
 
   * Require a more recent libboost
