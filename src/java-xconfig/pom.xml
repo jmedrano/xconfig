@@ -6,7 +6,14 @@
 	<packaging>pom</packaging>
 	<version>1.2.1-SNAPSHOT</version>
 	<name>xconfig</name>
-	<url>http://maven.apache.org</url>
+
+	<parent>
+		<groupId>com.tuenti.services</groupId>
+		<artifactId>mvne-parent</artifactId>
+		<version>3.0.0</version>
+		<relativePath></relativePath>
+	</parent>
+
 
 	<modules>
 		<module>xconfig-base</module>
@@ -15,34 +22,8 @@
 		<module>xconfig-native</module>
 	</modules>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	</properties>
-
-	<distributionManagement>
-		<repository>
-			<id>repo.nexus.tuenti</id>
-			<url>http://nexus.tuenti.local/nexus/content/repositories/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>repo.nexus.tuenti</id>
-			<url>http://nexus.tuenti.local/nexus/content/repositories/snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-		</snapshotRepository>
-	</distributionManagement>
-
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.0</version>
-				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -50,19 +31,6 @@
 				<executions>
 					<execution>
 						<id>attach-sources</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
-				<executions>
-					<execution>
-						<id>attach-javadocs</id>
 						<goals>
 							<goal>jar</goal>
 						</goals>
