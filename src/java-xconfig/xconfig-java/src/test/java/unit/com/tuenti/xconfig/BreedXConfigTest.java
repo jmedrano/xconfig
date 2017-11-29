@@ -7,19 +7,16 @@
  */
 package com.tuenti.xconfig;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
-import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 
-/**
- * XConfigTest class
- */
 public class BreedXConfigTest {
 
 	private XConfig xconfig = null;
@@ -36,51 +33,51 @@ public class BreedXConfigTest {
 	}
 
 	@Test
-	public void testGetWithoutOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testGetWithoutOverrides() {
 		XConfigMap actualMap = getConfig("potatoConfig/details/a", "unknown", "unknown").getAsMap();
 		XConfigMap expectedMap = xconfig.getAsMap("potatoConfig/details/a");
-		Assert.assertEquals(expectedMap, actualMap);
+		assertEquals(expectedMap, actualMap);
 	}
 
 	@Test
-	public void testGetWithOneOverride() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testGetWithOneOverride() {
 		XConfigMap actualMap = getConfig("potatoConfig/details/a", "potatolandia", "unknown").getAsMap();
 		XConfigMap expectedMap = xconfig.getAsMap("potatoTestResults/getWithOneOverride");
-		Assert.assertEquals(expectedMap, actualMap);
+		assertEquals(expectedMap, actualMap);
 	}
 
 	@Test
-	public void testGetWithTwoOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testGetWithTwoOverrides() {
 		XConfigMap actualMap = getConfig("potatoConfig/details/a", "potatolandia", "potato-pre").getAsMap();
 		XConfigMap expectedMap = xconfig.getAsMap("potatoTestResults/getWithTwoOverrides");
-		Assert.assertEquals(expectedMap, actualMap);
+		assertEquals(expectedMap, actualMap);
 	}
 
 	@Test
-	public void testGetWithTwoSimpleOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testGetWithTwoSimpleOverrides() {
 		String actualName = getConfig("potatoConfig/names/a", "potatolandia", "potato-pre").getAsString();
-		Assert.assertEquals("adriana", actualName);
+		assertEquals("adriana", actualName);
 	}
 
 	@Test(expected = XConfigKeyNotFoundException.class)
-	public void testMissingKeyThrowsException() throws Exception {
+	public void testMissingKeyThrowsException() {
 		getConfig("potatoConfig/names/c", "potatolandia", "potato-pre").getAsString();
 	}
 
 	@Test
-	public void testGetOverridedMissingKey() throws Exception {
+	public void testGetOverridedMissingKey() {
 		String actualName = getConfig("potatoConfig/names/d", "potatolandia", "potato-pre").getAsString();
-		Assert.assertEquals("dani", actualName);
+		assertEquals("dani", actualName);
 	}
 
 	@Test
-	public void testGetBaseWithRecursiveOverrides() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testGetBaseWithRecursiveOverrides() {
 		XConfigMap actualMap = getConfig("potatoConfig", "potatolandia", "potato-pre").getAsMap();
 		XConfigMap expectedMap = xconfig.getAsMap("potatoTestResults/getBaseWithRecursiveOverrides");
-		Assert.assertEquals(expectedMap, actualMap);
+		assertEquals(expectedMap, actualMap);
 	}
 
-	private XConfigValue getConfig(String key, String country, String environment) throws XConfigKeyNotFoundException {
+	private XConfigValue getConfig(String key, String country, String environment) {
 		String breed[][] = {{"country", country}, {"environment", environment}};
 		BreedXConfig breedXConfig = new BreedXConfig(xconfig, breed);
 		return breedXConfig.getValue(key);

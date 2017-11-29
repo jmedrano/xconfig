@@ -64,6 +64,11 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 	}
 
 	@Override
+	public Long getAsLong() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
+
+	@Override
 	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
 		throw new XConfigWrongTypeCastingException();
 	}

@@ -16,9 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-/**
- * XConfigPathUnitTest test class
- */
 @RunWith(Parameterized.class)
 public class XCConcatUnitTest {
 
@@ -42,7 +39,7 @@ public class XCConcatUnitTest {
 	}
 
 	@Test
-	public void testGetPathReturnsExpectedOutput() throws Exception {
+	public void testGetPathReturnsExpectedOutput() {
 		assertEquals(expectedOutput, XConfigPath.XCConcat((Object[]) inputString));
 	}
 }

@@ -9,18 +9,19 @@ package com.tuenti.xconfig;
 
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigNotConnectedException;
-import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigList;
 import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * XConfigTest class
- */
 public class XConfigTest {
 
 	private XConfig xconfig = null;
@@ -36,188 +37,183 @@ public class XConfigTest {
 		xconfig.close();
 	}
 
-	@Test
+	@Test(expected = XConfigKeyNotFoundException.class)
 	public void testNonexistentKeyThrowsException() {
-		try {
-			xconfig.getValue("nonexistentkey");
-			Assert.fail();
-		} catch (XConfigKeyNotFoundException e) {
-		}
+		xconfig.getValue("nonexistentkey");
 	}
 
 	@Test
-	public void testRetrieveIntegerValueNode() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testRetrieveIntegerValueNode() {
 		XConfigValue value = xconfig.getValue("basic/integerValue");
-		Assert.assertEquals(123, (long) value.getAsInteger());
+		assertEquals(123, (long) value.getAsInteger());
 	}
 
 	@Test
-	public void testRetrieveStringValueNode() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testRetrieveStringValueNode() {
 		XConfigValue value = xconfig.getValue("basic/stringValue");
-		Assert.assertEquals("test", value.getAsString());
+		assertEquals("test", value.getAsString());
 	}
 
 	@Test
-	public void testRetrieveFloatValueNode() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testRetrieveFloatValueNode() {
 		XConfigValue value = xconfig.getValue("basic/floatValue");
-		Assert.assertEquals(3.14f, value.getAsFloat(), 0.0);
+		assertEquals(3.14f, value.getAsFloat(), 0.0);
 	}
 
 	@Test
-	public void testRetrieveBooleanValueNode() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testRetrieveLongValueNode() {
+		XConfigValue value = xconfig.getValue("basic/longValue");
+		assertEquals(new Long(100200300400500L), value.getAsLong());
+	}
+
+	@Test
+	public void testRetrieveBooleanValueNode() {
 		XConfigValue value = xconfig.getValue("basic/booleanValue");
-		Assert.assertFalse(value.getAsBoolean());
+		assertFalse(value.getAsBoolean());
 	}
 
 	@Test
-	public void testRetrieveIntegerValueNodeDirectlyFromXConfig()
-			throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testRetrieveIntegerValueNodeDirectlyFromXConfig() {
 		String key = "basic/integerValue";
 		XConfigValue value = xconfig.getValue(key);
-		Assert.assertEquals(xconfig.getAsInteger(key), value.getAsInteger());
+		assertEquals(xconfig.getAsInteger(key), value.getAsInteger());
 	}
 
 	@Test
-	public void testRetrieveStringValueNodeDirectlyFromXConfig()
-			throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testRetrieveStringValueNodeDirectlyFromXConfig() {
 		String key = "basic/stringValue";
 		XConfigValue value = xconfig.getValue(key);
-		Assert.assertEquals(xconfig.getAsString(key), value.getAsString());
+		assertEquals(xconfig.getAsString(key), value.getAsString());
 	}
 
 	@Test
-	public void testRetrieveFloatValueNodeDirectlyFromXConfig() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testRetrieveFloatValueNodeDirectlyFromXConfig() {
 		String key = "basic/floatValue";
 		XConfigValue value = xconfig.getValue(key);
-		Assert.assertEquals(xconfig.getAsFloat(key), value.getAsFloat(), 0.0);
+		assertEquals(xconfig.getAsFloat(key), value.getAsFloat(), 0.0);
 	}
 
 	@Test
-	public void testRetrieveBooleanValueNodeDirectlyFromXConfig()
-			throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testRetrieveLongValueNodeDirectlyFromXConfig() {
+		String key = "basic/longValue";
+		XConfigValue value = xconfig.getValue(key);
+		assertEquals(xconfig.getAsLong(key), value.getAsLong());
+	}
+
+	@Test
+	public void testRetrieveBooleanValueNodeDirectlyFromXConfig() {
 		String key = "basic/booleanValue";
 		XConfigValue value = xconfig.getValue(key);
-		Assert.assertEquals(xconfig.getAsBoolean(key), value.getAsBoolean());
+		assertEquals(xconfig.getAsBoolean(key), value.getAsBoolean());
 	}
 
 	@Test
-	public void testRetrieveNullValueNode() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testRetrieveNullValueNode() {
 		XConfigValue value = xconfig.getValue("basic/nullValue");
-		Assert.assertEquals(null, value.getAsInteger());
-		Assert.assertEquals(null, value.getAsString());
-		Assert.assertEquals(null, value.getAsFloat());
-		Assert.assertEquals(null, value.getAsBoolean());
-		Assert.assertEquals(0, value.getAsList().size());
-		Assert.assertEquals(0, value.getAsMap().size());
+		assertNull(value.getAsInteger());
+		assertNull(value.getAsString());
+		assertNull(value.getAsFloat());
+		assertNull(value.getAsLong());
+		assertNull(value.getAsBoolean());
+		assertEquals(0, value.getAsList().size());
+		assertEquals(0, value.getAsMap().size());
 	}
 
 	@Test
-	public void testReloadReturnsFalse() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
-		Assert.assertFalse(xconfig.reload());
+	public void testReloadReturnsFalse() {
+		assertFalse(xconfig.reload());
 	}
 
 	@Test
-	public void testWalkThroughIntegersList() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testWalkThroughIntegersList() {
 		XConfigValue value = xconfig.getValue("basic/integersList");
 		XConfigList list = value.getAsList();
-		Assert.assertEquals(5, list.size());
-		for (int i = 0; i < 5; i++) {
-			Integer intValue = list.get(i).getAsInteger();
-			Assert.assertEquals(i, intValue.intValue());
-		}
+		assertEquals(5, list.size());
+		assertEquals(0, list.get(0).getAsInteger().intValue());
+		assertEquals(1, list.get(1).getAsInteger().intValue());
+		assertEquals(2, list.get(2).getAsInteger().intValue());
+		assertEquals(3, list.get(3).getAsInteger().intValue());
+		assertEquals(4, list.get(4).getAsInteger().intValue());
 	}
 
 	@Test
-	public void testPureMapBasicBehaviour() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testPureMapBasicBehaviour() {
 		XConfigValue value = xconfig.getValue("basic/pureMap");
 		XConfigMap map = value.getAsMap();
-		Assert.assertEquals(3, map.keySet().size());
-		for (int i = 1; i <= 3; i++) {
-			String key = String.format("key%d", i);
-			Assert.assertTrue(map.containsKey(key));
-			Assert.assertEquals(String.format("test%d", i), map.get(key).getAsString());
-		}
+		assertEquals(3, map.keySet().size());
+		assertTrue(map.containsKey("key1"));
+		assertEquals("test1", map.get("key1").getAsString());
+		assertTrue(map.containsKey("key2"));
+		assertEquals("test2", map.get("key2").getAsString());
+		assertTrue(map.containsKey("key3"));
+		assertEquals("test3", map.get("key3").getAsString());
 	}
 
 	@Test
-	public void testMixedMapBasicBehaviour() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testMixedMapBasicBehaviour() {
 		XConfigValue value = xconfig.getValue("basic/mixedMap");
 		XConfigMap map = value.getAsMap();
-		Assert.assertEquals(4, map.keySet().size());
-		value = map.get("key1");
-		Assert.assertEquals("test1", value.getAsString());
-		value = map.get("key2");
-		Assert.assertEquals(2, value.getAsInteger().intValue());
-		value = map.get("key3");
-		Assert.assertEquals(1.16f, value.getAsFloat(), 0);
-		value = map.get("key4");
-		Assert.assertEquals(true, value.getAsBoolean().booleanValue());
+		assertEquals(5, map.keySet().size());
+		assertEquals("test1", map.get("key1").getAsString());
+		assertEquals(2, map.get("key2").getAsInteger().intValue());
+		assertEquals(1.16f, map.get("key3").getAsFloat(), 0);
+		assertEquals(true, map.get("key4").getAsBoolean().booleanValue());
+		assertEquals(new Long(900800700600500L), map.get("key5").getAsLong());
 	}
 
 	@Test
-	public void testDoubleCloseWorks() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	public void testDoubleCloseWorks() {
 		xconfig.close();
 		xconfig.close();
 	}
 
-	@Test
-	public void testAfterCloseThrowsError() throws XConfigKeyNotFoundException,
-			XConfigWrongTypeCastingException {
+	@Test(expected = XConfigNotConnectedException.class)
+	public void testAfterCloseThrowsError() {
 		xconfig.close();
-		try {
-			xconfig.getValue("basic/integerValue");
-			Assert.fail();
-		} catch (XConfigNotConnectedException e) {
-		}
+		xconfig.getValue("basic/integerValue");
 	}
 
 	@Test
 	public void testGetAsStringReturnsDefaultValueWhenTypeCastingMismatch() {
-		Assert.assertEquals("test", xconfig.getAsString("basic/integersList", "test"));
+		assertEquals("test", xconfig.getAsString("basic/integersList", "test"));
 	}
 
 	@Test
 	public void testGetAsIntegerReturnsDefaultValueWhenTypeCastingMismatch() {
-		Assert.assertEquals(1010, (int)xconfig.getAsInteger("basic/stringValue", 1010));
+		assertEquals(1010, (int)xconfig.getAsInteger("basic/stringValue", 1010));
 	}
 
 	@Test
 	public void testGetAsFloatReturnsDefaultValueWhenTypeCastingMismatch() {
-		Assert.assertEquals(1.23f, xconfig.getAsFloat("basic/stringValue", 1.23f), 0);
+		assertEquals(1.23f, xconfig.getAsFloat("basic/stringValue", 1.23f), 0);
+	}
+
+	@Test
+	public void testGetAsLongReturnsDefaultValueWhenTypeCastingMismatch() {
+		assertEquals(new Long(123L), xconfig.getAsLong("basic/stringValue", 123L));
 	}
 
 	@Test
 	public void testGetAsBooleanReturnsDefaultValueWhenTypeCastingMismatch() {
-		Assert.assertEquals(Boolean.TRUE, xconfig.getAsBoolean("basic/stringValue", Boolean.TRUE));
+		assertEquals(Boolean.TRUE, xconfig.getAsBoolean("basic/stringValue", Boolean.TRUE));
 	}
 
 	@Test
 	public void testGetAsListReturnsDefaultValueWhenTypeCastingMismatch() {
 		XConfigList testList = new XConfigList();
-		Assert.assertEquals(testList, xconfig.getAsList("basic/stringValue", testList));
+		assertEquals(testList, xconfig.getAsList("basic/stringValue", testList));
 	}
 
 	@Test
 	public void testGetAsMapReturnsDefaultValueWhenTypeCastingMismatch() {
 		XConfigMap testMap = new XConfigMap();
-		Assert.assertEquals(testMap, xconfig.getAsMap("basic/stringValue", testMap));
+		assertEquals(testMap, xconfig.getAsMap("basic/stringValue", testMap));
 	}
 
 	@Test
-	public void testRetrieveKeyWithSpecialCharacter() throws XConfigKeyNotFoundException, XConfigWrongTypeCastingException {
+	public void testRetrieveKeyWithSpecialCharacter() {
 		String key = "basic/#specialKey";
 		boolean expectedValue = true;
-		Assert.assertEquals(expectedValue, xconfig.getAsBoolean(key));
+		assertEquals(expectedValue, xconfig.getAsBoolean(key));
 	}
 }

@@ -56,6 +56,11 @@ public class XConfigMap implements XConfigValue {
 	}
 
 	@Override
+	public Long getAsLong() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
+
+	@Override
 	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
 		throw new XConfigWrongTypeCastingException();
 	}
@@ -177,6 +182,14 @@ public class XConfigMap implements XConfigValue {
 	public Float getAsFloat(String key, Float defaultValue) {
 		try {
 			return get(key).getAsFloat();
+		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
+			return defaultValue;
+		}
+	}
+
+	public Long getAsLong(String key, Long defaultValue) {
+		try {
+			return get(key).getAsLong();
 		} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException ignored) {
 			return defaultValue;
 		}

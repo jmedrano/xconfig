@@ -89,6 +89,31 @@ abstract public class XConfigBase implements XConfig {
 	/*
 	 * (non-Javadoc)
 	 *
+	 * @see com.tuenti.xconfig.XConfig#getAsLong(java.lang.String)
+	 */
+	@Override
+	public Long getAsLong(final String key) throws XConfigKeyNotFoundException,
+	XConfigWrongTypeCastingException {
+		return this.getValue(key).getAsLong();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see com.tuenti.xconfig.XConfig#getAsLong(java.lang.String, java.lang.Long)
+	 */
+	@Override
+	public Long getAsLong(final String key, final Long defaultValue) {
+		try {
+			return this.getValue(key).getAsLong();
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException ignored) {
+			return defaultValue;
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
 	 * @see com.tuenti.xconfig.XConfig#getAsList(java.lang.String)
 	 */
 	@Override

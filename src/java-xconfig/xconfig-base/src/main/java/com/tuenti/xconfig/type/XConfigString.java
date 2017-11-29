@@ -44,6 +44,15 @@ public class XConfigString implements XConfigValue {
 	}
 
 	@Override
+	public Long getAsLong() throws XConfigWrongTypeCastingException {
+		try {
+			return Long.parseLong(value);
+		} catch (NumberFormatException e) {
+			throw new XConfigWrongTypeCastingException();
+		}
+	}
+
+	@Override
 	public Boolean getAsBoolean() throws XConfigWrongTypeCastingException {
 		if (value.equals("false")) {
 			return false;

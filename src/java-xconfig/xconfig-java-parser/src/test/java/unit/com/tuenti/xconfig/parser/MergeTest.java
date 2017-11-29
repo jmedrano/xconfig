@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.parser.ConfigParser;
 import com.tuenti.xconfig.type.XConfigInteger;
 import com.tuenti.xconfig.type.XConfigList;
@@ -23,7 +22,7 @@ public class MergeTest {
 	}
 
 	@Test
-	public void testMerge() throws FileNotFoundException, XConfigKeyNotFoundException {
+	public void testMerge() throws FileNotFoundException {
 		configParser.addFile(new File("src/test/resources/merge1/dbConf.yaml"));
 		configParser.addFile(new File("src/test/resources/merge2/dbConf.yaml"));
 		XConfigList expectedList = new XConfigList();

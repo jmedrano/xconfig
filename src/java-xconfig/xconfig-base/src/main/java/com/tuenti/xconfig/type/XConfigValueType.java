@@ -14,6 +14,7 @@ public enum XConfigValueType {
 	BOOLEAN,
 	FLOAT,
 	INTEGER,
+	LONG,
 	LIST,
 	MAP,
 	NULL,

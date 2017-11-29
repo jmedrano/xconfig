@@ -14,9 +14,6 @@ import org.junit.Test;
 
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 
-/**
- * XConfigIntegerUnitTest test class
- */
 public class XConfigIntegerUnitTest {
 
 	private XConfigInteger object;
@@ -29,37 +26,42 @@ public class XConfigIntegerUnitTest {
 	}
 
 	@Test
-	public void testGetAsIntegerReturnsExpectedInteger() throws Exception {
+	public void testGetAsIntegerReturnsExpectedInteger() {
 		assertEquals(value, object.getAsInteger());
 	}
 
 	@Test
-	public void testGetAsFloatReturnsExpectedFloat() throws Exception {
+	public void testGetAsFloatReturnsExpectedFloat() {
 		assertEquals(new Float(value), object.getAsFloat());
 	}
 
 	@Test
-	public void testGetAsStringReturnsExpectedString() throws Exception {
+	public void testGetAsLongReturnsExpectedLong() {
+		assertEquals(new Long(value), object.getAsLong());
+	}
+
+	@Test
+	public void testGetAsStringReturnsExpectedString() {
 		assertEquals("12345678", object.getAsString());
 	}
 
-	@Test (expected = XConfigWrongTypeCastingException.class)
-	public void testGetAsBooleanThrowsWrongTypeCastingException() throws Exception {
+	@Test(expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsBooleanThrowsWrongTypeCastingException() {
 		object.getAsBoolean();
 	}
 
-	@Test (expected = XConfigWrongTypeCastingException.class)
-	public void testGetAsMapThrowsWrongTypeCastingException() throws Exception {
+	@Test(expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsMapThrowsWrongTypeCastingException() {
 		object.getAsMap();
 	}
 
-	@Test (expected = XConfigWrongTypeCastingException.class)
-	public void testGetAsListThrowsWrongTypeCastingException() throws Exception {
+	@Test(expected = XConfigWrongTypeCastingException.class)
+	public void testGetAsListThrowsWrongTypeCastingException() {
 		object.getAsList();
 	}
 
 	@Test
-	public void testGetAsJavaObject() throws Exception {
+	public void testGetAsJavaObject() {
 		assertEquals(this.object.getAsInteger(), this.object.getAsJavaObject());
 	}
 }

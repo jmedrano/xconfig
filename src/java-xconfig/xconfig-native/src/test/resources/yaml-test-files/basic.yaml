@@ -3,6 +3,7 @@ basic:
     "integerValue": 123
     "stringValue": "test"
     "floatValue": 3.14
+    "longValue": 100200300400500
     "booleanValue": false
     "nullValue": null
     "integersList":
@@ -20,5 +21,6 @@ basic:
       "key2": 2
       "key3": 1.16
       "key4": true
+      "key5": 900800700600500
     "#specialKey": true
 ...

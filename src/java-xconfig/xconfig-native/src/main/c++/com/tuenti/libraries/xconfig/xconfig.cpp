@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include "com_tuenti_xconfig_XConfigNative.h"
 #include "handle.h"
+#include <limits>
 
 using xconfig::XConfig;
 using xconfig::XConfigNode;
@@ -110,9 +111,15 @@ jobject getJobjectFromXConfigNode(JNIEnv * environment, XConfigNode node) {
   jmethodID methodId;
   jobject newObject;
   jstring stringValue;
+  int64_t intValue;
   switch (type) {
     case XConfigValueType::TYPE_INTEGER:
-      return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigInteger", "(I)V", node.getInt());
+      intValue = node.getInt();
+      if (intValue < std::numeric_limits<int>::min() || intValue > std::numeric_limits<int>::max()) {
+        return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigLong", "(J)V", intValue);
+      } else {
+        return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigInteger", "(I)V", intValue);
+      }
     case XConfigValueType::TYPE_BOOLEAN:
       return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigBoolean", "(Z)V", node.getBool());
     case XConfigValueType::TYPE_FLOAT:

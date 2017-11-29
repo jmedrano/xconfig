@@ -13,50 +13,52 @@ import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * XConfigMapUnitTest test class
- */
 public class XConfigNullUnitTest {
 
 	private XConfigNull object;
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		this.object = new XConfigNull();
 	}
 
 	@Test
-	public void testGetAsListReturnsExpectedList() throws Exception {
+	public void testGetAsListReturnsExpectedList() {
 		assertEquals(0, this.object.getAsList().size());
 	}
 
 	@Test
-	public void testGetAsMapReturnsExpectedMap() throws Exception {
+	public void testGetAsMapReturnsExpectedMap() {
 		assertEquals(0, this.object.getAsMap().size());
 	}
-	
+
 	@Test
-	public void testGetAsStringReturnsExpectedString() throws Exception {
+	public void testGetAsStringReturnsExpectedString() {
 		assertNull(this.object.getAsString());
 	}
 
 	@Test
-	public void testGetAsFloatReturnsExpectedFloat() throws Exception {
+	public void testGetAsFloatReturnsExpectedFloat() {
 		assertNull(this.object.getAsFloat());
 	}
 
 	@Test
-	public void testGetAsBooleanReturnsExpectedBoolean() throws Exception {
+	public void testGetAsBooleanReturnsExpectedBoolean() {
 		assertNull(this.object.getAsBoolean());
 	}
 
 	@Test
-	public void testGetAsIntegerReturnsExpectedInteger() throws Exception {
+	public void testGetAsIntegerReturnsExpectedInteger() {
 		assertNull(this.object.getAsInteger());
 	}
 
 	@Test
-	public void testGetAsJavaObject() throws Exception {
+	public void testGetAsLongReturnsExpectedLong() {
+		assertNull(this.object.getAsLong());
+	}
+
+	@Test
+	public void testGetAsJavaObject() {
 		assertNull(null, this.object.getAsJavaObject());
 	}
 }

@@ -16,9 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-/**
- * XConfigPathUnitTest test class
- */
 @RunWith(Parameterized.class)
 public class XCJoinUnitTest {
 
@@ -45,7 +42,7 @@ public class XCJoinUnitTest {
 	}
 
 	@Test
-	public void testGetPathReturnsExpectedOutput() throws Exception {
+	public void testGetPathReturnsExpectedOutput() {
 		assertEquals(expectedOutput, XConfigPath.XCJoin((Object[]) inputString));
 	}
 }

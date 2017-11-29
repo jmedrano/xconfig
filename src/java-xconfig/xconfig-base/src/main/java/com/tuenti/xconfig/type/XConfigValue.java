@@ -16,6 +16,7 @@ public interface XConfigValue {
 	Integer getAsInteger() throws XConfigWrongTypeCastingException;
 	String getAsString() throws XConfigWrongTypeCastingException;
 	Float getAsFloat() throws XConfigWrongTypeCastingException;
+	Long getAsLong() throws XConfigWrongTypeCastingException;
 	Boolean getAsBoolean() throws XConfigWrongTypeCastingException;
 	XConfigMap getAsMap() throws XConfigWrongTypeCastingException;
 	XConfigList getAsList() throws XConfigWrongTypeCastingException;

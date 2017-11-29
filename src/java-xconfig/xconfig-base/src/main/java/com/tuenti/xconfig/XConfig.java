@@ -71,9 +71,31 @@ public interface XConfig {
 	 *            Config key
 	 * @param defaultValue
 	 *            Default value
-	 * @return Value as a float
+	 * @return Value as an integer
 	 */
 	Integer getAsInteger(String key, Integer defaultValue);
+
+	/**
+	 * Tries to recover a given key as a long value.
+	 * 
+	 * @param key
+	 *            Config key
+	 * @return Value as an long
+	 */
+	Long getAsLong(String key) throws XConfigKeyNotFoundException,
+			XConfigWrongTypeCastingException;
+
+	/**
+	 * Tries to recover a given key as a long value if key is not found
+	 * default value will be returned.
+	 * 
+	 * @param key
+	 *            Config key
+	 * @param defaultValue
+	 *            Default value
+	 * @return Value as a long
+	 */
+	Long getAsLong(String key, Long defaultValue);
 
 	/**
 	 * Tries to recover a given key as a XConfigValue's list.

@@ -25,6 +25,11 @@ public class XConfigNull implements XConfigValue {
 	}
 
 	@Override
+	public Long getAsLong() {
+		return null;
+	}
+
+	@Override
 	public Boolean getAsBoolean() {
 		return null;
 	}

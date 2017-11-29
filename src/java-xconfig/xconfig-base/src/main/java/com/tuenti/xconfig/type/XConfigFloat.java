@@ -41,8 +41,19 @@ public class XConfigFloat implements XConfigValue {
 	}
 
 	@Override
-	public Integer getAsInteger() {
+	public Integer getAsInteger() throws XConfigWrongTypeCastingException {
+		if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+			throw new XConfigWrongTypeCastingException();
+		}
 		return value.intValue();
+	}
+
+	@Override
+	public Long getAsLong() throws XConfigWrongTypeCastingException {
+		if (value > Long.MAX_VALUE || value < Long.MIN_VALUE) {
+			throw new XConfigWrongTypeCastingException();
+		}
+		return value.longValue();
 	}
 
 	@Override

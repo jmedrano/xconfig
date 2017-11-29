@@ -1,28 +1,26 @@
-/*
- * XConfigInteger.java
- *
- * Copyright (C) 2014 Tuenti Technologies S.L.
- *
- * This file can only be stored on servers belonging to Tuenti Technologies S.L.
- */
 package com.tuenti.xconfig.type;
 
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 
-/**
- * XConfigInteger class.
- */
-public class XConfigInteger implements XConfigValue {
+public class XConfigLong implements XConfigValue {
 
-	private Integer value = null;
+	private Long value = null;
 
-	public XConfigInteger(int value) {
+	public XConfigLong(long value) {
 		this.value = value;
 	}
 
 	@Override
-	public Integer getAsInteger() {
+	public Long getAsLong() {
 		return this.value;
+	}
+
+	@Override
+	public Integer getAsInteger() throws XConfigWrongTypeCastingException {
+		if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+			throw new XConfigWrongTypeCastingException();
+		}
+		return value.intValue();
 	}
 
 	@Override
@@ -33,11 +31,6 @@ public class XConfigInteger implements XConfigValue {
 	@Override
 	public Float getAsFloat() {
 		return value.floatValue();
-	}
-
-	@Override
-	public Long getAsLong() {
-		return value.longValue();
 	}
 
 	@Override
@@ -57,12 +50,12 @@ public class XConfigInteger implements XConfigValue {
 
 	@Override
 	public XConfigValueType getType() {
-		return XConfigValueType.INTEGER;
+		return XConfigValueType.LONG;
 	}
 
 	@Override
 	public String toString() {
-		return "XConfigInteger [value=" + value + "]";
+		return "XConfigLong [value=" + value + "]";
 	}
 
 	@Override
@@ -70,7 +63,7 @@ public class XConfigInteger implements XConfigValue {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 
-		XConfigInteger that = (XConfigInteger) o;
+		XConfigLong that = (XConfigLong) o;
 
 		if (!value.equals(that.value)) return false;
 
@@ -83,7 +76,7 @@ public class XConfigInteger implements XConfigValue {
 	}
 
 	@Override
-	public Integer getAsJavaObject() {
+	public Long getAsJavaObject() {
 		return value;
 	}
 }

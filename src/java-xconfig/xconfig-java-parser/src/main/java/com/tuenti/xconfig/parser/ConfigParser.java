@@ -22,6 +22,7 @@ import com.tuenti.xconfig.type.XConfigBoolean;
 import com.tuenti.xconfig.type.XConfigFloat;
 import com.tuenti.xconfig.type.XConfigInteger;
 import com.tuenti.xconfig.type.XConfigList;
+import com.tuenti.xconfig.type.XConfigLong;
 import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigNull;
 import com.tuenti.xconfig.type.XConfigString;
@@ -118,6 +119,10 @@ public class ConfigParser {
 			return new XConfigInteger((Integer) element);
 		}
 
+		if (element instanceof Long) {
+			return new XConfigLong((Long) element);
+		}
+
 		if (element instanceof Boolean) {
 			return new XConfigBoolean((Boolean) element);
 		}
@@ -158,5 +163,4 @@ public class ConfigParser {
 		}
 		throw new RuntimeException("Unexpected value " + element + " of type " + element.getClass());
 	}
-	
 }

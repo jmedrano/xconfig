@@ -41,6 +41,11 @@ public class XConfigBoolean implements XConfigValue {
 	}
 
 	@Override
+	public Long getAsLong() throws XConfigWrongTypeCastingException {
+		throw new XConfigWrongTypeCastingException();
+	}
+
+	@Override
 	public XConfigMap getAsMap() throws XConfigWrongTypeCastingException {
 		throw new XConfigWrongTypeCastingException();
 	}
