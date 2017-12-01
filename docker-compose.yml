@@ -1,7 +1,7 @@
 version: '2'
 services:
   builder:
-    image: "docker.tuenti.io/service-inf/java-builder:1.2"
+    image: "docker.tuenti.io/service-inf/java-builder:2.1"
     volumes:
       - "./:/source"
       # so the docker plugin can build images
