@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Stream;
 
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
@@ -175,5 +176,9 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 			javaValues.add(v.getAsJavaObject());
 		}
 		return javaValues;
+	}
+
+	public Stream<XConfigValue> stream() {
+		return values.stream();
 	}
 }
