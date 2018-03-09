@@ -583,7 +583,17 @@ public class XConfigNodeTest {
 
 		assertEquals("1234", result);
 	}
-	
+
+	@Test
+	public void testGetFromCurrentNode() {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("true"));
+
+		XConfigNode rootNode = xConfigNode.getSubNode();
+		XConfigNode valueNode = rootNode.getSubNode("subnode", "value");
+		boolean result = valueNode.getBoolean().get();
+
+		assertTrue(result);
+	}
 	
 	private String yamlWithValue(String value) {
 		return "rootNode:\n" +

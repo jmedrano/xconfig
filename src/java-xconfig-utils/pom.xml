@@ -6,26 +6,18 @@
 	<artifactId>java-xconfig-utils</artifactId>
 	<packaging>jar</packaging>
 	<name>XConfigJavaUtils</name>
-	<version>1.1.2-SNAPSHOT</version>
+	<version>1.2.0-SNAPSHOT</version>
+
+	<parent>
+		<groupId>com.tuenti.services</groupId>
+		<artifactId>mvne-parent</artifactId>
+		<version>4.0.0</version>
+	</parent>
 
 	<properties>
-		<java.version>1.8</java.version>
-		<xconfig.version>1.1.2</xconfig.version>
+		<xconfig.version>1.3.0</xconfig.version>
 		<jacoco.version>0.7.9</jacoco.version>
 	</properties>
-
-	<!-- Tuenti repos -->
-	<distributionManagement>
-		<repository>
-			<id>repo.nexus.tuenti</id>
-			<url>https://nexus.tuenti.io/nexus/content/repositories/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>repo.nexus.tuenti</id>
-			<url>https://nexus.tuenti.io/nexus/content/repositories/snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-		</snapshotRepository>
-	</distributionManagement>
 
 	<dependencies>
 		<!-- Basic dependencies -->
@@ -57,17 +49,6 @@
 
 	<build>
 		<plugins>
-			<!-- 1.8 compiler -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.5.1</version>
-				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
-				</configuration>
-			</plugin>
-
 			<!-- Jacoco test coverage report -->
 			<plugin>
 				<groupId>org.jacoco</groupId>

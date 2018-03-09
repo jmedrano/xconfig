@@ -45,6 +45,7 @@ src/php-xconfig/xconfig.h
 src/pyxconfig/Makefile
 src/pyxconfig/config/tmp.yaml
 .idea
+*.iml
 .classpath
 .project
 .settings

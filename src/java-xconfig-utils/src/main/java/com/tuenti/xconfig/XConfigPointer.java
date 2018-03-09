@@ -55,7 +55,11 @@ interface XConfigPointer {
 		}
 		
 		private String concat(String... parts) {
-			return XCConcat(XCConcat((Object[]) rootPath), XCConcat((Object[]) parts));
+			if (parts.length != 0) {
+				return XCConcat(XCConcat((Object[]) rootPath), XCConcat((Object[]) parts));
+			} else {
+				return XCConcat((Object[]) rootPath);
+			}
 		}
 	}
 
