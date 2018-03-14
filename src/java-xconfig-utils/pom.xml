@@ -6,7 +6,7 @@
 	<artifactId>java-xconfig-utils</artifactId>
 	<packaging>jar</packaging>
 	<name>XConfigJavaUtils</name>
-	<version>1.2.0-SNAPSHOT</version>
+	<version>1.2.0</version>
 
 	<parent>
 		<groupId>com.tuenti.services</groupId>
