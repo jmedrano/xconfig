@@ -8,23 +8,31 @@ import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 
 /**
- * BreedXConfig class. Acts as a wrapper for an XConfig instance,
+ * <p>BreedXConfig class. Acts as a wrapper for an XConfig instance,
  * converting each individual petition into all the petitions required
  * by a specified breed.
+ * 
+ * <p>When the BreedXConfig is built over other parent BreedXConfig, combined breeds
+ * will also be generated using all the combinations of parent/child keys (see BreedsCombiner).
  */
 public class BreedXConfig extends XConfigBase {
 
 	private XConfig xconfig;
 	private String[][] breed;
+	private BreedsCombiner breedsCombiner = new BreedsCombiner();
 
-	public BreedXConfig(XConfig xconfig, String[][] breed) {
+	public BreedXConfig(XConfig xconfig, String[][] breedsArray) {
 		if (xconfig instanceof BreedXConfig) {
-			throw new RuntimeException("You can't pass a BreedsXConfig to another BreedsXConfig");
+			BreedXConfig breedBaseConfig = (BreedXConfig) xconfig;
+			this.xconfig = breedBaseConfig.xconfig;
+			this.breed = breedsCombiner.combineBreeds(breedBaseConfig.breed, breedsArray);
+			
+		} else {
+			this.xconfig = xconfig;
+			this.breed = breedsArray;
 		}
-		this.xconfig = xconfig;
-		this.breed = breed;
 	}
-
+	
 	@Override
 	public void close() {
 		xconfig.close();
