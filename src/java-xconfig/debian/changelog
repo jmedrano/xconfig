@@ -1,3 +1,11 @@
+java-xconfig (1.3.1-1) precise; urgency=medium
+
+  * Added XConfigList::stream
+  * Allow retriving from the current node (empty path)
+  * Support to work with virtual environments
+
+ -- dgarcia <dgarcia@it-Latitude-7480>  Mon, 21 May 2018 16:08:14 +0100
+
 java-xconfig (1.3.0-1) precise; urgency=medium
 
   * Add XConfigLong support
