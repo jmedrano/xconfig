@@ -22,6 +22,8 @@ workflows:
     stages: [docker_up, install_extra_packages, verify_java, docker_down]
   release_java:
     stages: [docker_up, install_extra_packages, deploy_java, docker_down]
+  deploy_java:
+    stages: [docker_up, install_extra_packages, deploy_java, docker_down]
   deploy_java_utils:
     stages: [docker_up, deploy_java_utils, docker_down]
 
