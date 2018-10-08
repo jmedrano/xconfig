@@ -908,8 +908,9 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 			size_t firstChildId = 0;
 			size_t prevChildId = 0;
 			size_t n;
-			for (n = 0; n < bucket->value._vectorial.size && childId; n++) {
-				TTRACE("#%ld/%d", n, bucket->value._vectorial.size);
+			auto childCount = bucket->value._vectorial.size;
+			for (n = 0; n < childCount && childId; n++) {
+				TTRACE("#%ld/%d", n, childCount);
 
 				canonicalIds(&blobId, &childId);
 				XConfigBucket* childBucket = getBucket(blobId, childId);
@@ -920,6 +921,8 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 				childKey += isMap ? getString(blobId, childBucket->name) : lexical_cast<string>(childBucket->name);
 
 				auto newChildId = deepCopy(composeNodeId(blobId, childId), isMap, childKey);
+				childBucket = getBucket(blobId, childId);
+
 				if (prevChildId) {
 					auto prevChildBlobId = decodeBlobId(prevChildId);
 					TTRACE("prevChild(%ld)->next=%ld", prevChildId, newChildId);

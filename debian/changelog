@@ -1,3 +1,9 @@
+xconfig (0.9.5-tuenti1) stable; urgency=low
+
+  * Fix segfaults in expandRefs()
+
+ -- Jakub Holubansky <jakub@tuenti.com>  Mon, 8 Oct 2018 17:56:19 +0200
+
 xconfig (0.9.4-tuenti1) stable; urgency=low
 
   * Increase config paths length limit to 10kB
