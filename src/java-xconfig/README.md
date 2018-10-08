@@ -14,6 +14,7 @@ to develop or run tests, but must never be used in production.
 `xconfig-native` needs the equivalent `libxconfig-native.so` to be able to work.
 In order to use all the matching versions, a `java-xconfig` debian package
 is created with:
+
 - `/usr/share/java`: `xconfig-base` and `xconfig-native` jars. That path must
 be included in the application classpath. It's already a standard in Tomcat.
 - `/usr/lib/jni`: `libxconfig-native.so` with the native binding. That path
