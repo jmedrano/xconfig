@@ -482,25 +482,33 @@ int main(int argc, char** argv)
 	if (vm.count("server")) {
 		serveFile(path, socket);
 	} else {
-		string key(vm["key"].as<string>());
-		int implicitYamlSeparator = vm.count("noind");
+		string key;
+		try {
+			key = vm["key"].as<string>();
+			int implicitYamlSeparator = vm.count("noind");
 
-		boost::shared_ptr<XConfigConnection> conn;
-		UnixConnectionPool pool;
-		if (unixSocketMode) {
-			conn = pool.getConnection(path, socket);
-		} else {
-			conn.reset(new FileConnection(path));
+			boost::shared_ptr<XConfigConnection> conn;
+			UnixConnectionPool pool;
+			if (unixSocketMode) {
+				conn = pool.getConnection(path, socket);
+			} else {
+				conn.reset(new FileConnection(path));
+			}
+
+			XConfig xc(conn);
+			Dumper dumper(xc, implicitYamlSeparator);
+			XConfigNode root = xc.getNode(key);
+			dumper.yamlStart();
+			dumper.yamlDump(root);
+			dumper.yamlEnd();
+		} catch (xconfig::XConfigNotFound e) {
+			fprintf(stderr, "key '%s' not found\n", key.c_str());
+			return 2;
+		} catch (xconfig::XConfigNotConnected e) {
+			fprintf(stderr, "XConfig is not connected with the server\n");
+			return 3;
 		}
-		XConfig xc(conn);
-		Dumper dumper(xc, implicitYamlSeparator);
-		XConfigNode root = xc.getNode(key);
-		dumper.yamlStart();
-		dumper.yamlDump(root);
-		dumper.yamlEnd();
 	}
-
-	//sleep(30);
 
 	return 0;
 }
