@@ -433,6 +433,10 @@ void Dumper::yamlDump(const XConfigNode& node) {
 			if (!yaml_emitter_emit(&emitter, &event))
 				emitterError();
 			break;
+		case XConfigValueType::TYPE_DELETE:
+			fprintf(stderr, "Key was deleted\n");
+			throw xconfig::XConfigNotFound();
+                        break;
 		default:
 			fprintf(stderr, "Unknown type %d\n", xc.getType(node));
 			break;
