@@ -505,7 +505,7 @@ int main(int argc, char** argv)
 			fprintf(stderr, "key '%s' not found\n", key.c_str());
 			return 2;
 		} catch (xconfig::XConfigNotConnected e) {
-			fprintf(stderr, "XConfig is not connected with the server\n");
+			fprintf(stderr, "XConfig couldn't connect with the daemon\n");
 			return 3;
 		}
 	}
