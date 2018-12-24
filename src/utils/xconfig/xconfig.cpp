@@ -36,6 +36,12 @@ static int bucketIdx = 0;
 static char stringPool[MAX_BUCKETS * 128];
 static int stringOffset = 0;
 
+class XConfigKeyDeleted : public xconfig::XConfigException {
+public:
+	XConfigKeyDeleted() {}
+	XConfigKeyDeleted(const std::string& key) : xconfig::XConfigException(key) {}
+};
+
 class Dumper {
 public:
 	Dumper(const XConfig& xc, bool implicitYamlSeparator) : xc(xc), implicitYamlSeparator(implicitYamlSeparator) {}
@@ -434,8 +440,7 @@ void Dumper::yamlDump(const XConfigNode& node) {
 				emitterError();
 			break;
 		case XConfigValueType::TYPE_DELETE:
-			fprintf(stderr, "Key was deleted\n");
-			throw xconfig::XConfigNotFound();
+			throw XConfigKeyDeleted();
                         break;
 		default:
 			fprintf(stderr, "Unknown type %d\n", xc.getType(node));
@@ -511,6 +516,9 @@ int main(int argc, char** argv)
 		} catch (xconfig::XConfigNotConnected e) {
 			fprintf(stderr, "XConfig couldn't connect with the daemon\n");
 			return 3;
+		} catch (XConfigKeyDeleted e) {
+			fprintf(stderr, "key '%s' was deleted\n", key.c_str());
+                        return 4;
 		}
 	}
 
