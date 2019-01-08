@@ -1,3 +1,9 @@
+xconfig (0.9.6-tuenti1) stable; urgency=low
+
+  * Fix segfaults with delete key
+
+ -- David Garcia Alvarez <dgarcia@tuenti.com>  Mon, 24 Dec 2018 09:01:53 +0200
+
 xconfig (0.9.5-tuenti1) stable; urgency=low
 
   * Fix segfaults in expandRefs()
