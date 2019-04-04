@@ -46,9 +46,9 @@ stages:
     - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && ./makePackage.sh"'
 
   build:
-    - 'docker-compose up -d php-builder'
-    - 'docker-compose exec php-builder apt-get update'
-    - 'docker-compose exec php-builder apt-get install -y packaging-dev debian-keyring devscripts equivs'
-    - 'docker-compose exec php-builder bash -c "cd /source && mk-build-deps --install -t \"apt-get -y\""'
-    - 'docker-compose exec php-builder bash -c "cd /source &&  dpkg-buildpackage -uc -us -b"'
-    - 'docker-compose exec php-builder bash -c "cp ../*.deb /source/"'
+    - 'docker-compose up -d xconfig-builder'
+    - 'docker-compose exec xconfig-builder apt-get update'
+    - 'docker-compose exec xconfig-builder apt-get install -y packaging-dev debian-keyring devscripts equivs php-dev'
+    - 'docker-compose exec xconfig-builder bash -c "cd /source && mk-build-deps --install -t \"apt-get -y\""'
+    - 'docker-compose exec xconfig-builder bash -c "cd /source &&  dpkg-buildpackage -uc -us -b"'
+    - 'docker-compose exec xconfig-builder bash -c "cp ../*.deb /source/"'

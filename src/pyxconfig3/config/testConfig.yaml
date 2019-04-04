@@ -1,0 +1,14 @@
+testConfig:
+  sampleInt: 1
+  sampleList: [1, 2, []]
+  sampleList2: [1, 2]
+  sampleList3: []
+  sampleList4: [[1]]
+  sampleNull: null
+  sampleBool: true
+  sampleString: "test"
+  sampleMap:
+    a: 1
+    b:
+      - x: []
+    c: "test"

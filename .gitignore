@@ -17,7 +17,7 @@ debian/libxconfig-dev/
 debian/libxconfig-dbg/
 debian/xconfig-utils/
 debian/php7-xconfig/
-debian/pyxconfig/
+debian/pyxconfig*/
 debian/files
 debian/tmp
 debian/debhelper-build-stamp
@@ -42,8 +42,8 @@ src/php-xconfig/mkinstalldirs
 src/php-xconfig/run-tests.php
 src/php-xconfig/xconfig.cpp
 src/php-xconfig/xconfig.h
-src/pyxconfig/Makefile
-src/pyxconfig/config/tmp.yaml
+src/pyxconfig*/Makefile
+src/pyxconfig*/config/tmp.yaml
 .idea
 *.iml
 .classpath
