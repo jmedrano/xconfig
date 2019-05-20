@@ -49,3 +49,4 @@ src/pyxconfig/config/tmp.yaml
 .classpath
 .project
 .settings
+.vscode
