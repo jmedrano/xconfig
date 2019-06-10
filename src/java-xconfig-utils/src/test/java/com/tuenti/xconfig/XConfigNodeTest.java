@@ -2,6 +2,7 @@ package com.tuenti.xconfig;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -594,7 +595,30 @@ public class XConfigNodeTest {
 
 		assertTrue(result);
 	}
-	
+
+	@Test
+	public void testGetPrimitiveValueMap() {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("{\"map1\":{\"key\":1},\"map2\":{\"key\":2}}"));
+
+		Object result = xConfigNode.getPrimitiveValue("subnode", "value").get();
+
+		assertTrue(result instanceof Map);
+
+		Map<String, Map<String,Integer>> mapResult = (Map) result;
+		assertEquals(1, mapResult.get("map1").get("key").intValue());
+		assertEquals(2, mapResult.get("map2").get("key").intValue());
+	}
+
+	@Test
+	public void testGetPrimitiveValueList() {
+		XConfigNode xConfigNode = createXConfigNode(yamlWithValue("[one, two, three, caramba]"));
+
+		Object result = xConfigNode.getPrimitiveValue("subnode", "value").get();
+
+		assertTrue(result instanceof List);
+		assertArrayEquals(Stream.of("one", "two", "three", "caramba").toArray(),((List<String>)result).toArray());
+	}
+
 	private String yamlWithValue(String value) {
 		return "rootNode:\n" +
 				"  subnode:\n" +

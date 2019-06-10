@@ -142,6 +142,10 @@ public final class XConfigNode {
 		}
 	}
 
+	public Optional<Object> getPrimitiveValue(String... path){
+		return pointer.getValue(path).map(this::toJavaObject);
+	}
+
 	private <T> T require(Optional<T> value, String... path) {
 		return value.orElseThrow(() -> new InvalidConfigException("Required config value not found or invalid in "
 					+ String.join("/", path)));
@@ -166,7 +170,11 @@ public final class XConfigNode {
 	private Boolean toBoolean(XConfigValue input) {
 		return valueOrNullIfError(input, (it -> it.getAsBoolean()));
 	}
-	
+
+	private Object toJavaObject(XConfigValue input) {
+		return valueOrNullIfError(input, (it -> it.getAsJavaObject()));
+	}
+
 	private <T> T valueOrNullIfError(XConfigValue input, Function<XConfigValue, T> valueFunction) {
 		try {
 			return valueFunction.apply(input);
