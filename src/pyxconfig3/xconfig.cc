@@ -73,7 +73,7 @@ static bool getKeyVectorFromArgs(PyObject *args, vector<string> &keys) {
             PyObject* item = PySequence_GetItem(keysParam, i);
             PyObject* itemStr = PyObject_Str(item);
 
-            const char* keyPart = PyBytes_AS_STRING(itemStr);
+            const char* keyPart = PyUnicode_AsUTF8(itemStr);
             keys.push_back((string) keyPart);
 
             Py_DECREF(item);
@@ -84,7 +84,7 @@ static bool getKeyVectorFromArgs(PyObject *args, vector<string> &keys) {
     }
 
     PyObject* argsStr = PyObject_Str(args);
-    PyErr_SetString(XConfigWrongTypeException, ((string)"Wrong type for key " + PyBytes_AS_STRING(argsStr)).c_str());
+    PyErr_SetString(XConfigWrongTypeException, ((string)"Wrong type for key " + PyUnicode_AsUTF8(argsStr)).c_str());
     Py_DECREF(argsStr);
     return false;
 }
@@ -98,7 +98,7 @@ static bool getNodeFromArgs(XConfigObject *self, PyObject *args, XConfigNode &no
         node = self->xc->getNodeNoThrow(keys);
         if (!node && !nothrow) {
             PyObject* argsStr = PyObject_Str(args);
-            string message = (string)"Key " + PyBytes_AS_STRING(argsStr) + " not found";
+            string message = (string)"Key " + PyUnicode_AsUTF8(argsStr) + " not found";
             PyErr_SetString(XConfigNotFoundException, message.c_str());
             Py_DECREF(argsStr);
             return false;
@@ -129,12 +129,13 @@ static int XConfig_init(XConfigObject *self, PyObject *args) {
             return 0;
         } catch (const XConfigNotConnected &e) {
             PyObject* argsStr = PyObject_Str(args);
-            string message = (string)"XConfig could not connect with path " + PyBytes_AS_STRING(argsStr);
+            string message = (string)"XConfig could not connect with path " + PyUnicode_AsUTF8(argsStr);
             PyErr_SetString(XConfigNotConnectedException, message.c_str());
             Py_DECREF(argsStr);
             return -1;
         }
     }
+    return -1;
 }
 
 static void XConfig_dealloc(XConfigObject* self)

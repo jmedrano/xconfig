@@ -135,6 +135,7 @@ static int XConfig_init(XConfigObject *self, PyObject *args) {
             return -1;
         }
     }
+    return -1;
 }
 
 static void XConfig_dealloc(XConfigObject* self)
