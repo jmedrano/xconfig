@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -o errexit nounset
+
+source /etc/os-release
+
+if [ "$ID" != "debian" ] ; then
+    echo "Not supported operating system"
+    exit 1;
+fi
+
+sed "s/DISTRIBUTIONNAME/~$VERSION_CODENAME/g" debian/changelog.template > debian/changelog
+
+apt update; apt install -y build-essential devscripts php-dev
+mk-build-deps -i -t "apt-get -y"
+rm ./*build-deps*.deb
+debuild -us -uc

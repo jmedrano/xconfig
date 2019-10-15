@@ -1,0 +1,252 @@
+#!/bin/bash
+# Helper script to manage the unified config system:
+# - Show the ordered config paths for a certain application
+# - Obtain a config value from XConfig using the correct config paths
+#
+# Jesús Bravo Álvarez <suso@tuenti.com>
+
+
+syntax() {
+  message=$1
+  if [ "$message" != "" ]; then
+    /bin/echo -e "\033[1m$message\033[0m\n"
+  fi
+
+  cat <<EOT
+config_helper <command> <args>
+
+Commands:
+
+  env
+    Show the CONFIG_PATH environment variable with the list of paths
+    To be executed as:
+      eval \`config_helper env\`
+
+  paths
+    Show the list of config paths (the same as 'env' but for humans)
+
+  get -k <config_node> [-f <format>]
+    Get a config value from XConfig
+    -k NODE      Path to the config node separated by slash (/)
+    -f FORMAT    Output format:
+                 - yaml (default)
+                 - json (requires python and pyyaml)
+
+
+Main arguments (use them to tune the config paths for your app)
+
+  -a APP           App name (tuenti, charging-service, pushgw...)
+                   env: CONFIG_APP_NAME
+                   default: (none)
+
+  -t TECHNOLOGY    Config paths for compatibility with old config repos
+                   - php (for php/erlang)
+                   - java
+                   env: CONFIG_TECHNOLOGY
+                   default: (none)
+
+  -e ENVIRONMENTS  Logical environments list, separated by ':', ordered from more
+                   general (lower priority) to more specific (higher priority)
+                   env: CONFIG_ENVIRONMENTS
+                   default: ""
+
+
+Other arguments (default values should work most of the times)
+
+  -m MODE          Force the config paths setup mode
+                   - server: standalone server (no containers)
+                   - docker: docker container
+                   - k8s: docker container in a kubernetes cluster
+                   default: (automatically detected)
+
+  -b BASE_PATH     Force the base config directory
+                   env: CONFIG_BASE_PATH
+                   default (server): /srv/configuration
+                   default (docker/k8s): /var/xconfig/configuration
+
+  -d DATACENTER    Force the datacenter name
+                   default (server): use symlink on /srv/appconfig/this/datacenter
+                   default (docker/k8s): this (symlink created by xconfig-checkout)
+
+  -c CLUSTER       Force the kubernetes cluster name (k8s mode only)
+                   default: this (symlink created by xconfig-checkout)
+
+  -n NAMESPACE     Force the k8s namespace (k8s mode only)
+                   env: CONFIG_NAMESPACE
+                   default: FIXMEFIXME (indicates missing env var in the pod spec)
+
+  -r ROLE          Force the puppet role (server mode only)
+                   default: use symlink on /srv/appconfig/this/role
+
+  -h HOST          Force the hostname (server mode only)
+                   default: use symlink on /srv/appconfig/this/server
+
+
+Examples:
+
+Show the paths for the charging service in Peru PRE
+$ config_helper paths -a charging-service -t java -e preproduction:pre-latam:pre-peru
+
+Set the CONFIG_PATH variable in your environment for tuenti-ng
+$ eval \`config_helper env -a tuenti -t php\`
+
+Get a config value for the push service
+$ config_helper get -a push -t php -k pushServiceConfig
+
+Get a config value inside a k8s pod (magic!)
+$ config_helper get -k serviceConfig
+
+EOT
+  exit 1
+}
+
+get_paths_base() {
+  if [ -n "$technology" ]; then
+    echo "$base_path/technology/$technology-systems"
+    echo "$base_path/technology/$technology"
+  fi
+
+  echo "$base_path/main/common"
+
+  if [ -n "$environments" ]; then
+    IFS=':' envs=($environments)
+    for env in ${envs[@]}; do
+      echo "$base_path/environment/$env/common"
+    done
+  fi
+
+  if [ -n "$datacenter" ]; then
+    echo "$base_path/platform/datacenter/$datacenter/common"
+  elif [ "$mode" = "server" ]; then
+    echo "/srv/appconfig/this/datacenter/common"
+  fi
+
+  if [ "$mode" = "k8s" ]; then
+    echo "$base_path/platform/cluster/$cluster/common"
+    echo "$base_path/platform/namespace/$cluster/$namespace/common"
+  fi
+
+  if [ "$mode" = "server" ]; then
+    if [ -n "$role" ]; then
+      echo "$base_path/platform/role/$role/common"
+    else
+      echo "/srv/appconfig/this/role/common"
+    fi
+
+    if [ -n "$host" ]; then
+      echo "$base_path/platform/host/$host/common"
+    else
+      echo "/srv/appconfig/this/server/common"
+    fi
+  fi
+
+  # Legacy for PHP alphas (server mode only)
+  if [ "$mode" = "server" -a "$vhost" != "" ]; then
+    echo "/srv/appconfig/tuenti/dev/test/$vhost"
+    echo "/srv/appconfig/tuenti/dev/vhost/$vhost"
+  fi
+}
+
+get_paths() {
+  if [ -n "$app" -a "$app" != "undefined" ]; then
+    get_paths_base | while read path; do
+      echo "$path"
+      if [[ "$path" == *"common" ]]; then
+        echo "${path/common/$app}"
+      fi
+    done
+  else
+    get_paths_base
+  fi
+  
+}
+
+get_paths_compact() {
+  get_paths | tr '\n' ':' | sed -e s/:$//
+}
+
+cmd_env() {
+  echo "export CONFIG_PATH="`get_paths_compact`
+}
+
+cmd_get() {
+  xconfig -p `get_paths_compact` -k "$config_node" |
+  case $output_format in
+    json) python -c 'import sys, yaml, json; json.dump(yaml.load(sys.stdin), sys.stdout, indent=2)';;
+    yaml) cat;;
+  esac
+}
+
+# Undocumented legacy command (used only in tqueue_admin)
+cmd_dcs() {
+  for dc in `find /srv/configuration/platform/datacenter/ -mindepth 1 -maxdepth 1 -type d`; do
+    basename $dc
+  done
+}
+
+
+## main
+
+GETOPT=`getopt -o m:b:a:s:t:e:d:c:n:r:h:v:k:f: -- "$@"`
+eval set -- "$GETOPT"
+
+while true; do
+  case "$1" in
+    -a) app=$2; shift 2;;
+    -t) technology=$2; shift 2;;
+    -e) environments=$2; shift 2;;
+    -m) mode=$2; shift 2;;
+    -b) base_path=$2; shift 2;;
+    -d) datacenter=$2; shift 2;;
+    -c) cluster=$2; shift 2;;
+    -n) namespace=$2; shift 2;;
+    -r) role=$2; shift 2;;
+    -h) host=$2; shift 2;;
+    -v) vhost=$2; shift 2;; # Undocumented legacy for PHP alpha overrides
+    -k) config_node=$2; shift 2;;
+    -f) output_format=$2; shift 2;;
+    --) shift; break;;
+  esac
+done
+
+command=$1
+
+case $command in
+             "") syntax "Missing command name";;
+  "paths"|"env") [ -n "$config_node" ] && syntax "Argument -k not compatible with '$command' command"
+                 [ -n "$output_format" ] && syntax "Argument -f not compatible with '$command' command";;
+          "get") [ -z "$config_node" ] && syntax "Argument -k is mandatory for 'get' command"
+                 [ -z "$output_format" ] && output_format="yaml";;
+        "print") ;; # Legacy
+          "dcs") ;; # Legacy
+              *) syntax "Command '$command' not recognized";;
+esac
+
+# Heuristic to determine the mode
+if [ -z "$mode" ]; then
+  mode="server"
+  [ -e "/.dockerenv" ] && mode="docker"
+  [ -n "$KUBERNETES_SERVICE_HOST" ] && mode="k8s"
+fi
+
+# Fill arguments received as environment variables
+[ -z "$app" -a -n "$CONFIG_APP_NAME" ] && app=$CONFIG_APP_NAME
+[ -z "$technology" -a -n "$CONFIG_TECHNOLOGY" ] && technology=$CONFIG_TECHNOLOGY
+[ -z "$environments" -a -n "$CONFIG_ENVIRONMENTS" ] && environments=$CONFIG_ENVIRONMENTS
+[ -z "$namespace" -a -n "$CONFIG_NAMESPACE" ] && namespace=$CONFIG_NAMESPACE
+[ -z "$base_path" -a -n "$CONFIG_BASE_PATH" ] && base_path=$CONFIG_BASE_PATH
+
+# Fill defaults
+[ "$mode" = "server" -a -z "$base_path" ] && base_path="/srv/configuration"
+[ "$mode" != "server" -a -z "$base_path" ] && base_path="/var/xconfig/configuration"
+[ "$mode" != "server" -a -z "$datacenter" ] && datacenter="this"
+[ "$mode" = "k8s" -a -z "$cluster" ] && cluster="this"
+[ "$mode" = "k8s" -a -z "$namespace" ] && namespace=FIXMEFIXME  # Detect easily a missing env var in the pod spec
+
+case $command in
+  "paths") get_paths;;
+    "env") cmd_env;;
+    "get") cmd_get;;
+  "print") get_paths;; # Legacy
+    "dcs") cmd_dcs;; # Legacy
+esac

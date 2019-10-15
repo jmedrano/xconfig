@@ -4,9 +4,14 @@ services:
     image: "docker.tuenti.io/service-inf/java-builder:2.5"
     volumes:
       - "./:/source"
-
   xconfig-builder:
-    image: "docker.tuenti.io/debian:stretch"
+    image: "docker.tuenti.io/debian:stretch1"
+    command: "sleep infinity"
+    volumes:
+      - "./:/source"
+
+  buster-builder:
+    image: "docker.tuenti.io/debian:buster"
     command: "sleep infinity"
     volumes:
       - "./:/source"

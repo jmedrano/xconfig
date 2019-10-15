@@ -14,6 +14,12 @@ defaults:
       set_current_release_version: "mvn -f src/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release"
       set_next_development_version: "mvn -f src/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel"
 
+parameters:
+  generate_debian_packages: "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"
+  generate_python_wheel: "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"
+  generated_files: "packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info"
+  java_binding_path: "/source/bindings/java/java-xconfig"
+
 workflows:
   verify_java:
     stages: [docker_up, install_extra_packages, verify_java, docker_down]
@@ -27,28 +33,38 @@ workflows:
   # Meant to be executed with cigen
   build_java_deb_package:
     stages: [docker_up, install_extra_packages, build_java_deb_package, docker_down]
-  build:
-    stages: [build]
+  build_strech:
+    stages: [clean, build_strech]
+  build_buster:
+    stages: [clean, build_buster]
+  clean:
+    stages: [clean]
 
 stages:
   docker_up: ["docker-compose pull", "docker-compose up -d"]
   docker_down: ["docker-compose down"]
-  verify_java: ["docker-compose exec -T builder mvn -B verify -f src/java-xconfig"]
-  deploy_java: ["docker-compose exec -T builder mvn -B deploy -f src/java-xconfig"]
-  deploy_java_utils: ["docker-compose exec -T builder mvn -B deploy -f src/java-xconfig-utils"]
+  verify_java: ["docker-compose exec -T builder mvn -B verify -f ${java_binding_path}"]
+  deploy_java: ["docker-compose exec -T builder mvn -B deploy -f ${java_binding_path}"]
+  deploy_java_utils: ["docker-compose exec -T builder mvn -B deploy -f bindings/java/java-xconfig-utils/"]
 
   install_extra_packages:
     - 'docker-compose exec -T builder apt-get update'
     - 'docker-compose exec -T builder apt-get install -y packaging-dev debian-keyring devscripts equivs xconfigd libxconfig-dev'
     - 'docker-compose exec -T builder /etc/init.d/xconfigd start'
   build_java_deb_package:
-    - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && mk-build-deps --install -t \"apt-get -y\""'
-    - 'docker-compose exec -T builder bash -c "cd /source/src/java-xconfig && ./makePackage.sh"'
+    - 'docker-compose exec -T builder bash -c "cd ${java_binding_path} && mk-build-deps --install -t \"apt-get -y\""'
+    - 'docker-compose exec -T builder bash -c "cd ${java_binding_path} && ./makePackage.sh"'
 
-  build:
+  build_strech:
     - 'docker-compose up -d xconfig-builder'
-    - 'docker-compose exec xconfig-builder apt-get update'
-    - 'docker-compose exec xconfig-builder apt-get install -y packaging-dev debian-keyring devscripts equivs php-dev'
-    - 'docker-compose exec xconfig-builder bash -c "cd /source && mk-build-deps --install -t \"apt-get -y\""'
-    - 'docker-compose exec xconfig-builder bash -c "cd /source &&  dpkg-buildpackage -uc -us -b"'
-    - 'docker-compose exec xconfig-builder bash -c "cp ../*.deb /source/"'
+    - 'docker-compose exec xconfig-builder bash -c "${generate_debian_packages}"'
+    - 'docker-compose exec xconfig-builder bash -c "${generate_python_wheel}"'
+
+  build_buster:
+    - 'docker-compose up -d buster-builder'
+    - 'docker-compose exec buster-builder bash -c "${generate_debian_packages}"'
+    - 'docker-compose exec buster-builder bash -c "${generate_python_wheel}"'
+
+  clean:
+    - 'docker-compose up -d buster-builder'
+    - 'docker-compose exec buster-builder bash -c "cd /source; debuild -- clean; rm -rf ${generated_files}"'

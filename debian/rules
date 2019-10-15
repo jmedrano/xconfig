@@ -21,3 +21,6 @@ override_dh_auto_install:
 
 override_dh_strip:
 	dh_strip -a --dbg-package=libxconfig-dbg -Nxconfigd
+
+clean:
+	cd debian; rm -rf files libxconfig libxconfig-dbg *debhelper* *substvars libxconfig-dev php7-xconfig tmp xconfigd xconfigd-base xconfig-utils

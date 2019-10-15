@@ -1,4 +1,12 @@
-xconfig (0.9.7-tuenti1) stable; urgency=low
+xconfig (1.0.2DISTRIBUTIONNAME) stable; urgency=low
+
+  * Extract all the bindings out of the main package
+  * Improve the build system
+  * Include the distribution name on the version
+
+ -- Daniel Pañeda <dpaneda@tuenti.com>  Thu, 11 Jul 2019 16:18:51 +0200
+
+xconfig (0.9.8) stable; urgency=low
 
   * Fix pyxconfig for debian stretch
 
