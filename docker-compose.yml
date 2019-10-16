@@ -1,10 +1,10 @@
 version: '2'
 services:
-  builder:
+  java-builder:
     image: "docker.tuenti.io/service-inf/java-builder:2.5"
     volumes:
       - "./:/source"
-  xconfig-builder:
+  strech-builder:
     image: "docker.tuenti.io/debian:stretch1"
     command: "sleep infinity"
     volumes:

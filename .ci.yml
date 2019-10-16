@@ -43,22 +43,22 @@ workflows:
 stages:
   docker_up: ["docker-compose pull", "docker-compose up -d"]
   docker_down: ["docker-compose down"]
-  verify_java: ["docker-compose exec -T builder mvn -B verify -f ${java_binding_path}"]
-  deploy_java: ["docker-compose exec -T builder mvn -B deploy -f ${java_binding_path}"]
-  deploy_java_utils: ["docker-compose exec -T builder mvn -B deploy -f bindings/java/java-xconfig-utils/"]
+  verify_java: ["docker-compose exec -T java-builder mvn -B verify -f ${java_binding_path}"]
+  deploy_java: ["docker-compose exec -T java-builder mvn -B deploy -f ${java_binding_path}"]
+  deploy_java_utils: ["docker-compose exec -T java-builder mvn -B deploy -f bindings/java/java-xconfig-utils/"]
 
   install_extra_packages:
-    - 'docker-compose exec -T builder apt-get update'
-    - 'docker-compose exec -T builder apt-get install -y packaging-dev debian-keyring devscripts equivs xconfigd libxconfig-dev'
-    - 'docker-compose exec -T builder /etc/init.d/xconfigd start'
+    - 'docker-compose exec -T java-builder apt-get update'
+    - 'docker-compose exec -T java-builder apt-get install -y packaging-dev debian-keyring devscripts equivs xconfigd libxconfig-dev'
+    - 'docker-compose exec -T java-builder /etc/init.d/xconfigd start'
   build_java_deb_package:
-    - 'docker-compose exec -T builder bash -c "cd ${java_binding_path} && mk-build-deps --install -t \"apt-get -y\""'
-    - 'docker-compose exec -T builder bash -c "cd ${java_binding_path} && ./makePackage.sh"'
+    - 'docker-compose exec -T java-builder bash -c "cd ${java_binding_path} && mk-build-deps --install -t \"apt-get -y\""'
+    - 'docker-compose exec -T java-builder bash -c "cd ${java_binding_path} && ./makePackage.sh"'
 
   build_strech:
-    - 'docker-compose up -d xconfig-builder'
-    - 'docker-compose exec xconfig-builder bash -c "${generate_debian_packages}"'
-    - 'docker-compose exec xconfig-builder bash -c "${generate_python_wheel}"'
+    - 'docker-compose up -d strech-builder'
+    - 'docker-compose exec strech-builder bash -c "${generate_debian_packages}"'
+    - 'docker-compose exec strech-builder bash -c "${generate_python_wheel}"'
 
   build_buster:
     - 'docker-compose up -d buster-builder'

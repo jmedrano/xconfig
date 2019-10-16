@@ -12,6 +12,12 @@ xconfig (0.9.8) stable; urgency=low
 
  -- Taras Sotnikov <tsotnikov@tuenti.com>  Thu, 11 Jul 2019 16:18:51 +0200
 
+xconfig (0.9.7-tuenti1) stable; urgency=low
+
+  * Fix pyxconfig for debian stretch
+
+ -- Taras Sotnikov <tsotnikov@tuenti.com>  Thu, 11 Jul 2019 16:18:51 +0200
+
 xconfig (0.9.6-tuenti1) stable; urgency=low
 
   * Fix segfaults with delete key
