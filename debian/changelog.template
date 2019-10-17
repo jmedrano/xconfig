@@ -1,4 +1,4 @@
-xconfig (1.0.2DISTRIBUTIONNAME) stable; urgency=low
+xconfig (1.0.3DISTRIBUTIONNAME) stable; urgency=low
 
   * Extract all the bindings out of the main package
   * Improve the build system
