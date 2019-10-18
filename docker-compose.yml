@@ -11,7 +11,7 @@ services:
       - "./:/source"
 
   buster-builder:
-    image: "docker.tuenti.io/debian:buster"
+    image: "docker.tuenti.io/debian:buster1"
     command: "sleep infinity"
     volumes:
       - "./:/source"

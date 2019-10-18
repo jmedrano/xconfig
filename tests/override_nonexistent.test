@@ -1,0 +1,18 @@
+base:override_nonexistent
+base/base.yaml
+---
+key1: "value1"
+key2:
+  key3: "value2"
+...
+override/override.yaml
+---
+key2: !mapoverride
+  key4: !delete
+...
+expected
+---
+key1: !!str value1
+key2:
+  key3: !!str value2
+...
