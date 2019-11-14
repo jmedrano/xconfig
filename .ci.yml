@@ -10,9 +10,9 @@ defaults:
         - "server+jenkins@tuenti.com"
     versioning:
       enabled: true
-      get_version: "mvn -f src/java-xconfig/pom.xml -q com.tuenti.maven.plugins:tuentiversions-maven-plugin:show-current"
-      set_current_release_version: "mvn -f src/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release"
-      set_next_development_version: "mvn -f src/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel"
+      get_version: "mvn -f bindings/java/java-xconfig/pom.xml -q com.tuenti.maven.plugins:tuentiversions-maven-plugin:show-current"
+      set_current_release_version: "mvn -f bindings/java/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-release"
+      set_next_development_version: "mvn -f bindings/java/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel"
 
 parameters:
   generate_debian_packages: "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"
