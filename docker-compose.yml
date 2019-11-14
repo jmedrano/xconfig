@@ -1,9 +1,11 @@
 version: '2'
 services:
   java-builder:
-    image: "docker.tuenti.io/service-inf/java-builder:2.5"
+    image: "docker.tuenti.io/service-inf/java8-maven:5.0"
     volumes:
       - "./:/source"
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
   strech-builder:
     image: "docker.tuenti.io/debian:stretch1"
     command: "sleep infinity"

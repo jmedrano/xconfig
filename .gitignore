@@ -7,6 +7,12 @@ config.h
 *.o
 *.a
 moc_*
+bindings/java/java-xconfig/debian/*.debhelper.log
+bindings/java/java-xconfig/debian/*.substvars
+bindings/java/java-xconfig/debian/*.debhelper
+bindings/java/java-xconfig/debian/java-xconfig/
+bindings/java/java-xconfig/debian/files
+bindings/java/java-xconfig/*build-deps*.deb
 debian/*.debhelper.log
 debian/*.substvars
 debian/*.debhelper
