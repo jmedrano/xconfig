@@ -15,9 +15,6 @@ defaults:
       set_next_development_version: "mvn -f bindings/java/java-xconfig/pom.xml com.tuenti.maven.plugins:tuentiversions-maven-plugin:set-next-devel"
 
 parameters:
-  generate_debian_packages: "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"
-  generate_python_wheel: "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"
-  generated_files: "packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info"
   java_binding_path: "/source/bindings/java/java-xconfig"
 
 workflows:
@@ -57,14 +54,14 @@ stages:
 
   build_strech:
     - 'docker-compose up -d strech-builder'
-    - 'docker-compose exec strech-builder bash -c "${generate_debian_packages}"'
-    - 'docker-compose exec strech-builder bash -c "${generate_python_wheel}"'
+    - 'docker-compose exec strech-builder bash -c "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
+    - 'docker-compose exec strech-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
 
   build_buster:
     - 'docker-compose up -d buster-builder'
-    - 'docker-compose exec buster-builder bash -c "${generate_debian_packages}"'
-    - 'docker-compose exec buster-builder bash -c "${generate_python_wheel}"'
+    - 'docker-compose exec buster-builder bash -c "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
+    - 'docker-compose exec buster-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
 
   clean:
     - 'docker-compose up -d buster-builder'
-    - 'docker-compose exec buster-builder bash -c "cd /source; debuild -- clean; rm -rf ${generated_files}"'
+    - 'docker-compose exec buster-builder bash -c "cd /source; debuild -- clean; rm -rf packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info"'
