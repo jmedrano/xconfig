@@ -22,7 +22,7 @@ debian/libxconfig/
 debian/libxconfig-dev/
 debian/libxconfig-dbg/
 debian/xconfig-utils/
-debian/php7-xconfig/
+debian/php7.4-xconfig/
 debian/pyxconfig*/
 debian/files
 debian/tmp
