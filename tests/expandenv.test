@@ -1,0 +1,16 @@
+base
+base/base1.yaml
+---
+key: !expandenv TEST_ENV
+foo:
+  bar:
+  - !expandenv TEST_ENV
+...
+...
+expected
+---
+key: !!str TEST_VALUE
+foo:
+  bar:
+  - !!str TEST_VALUE
+...

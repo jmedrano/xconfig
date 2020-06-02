@@ -11,6 +11,7 @@ enum XConfigValueType : uint32_t {
 	TYPE_STRING,
 	TYPE_MAP,
 	TYPE_SEQUENCE,
+	TYPE_EXPANDENV,
 
 	// virtual types
 	// they can't be in a dumped file
@@ -69,7 +70,17 @@ static_assert(sizeof(XConfigHeader) == 16, "sizeof(XConfigHeader) != 16");
 #endif
 
 inline bool isScalar(XConfigValueType type) {
-	return type < TYPE_MAP;
+	switch(type) {
+		case TYPE_NULL:
+		case TYPE_BOOLEAN:
+		case TYPE_INTEGER:
+		case TYPE_FLOAT:
+		case TYPE_STRING:
+		case TYPE_EXPANDENV:
+			return true;
+		default:
+			return false;
+	}
 }
 
 } // namespace xconfig

@@ -376,6 +376,7 @@ uint64_t ConfigurationMerger::checksumNode(size_t idx) {
     checksum = crc64(checksum, (const char *)&cb->value._float, sizeof(cb->value._float));
     TTRACE("FLOAT %g %lx", cb->value._float, checksum);
     break;
+  case xconfig::TYPE_EXPANDENV:
   case xconfig::TYPE_STRING: {
     const char *value = &destStringPool[cb->value._string - 1];
     checksum = crc64_string(checksum, value);
@@ -444,6 +445,11 @@ void ConfigurationMerger::debugNode(size_t idx, int indent) {
   case xconfig::TYPE_STRING: {
     const char *value = &destStringPool[cb->value._string - 1];
     TDEBUG("%sSTRG %s %s %s", prefix.c_str(), name, value, cs);
+    break;
+  }
+  case xconfig::TYPE_EXPANDENV: {
+    const char *value = &destStringPool[cb->value._string - 1];
+    TDEBUG("%sEXPANDENV %s %s %s", prefix.c_str(), name, value, cs);
     break;
   }
   case xconfig::TYPE_SEQUENCE:
@@ -666,6 +672,7 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 			}
 			break;
 		}
+		case xconfig::TYPE_EXPANDENV:
 		case xconfig::TYPE_STRING: {
 			char* name = const_cast<char*>(getString(blobId, destBucket->value._string));
 			destBucket->value._string = destStringPool.size() + 1;
@@ -948,6 +955,7 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 
 			break;
 		}
+		case xconfig::TYPE_EXPANDENV:
 		case xconfig::TYPE_STRING: {
 			const char* value = getString(blobId, bucket->value._string);
 			destBucket->value._string = insertDynamicString(value);

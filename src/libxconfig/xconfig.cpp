@@ -79,7 +79,9 @@ inline std::string XConfig::getString(uint32_t offset) const
 
 enum XConfigValueType XConfig::getType(const XConfigNode& node) const
 {
-	return getBucket(node)->type;
+	enum XConfigValueType type = getBucket(node)->type;
+	// hide implementation details for expandenv and show it as a regular string
+	return type == XConfigValueType::TYPE_EXPANDENV ? XConfigValueType::TYPE_STRING : type;
 }
 
 struct timespec XConfig::getMtime(const XConfigNode& node) const
@@ -100,6 +102,10 @@ std::string XConfig::getString(const XConfigNode& node) const
 	const XConfigBucket* bucket = getBucket(node);
 	if (bucket->type == XConfigValueType::TYPE_STRING)
 		return getString(bucket->value._string);
+	else if (bucket->type == XConfigValueType::TYPE_EXPANDENV) {
+		char * var = std::getenv(getString(bucket->value._string).c_str());
+		return var ? var : "";
+	}
 	throw XConfigWrongType();
 }
 

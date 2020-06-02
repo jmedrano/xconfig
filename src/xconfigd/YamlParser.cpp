@@ -140,6 +140,12 @@ void YamlParser::inferScalarType(XConfigBucket* bucket, const char* value, const
 	} else if (strcmp(tag, "!delete") == 0) {
 		bucket->type = xconfig::TYPE_DELETE;
 		return;
+	} else if (strcmp(tag, "!expandenv") == 0) {
+		bucket->type = xconfig::TYPE_EXPANDENV;
+		stringPool.insert(stringPool.end(), value, value + len + 1);
+		bucket->value._string = stringOffset + 1;
+		stringOffset += len + 1;
+		return;
 	} else {
 		TINFO("unknown tag [%s]", tag);
 	}

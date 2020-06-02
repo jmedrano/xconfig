@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export TEST_ENV="TEST_VALUE"
+
 function run_test {
 	ret=0
 	dir=`mktemp -d --tmpdir xconfig.test.XXXXXXXX`
