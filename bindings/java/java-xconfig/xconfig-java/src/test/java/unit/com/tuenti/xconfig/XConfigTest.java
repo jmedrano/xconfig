@@ -52,6 +52,11 @@ public class XConfigTest {
 	}
 
 	@Test
+	public void testGetHashWorksForEmptyString() {
+		xconfig.getHash("");
+	}
+
+	@Test
 	public void testRetrieveIntegerValueNode() {
 		XConfigValue value = xconfig.getValue("basic/integerValue");
 		assertEquals(123, (long) value.getAsInteger());

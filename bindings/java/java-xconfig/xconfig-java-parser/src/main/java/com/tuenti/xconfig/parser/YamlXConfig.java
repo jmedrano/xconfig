@@ -60,10 +60,13 @@ public class YamlXConfig extends XConfigBase {
 
 	@Override
 	public long getLastModificationTime(String key) throws XConfigKeyNotFoundException {
-		// verify that the element exists
-		config.getElement(key);
-		//but simply return the config's last time
-		return config.getLastModified();
+		//Emulate behaviour of xconfig-native, it returns the hash of the whole config if asked for an empty string
+		if ("".equals(key)) {
+			return config.getConfigHash();
+		} else {
+			config.getElement(key); // throws if the element doesn't exists
+			return config.getConfigHash();
+		}
 	}
 
 	@Override

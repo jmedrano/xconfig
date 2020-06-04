@@ -34,17 +34,17 @@ public class XConfigJava extends YamlXConfig {
 		setConfig(loadConfig());
 	}
 
-	private long getConfigTime() {
-		long lastModified = 0;
+	private long getCurrentConfigHash() {
+		long configHash = 0;
 		for (String dir : paths) {
 			File[] files = getFiles(dir);
 			for (File file : files) {
 				if (file.getName().endsWith(".yaml")) {
-					lastModified = Math.max(lastModified, file.lastModified());
+					configHash = (configHash * 31) + file.lastModified();
 				}
 			}
 		}
-		return lastModified;
+		return configHash;
 	}
 
 	private File[] getFiles(String dir) {
@@ -79,8 +79,8 @@ public class XConfigJava extends YamlXConfig {
 
 	@Override
 	public boolean reload() {
-		long configTime = getConfigTime();
-		if (configTime > getConfig().getLastModified()) {
+		long currentConfigHash = getCurrentConfigHash();
+		if (currentConfigHash != getConfig().getConfigHash()) {
 			setConfig(loadConfig());
 			return true;
 		}

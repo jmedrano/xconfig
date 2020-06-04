@@ -201,7 +201,15 @@ public interface XConfig {
 	/**
 	 * Get last modification time for a given key in milliseconds.
 	 * @return Timestamp in milliseconds
+	 *
+	 * @deprecated in favour of {@link XConfig#getHash(String)}. This method doesn't really returns the timestamp.
 	 */
+	@Deprecated
 	long getLastModificationTime(String key) throws XConfigKeyNotFoundException;
 
+	/**
+	 * Returns a hash representing the currently loaded config under the given key
+	 * @param key can use an "" (empty string) for the whole config hash
+	 */
+	long getHash(String key) throws XConfigKeyNotFoundException;
 }

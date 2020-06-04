@@ -193,4 +193,10 @@ abstract public class XConfigBase implements XConfig {
 	public boolean hasValidKey(String key, XConfigValueType type) {
 		return hasKey(key) && getValue(key).getType() == type;
 	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public long getHash(String key) throws XConfigKeyNotFoundException {
+		return getLastModificationTime(key);
+	}
 }

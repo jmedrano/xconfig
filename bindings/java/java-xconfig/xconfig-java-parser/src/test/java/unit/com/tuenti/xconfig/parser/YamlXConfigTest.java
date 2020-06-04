@@ -81,6 +81,12 @@ public class YamlXConfigTest {
 	}
 
 	@Test
+	public void testGetHashWorksForEmptyString() {
+		long hash = xconfig.getHash("");
+		assertEquals(0, hash);
+	}
+
+	@Test
 	public void testRetrieveIntegerValueNode() {
 		XConfigValue value = xconfig.getValue("basic/integerValue");
 		assertEquals(123, (long) value.getAsInteger());

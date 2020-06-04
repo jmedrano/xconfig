@@ -29,13 +29,13 @@ import com.tuenti.xconfig.type.XConfigString;
 import com.tuenti.xconfig.type.XConfigValue;
 
 public class ConfigParser {
-	private long lastModified = 0;
+	private long configHash = 0;
 
 	private Yaml yaml = new Yaml();
 	private XConfigMap config = new XConfigMap();
 
-	public long getLastModified() {
-		return lastModified;
+	public long getConfigHash() {
+		return configHash;
 	}
 
 	public void addFile(File file) throws FileNotFoundException {
@@ -45,7 +45,8 @@ public class ConfigParser {
 			XConfigValue xMap = convertToXConfig(load);
 			XConfigMap otherMap = xMap.getAsMap();
 			config.overrideWith(otherMap);
-			lastModified = Math.max(lastModified, file.lastModified());
+			// in XConfig native this behaves like a hash and not a timestamp
+			configHash = (configHash * 31) + file.lastModified();
 		} catch (XConfigWrongTypeCastingException e) {
 			throw new RuntimeException("File " + file + " has an incorrect fomat");
 		} finally {
