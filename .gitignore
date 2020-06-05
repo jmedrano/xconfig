@@ -13,6 +13,8 @@ bindings/java/java-xconfig/debian/*.debhelper
 bindings/java/java-xconfig/debian/java-xconfig/
 bindings/java/java-xconfig/debian/files
 bindings/java/java-xconfig/*build-deps*.deb
+bindings/python/dist/
+bindings/python/xconfig.egg-info/
 debian/*.debhelper.log
 debian/*.substvars
 debian/*.debhelper
@@ -27,6 +29,7 @@ debian/pyxconfig*/
 debian/files
 debian/tmp
 debian/debhelper-build-stamp
+debian/changelog
 conf/xconfigd.ini
 conf/log4cxx.xml
 src/php-xconfig/.deps
@@ -48,6 +51,8 @@ src/php-xconfig/mkinstalldirs
 src/php-xconfig/run-tests.php
 src/php-xconfig/xconfig.cpp
 src/php-xconfig/xconfig.h
+src/php-xconfig/config.h.in~
+src/php-xconfig/configure.ac
 src/pyxconfig*/Makefile
 src/pyxconfig*/config/tmp.yaml
 .idea
@@ -56,3 +61,4 @@ src/pyxconfig*/config/tmp.yaml
 .project
 .settings
 .vscode
+packages/

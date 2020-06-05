@@ -128,7 +128,7 @@ PHP_METHOD(XConfig, __construct)
 
 	try {
 		if (!xconfig_pool)
-			xconfig_pool = new UnixConnectionPool;
+			xconfig_pool = new UnixConnectionPool(UnixConnectionPool::DEFAULT_TIMEOUT, true);
 		if (socket) {
 			obj->xconfig = new XConfig(xconfig_pool->getConnection(string(path, path_len), string(socket, socket_len)), autoreload);
 		} else {
@@ -148,7 +148,7 @@ PHP_METHOD(XConfig, close)
 PHP_METHOD(XConfig, reload)
 {
 	xconfig_object *obj = Z_XCONFIG_OBJ_P(getThis());
-	obj->xconfig->reload();
+	RETURN_BOOL(obj->xconfig->reload());
 }
 
 static XConfigNode getNodeFromZVal(XConfig* xc, zval z_key, bool nothrow = false) {
