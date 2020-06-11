@@ -6,11 +6,6 @@ services:
       - "./:/source"
     environment:
       - DEBIAN_FRONTEND=noninteractive
-  strech-builder:
-    image: "docker.tuenti.io/debian:stretch1"
-    command: "sleep infinity"
-    volumes:
-      - "./:/source"
 
   buster-builder:
     image: "docker.tuenti.io/debian:buster-tuenti3"
