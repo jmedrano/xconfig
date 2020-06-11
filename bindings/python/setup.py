@@ -9,6 +9,9 @@ module1 = Extension('xconfig',
                    )
 
 setup(name='xconfig',
-      version='1.0',
+      version='1.0.5',
+      author="Infrastructure Team",
+      author_email="inf@tuenti.com",
       description='XConfig extension',
+      url="https://github.com/Telefonica/xconfig",
       ext_modules=[module1])

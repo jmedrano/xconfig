@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <xconfig/xconfig.h>
+#include <xconfig/xconfig_connection.h>
 #include <iostream>
 
 using std::string;
@@ -123,7 +124,7 @@ static int XConfig_init(XConfigObject *self, PyObject *args) {
     if (PyArg_ParseTuple(args, "s", &path)) {
         try {
             if (!xconfig_pool) {
-                xconfig_pool = new UnixConnectionPool;
+                xconfig_pool = new UnixConnectionPool(UnixConnectionPool::DEFAULT_TIMEOUT, true);
             }
             self->xc = new XConfig(xconfig_pool->getConnection(path), false);;
             return 0;
