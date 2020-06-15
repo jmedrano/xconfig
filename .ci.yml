@@ -32,6 +32,8 @@ workflows:
     stages: [docker_up, install_extra_packages, build_java_deb_package, docker_down]
   build_buster:
     stages: [clean, build_buster]
+  release_python:
+    stages: [clean, build_buster, release_python]
   clean:
     stages: [clean]
 
@@ -55,6 +57,9 @@ stages:
     - 'docker-compose exec buster-builder /source/add_php74_repo'
     - 'docker-compose exec buster-builder bash -c "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
     - 'docker-compose exec buster-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
+
+  release_python:
+    - 'docker-compose exec buster-builder bash -c "python3 -m twine upload --repository nexus /source/packages/*.whl"'
 
   clean:
     - 'docker-compose up -d buster-builder'

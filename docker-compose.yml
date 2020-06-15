@@ -12,3 +12,4 @@ services:
     command: "sleep infinity"
     volumes:
       - "./:/source"
+      - "~/.pypirc:/root/.pypirc"

@@ -4,7 +4,7 @@ dpkg -i /source/packages/libxconfig*.deb
 
 apt update
 apt-get -y install python3-pip
-pip3 install --user --upgrade setuptools wheel
+pip3 install --user --upgrade setuptools wheel twine
 python3 setup.py sdist bdist_wheel
 
 # Instructions to get a wheel for python 3.8
