@@ -44,7 +44,7 @@ stages:
 
   install_extra_packages:
     - 'docker-compose exec -T java-builder apt-get update'
-    - 'docker-compose exec -T java-builder apt-get install -y build-essential xconfigd libxconfig-dev'
+    - 'docker-compose exec -T java-builder apt-get install -y gcc g++ xconfigd libxconfig-dev'
     - 'docker-compose exec -T java-builder /etc/init.d/xconfigd start'
 
   build_buster:
