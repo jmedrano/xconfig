@@ -904,6 +904,8 @@ size_t ConfigurationMerger::deepCopy(size_t nodeId, bool inMap, const string& ke
 		case xconfig::TYPE_EXPANDREF_EXPANDED:
 			TWARN("unexpected TYPE_EXPANDREF_EXPANDED");
 			break;
+		case xconfig::TYPE_MAP_OVERRIDED:
+			// fall-through
 		case xconfig::TYPE_MAP:
 			isMap = true;
 			// fall-through
