@@ -55,105 +55,49 @@ public class XConfigCacheWrapperTest {
 	}
 
 	@Test
-	public void testGetValueCacheMissExistingValue() {
-		when(cache.getValue("someKey")).thenReturn(null);
-		XConfigString expectedValue = new XConfigString("Hello World");
-		when(wrapped.getValue("someKey")).thenReturn(expectedValue);
-
-		XConfigValue value = wrapper.getValue("someKey");
-
-		assertSame(expectedValue, value);
-		verify(cache).setValue("someKey", expectedValue);
-	}
-
-	@Test
-	public void testGetValueCacheHitExistingValue() {
-		XConfigString expectedValue = new XConfigString("Hello World");
-		when(cache.getValue("someKey")).thenReturn(expectedValue);
-
-		XConfigValue value = wrapper.getValue("someKey");
-
-		assertSame(expectedValue, value);
-		verify(cache).getValue("someKey");
-		verifyNoMoreInteractions(cache, wrapped);
-	}
-
-	@Test
-	public void testGetValueCacheMissNotFound() {
-		when(cache.getValue("someKey")).thenReturn(null);
+	public void testGetValueSomeValue() {
 		XConfigKeyNotFoundException notFoundException = new XConfigKeyNotFoundException("Hello World");
-		when(wrapped.getValue("someKey")).thenThrow(notFoundException);
+		when(cache.getValue("someKey", wrapped)).thenThrow(notFoundException);
 
 		try {
 			XConfigValue value = wrapper.getValue("someKey");
 			fail();
 		} catch (XConfigKeyNotFoundException e) {
 			assertSame(notFoundException, e);
-			verify(cache).setValue("someKey", notFoundException);
 		}
 	}
 
 	@Test
-	public void testGetValueCacheHitNotFound() {
+	public void testGetValueNotFoundException() {
 		XConfigKeyNotFoundException notFoundException = new XConfigKeyNotFoundException("Hello World");
-		when(cache.getValue("someKey")).thenThrow(notFoundException);
+		when(cache.getValue("someKey", wrapped)).thenThrow(notFoundException);
 
 		try {
 			XConfigValue value = wrapper.getValue("someKey");
 			fail();
 		} catch (XConfigKeyNotFoundException e) {
 			assertSame(notFoundException, e);
-			verify(cache).getValue("someKey");
-			verifyNoMoreInteractions(cache, wrapped);
 		}
 	}
 
 	@Test
-	public void testHasKeyCacheMissExistingValue() {
-		when(cache.getValue("someKey")).thenReturn(null);
-		XConfigString expectedValue = new XConfigString("Hello World");
-		when(wrapped.getValue("someKey")).thenReturn(expectedValue);
+	public void testHasKeyExistingValue() {
+		XConfigString someValue = new XConfigString("Hello World");
+		when(cache.getValue("someKey", wrapped)).thenReturn(someValue);
 
 		boolean hasKey = wrapper.hasKey("someKey");
 
 		assertTrue(hasKey);
-		verify(cache).setValue("someKey", expectedValue);
 	}
 
 	@Test
-	public void testHasKeyCacheHitExistingValue() {
-		XConfigString expectedValue = new XConfigString("Hello World");
-		when(cache.getValue("someKey")).thenReturn(expectedValue);
-
-		boolean hasKey = wrapper.hasKey("someKey");
-
-		assertTrue(hasKey);
-		verify(cache).getValue("someKey");
-		verifyNoMoreInteractions(cache, wrapped);
-	}
-
-	@Test
-	public void testHasKeyCacheMissNotFound() {
-		when(cache.getValue("someKey")).thenReturn(null);
+	public void testHasKeyNotFoundValue() {
 		XConfigKeyNotFoundException notFoundException = new XConfigKeyNotFoundException("Hello World");
-		when(wrapped.getValue("someKey")).thenThrow(notFoundException);
+		when(cache.getValue("someKey", wrapped)).thenThrow(notFoundException);
 
 		boolean hasKey = wrapper.hasKey("someKey");
 
 		assertFalse(hasKey);
-		verify(cache).setValue("someKey", notFoundException);
-	}
-
-	@Test
-	public void testHasKeyCacheHitNotFound() {
-		XConfigKeyNotFoundException notFoundException = new XConfigKeyNotFoundException("Hello World");
-		when(cache.getValue("someKey")).thenThrow(notFoundException);
-
-		boolean hasKey = wrapper.hasKey("someKey");
-
-		assertFalse(hasKey);
-		verify(cache).getValue("someKey");
-		verifyNoMoreInteractions(cache, wrapped);
 	}
 
 	@Test

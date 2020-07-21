@@ -1,5 +1,9 @@
 package com.tuenti.xconfig.cache;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.tuenti.xconfig.XConfig;
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
 import com.tuenti.xconfig.type.XConfigList;
@@ -7,37 +11,40 @@ import com.tuenti.xconfig.type.XConfigMap;
 import com.tuenti.xconfig.type.XConfigValue;
 import com.tuenti.xconfig.type.XConfigValueType;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 public class XConfigCache {
-	private final ConcurrentHashMap<String, XConfigValue> valueMap = new ConcurrentHashMap<>();
+	private static final long MAX_CACHE_ENTRIES = 30_000;
+
+	private final Cache<String, XConfigValue> cache;
 	private final long configHash;
 	private final XConfigCacheHook hook;
 
 	public XConfigCache(long configHash, XConfigCacheHook hook) {
 		this.configHash = configHash;
 		this.hook = hook;
+		this.cache = Caffeine.newBuilder()
+				.maximumSize(MAX_CACHE_ENTRIES)
+				.removalListener(this::removalListener)
+				.build();
 	}
 
-	public XConfigValue getValue(String key) {
-		XConfigValue value = valueMap.get(key);
+	public XConfigValue getValue(String key, XConfig provider) {
+		XConfigValue value = cache.get(key, s -> valueLoader(s, provider));
 		if (value instanceof XConfigValueNotFoundMarker) {
-			hook.onGetValueNotFound(key);
 			throw ((XConfigValueNotFoundMarker) value).exception;
 		}
-
-		hook.onGetValue(key, value);
 		return value;
 	}
 
-	public void setValue(String key, XConfigValue value) {
-		valueMap.put(key, value);
-		hook.onSetValue(key, value);
-	}
-
-	public void setValue(String key, XConfigKeyNotFoundException notFoundException) {
-		valueMap.put(key, new XConfigValueNotFoundMarker(notFoundException));
-		hook.onSetValueNotFound(key);
+	private XConfigValue valueLoader(String key, XConfig provider) {
+		XConfigValue value;
+		try {
+			value = provider.getValue(key);
+			hook.onSetValue(key, value);
+		} catch (XConfigKeyNotFoundException notFoundException) {
+			value = new XConfigValueNotFoundMarker(notFoundException);
+			hook.onSetValueNotFound(key);
+		}
+		return value;
 	}
 
 	public boolean isCacheValidForCurrentConfig(long currentConfigHash) {
@@ -48,8 +55,14 @@ public class XConfigCache {
 	public String toString() {
 		return "XConfigCache{" +
 				"identity=" + Integer.toHexString(System.identityHashCode(this)) +
-				"configHash=" + Long.toHexString(configHash) +
+				", configHash=" + Long.toHexString(configHash) +
 				'}';
+	}
+
+	private void removalListener(String key, XConfigValue value, RemovalCause removalCause) {
+		if (removalCause.wasEvicted()) {
+			hook.onValueEvicted(key, value);
+		}
 	}
 
 	private static class XConfigValueNotFoundMarker implements XConfigValue {

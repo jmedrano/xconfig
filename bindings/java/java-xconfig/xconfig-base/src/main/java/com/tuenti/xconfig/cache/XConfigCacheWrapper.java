@@ -35,19 +35,7 @@ public class XConfigCacheWrapper extends XConfigBase {
 
 	@Override
 	public XConfigValue getValue(String key) throws XConfigKeyNotFoundException {
-		XConfigValue cachedValue = cache.getValue(key);
-		if (cachedValue != null) {
-			return cachedValue;
-		} else {
-			try {
-				XConfigValue readValue = wrapped.getValue(key);
-				cache.setValue(key, readValue);
-				return readValue;
-			} catch (XConfigKeyNotFoundException notFoundException) {
-				cache.setValue(key, notFoundException);
-				throw notFoundException;
-			}
-		}
+		return cache.getValue(key, wrapped);
 	}
 
 	@Override

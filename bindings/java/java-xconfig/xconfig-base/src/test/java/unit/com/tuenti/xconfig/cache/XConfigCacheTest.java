@@ -1,5 +1,6 @@
 package com.tuenti.xconfig.cache;
 
+import com.tuenti.xconfig.XConfig;
 import com.tuenti.xconfig.exception.XConfigKeyNotFoundException;
 import com.tuenti.xconfig.type.XConfigString;
 import com.tuenti.xconfig.type.XConfigValue;
@@ -18,6 +19,8 @@ public class XConfigCacheTest {
 
 	@Mock
 	private XConfigCacheHook hook;
+	@Mock
+	private XConfig provider;
 
 	private XConfigCache cache;
 
@@ -37,36 +40,27 @@ public class XConfigCacheTest {
 	}
 
 	@Test
-	public void testCacheMiss() {
-		assertNull(cache.getValue("someKey"));
-
-		verify(hook).onGetValue("someKey", null);
-	}
-
-	@Test
-	public void testSettingCacheValue() {
+	public void testCacheLoadingAnyValue() {
 		XConfigString expectedValue = new XConfigString("Hello World");
-		cache.setValue("someKey", expectedValue);
+		when(provider.getValue("testCacheLoadingAnyValue")).thenReturn(expectedValue);
 
-		XConfigValue value = cache.getValue("someKey");
+		XConfigValue value = cache.getValue("testCacheLoadingAnyValue", provider);
 
-		assertEquals(expectedValue, value);
-		verify(hook).onSetValue("someKey", expectedValue);
-		verify(hook).onGetValue("someKey", expectedValue);
+		assertSame(expectedValue, value);
+		verify(hook).onSetValue("testCacheLoadingAnyValue", expectedValue);
 	}
 
 	@Test
-	public void testSettingCacheNotFound() {
+	public void testCacheLoadingNotFoundValue() {
 		XConfigKeyNotFoundException notFoundException = new XConfigKeyNotFoundException("not found");
-		cache.setValue("someKey", notFoundException);
+		when(provider.getValue("testCacheLoadingNotFoundValue")).thenThrow(notFoundException);
 
 		try {
-			cache.getValue("someKey");
+			XConfigValue value = cache.getValue("testCacheLoadingNotFoundValue", provider);
 			fail();
 		} catch (XConfigKeyNotFoundException e) {
 			assertSame(notFoundException, e);
-			verify(hook).onSetValueNotFound("someKey");
-			verify(hook).onGetValueNotFound("someKey");
+			verify(hook).onSetValueNotFound("testCacheLoadingNotFoundValue");
 		}
 	}
 }

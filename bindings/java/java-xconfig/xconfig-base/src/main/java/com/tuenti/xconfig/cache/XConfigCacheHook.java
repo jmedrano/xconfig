@@ -1,5 +1,7 @@
 package com.tuenti.xconfig.cache;
 
+import com.tuenti.xconfig.type.XConfigValue;
+
 public interface XConfigCacheHook {
 	default void onSetValue(String key, Object value) {
 		//NOOP
@@ -7,13 +9,9 @@ public interface XConfigCacheHook {
 
 	default void onSetValueNotFound(String key) {
 		//NOOP
-	};
-
-	default void onGetValue(String key, Object value) {
-		//NOOP
 	}
 
-	default void onGetValueNotFound(String key) {
+	default void onValueEvicted(String key, XConfigValue value) {
 		//NOOP
 	}
 }
