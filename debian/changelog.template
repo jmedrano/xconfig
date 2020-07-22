@@ -1,3 +1,10 @@
+xconfig (1.0.6DISTRIBUTIONNAME) stable; urgency=low
+
+  * Fix expandref of mapoverride
+  * Don't show warnings when expanding other expansions
+
+ -- Jakub Holubansky <jakub@tuenti.com>  Wed, 22 Jul 2020 11:55:00 +0200
+
 xconfig (1.0.5DISTRIBUTIONNAME) stable; urgency=low
 
   * Add expandenv support to daemon and client
