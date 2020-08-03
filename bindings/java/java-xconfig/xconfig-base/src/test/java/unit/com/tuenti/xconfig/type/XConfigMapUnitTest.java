@@ -257,4 +257,51 @@ public class XConfigMapUnitTest {
 		assertEquals(key1CurrentValue, resultMap.get("key1"));
 		assertEquals(key2NewValue, resultMap.get("key2"));
 	}
+
+	@Test
+	public void testMergeWithNewKey() {
+		XConfigMap mapOverride = new XConfigMap();
+		XConfigString key2Value = new XConfigString("asd");
+		mapOverride.add("key2", key2Value);
+
+		XConfigMap result = object.mergeWith(mapOverride);
+
+		assertEquals(integerValue, result.get("key1"));
+		assertEquals(key2Value, result.get("key2"));
+	}
+
+	@Test
+	public void testMergeWithExistentKey() {
+		XConfigMap mapOverride = new XConfigMap();
+		XConfigInteger keyNewValue = new XConfigInteger(27);
+		mapOverride.add("key1", keyNewValue);
+
+		XConfigMap result = object.mergeWith(mapOverride);
+
+		assertEquals(keyNewValue, result.get("key1"));
+	}
+
+	@Test
+	public void testNestedMergeWith() {
+		XConfigMap currentChildMap = new XConfigMap();
+		XConfigString key1CurrentValue = new XConfigString("eo");
+		XConfigString key2CurrentValue = new XConfigString("asd");
+		currentChildMap.add("key1", key1CurrentValue);
+		currentChildMap.add("key2", key2CurrentValue);
+		object.add("parent", currentChildMap);
+
+		XConfigMap newChildMap = new XConfigMap();
+		XConfigString key2NewValue = new XConfigString("fyisudy");
+		newChildMap.add("key2", key2NewValue);
+		XConfigMap mapOverride = new XConfigMap();
+		mapOverride.add("parent", newChildMap);
+
+		XConfigMap result = object.mergeWith(mapOverride);
+
+		assertEquals(integerValue, result.get("key1"));
+		XConfigMap nestedMap = result.getAsMap("parent", null);
+		assertNotNull(nestedMap);
+		assertEquals(key1CurrentValue, nestedMap.get("key1"));
+		assertEquals(key2NewValue, nestedMap.get("key2"));
+	}
 }

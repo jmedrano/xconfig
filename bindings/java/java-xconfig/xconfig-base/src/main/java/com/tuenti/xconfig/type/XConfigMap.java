@@ -234,4 +234,28 @@ public class XConfigMap implements XConfigValue {
 			}
 		}
 	}
+
+	/**
+	 * Combines this map and {@code otherMap} into a new map.
+	 * In case of conflict prioritizes the entries in {@code otherMap}.
+	 */
+	public XConfigMap mergeWith(XConfigMap otherMap) {
+		Map<String, XConfigValue> resultMap = new HashMap<>(values);
+		for (Entry<String, XConfigValue> entry : otherMap.values.entrySet()) {
+			String key = entry.getKey();
+			XConfigValue value = entry.getValue();
+			if (value instanceof XConfigMap) {
+				XConfigValue ownValue = values.get(key);
+				if (ownValue instanceof XConfigMap) {
+					value = ((XConfigMap) ownValue).mergeWith(((XConfigMap) value));
+				}
+			}
+			resultMap.put(key, value);
+		}
+
+		// Avoids another copy of the map.
+		XConfigMap xConfigMap = new XConfigMap();
+		xConfigMap.values = resultMap;
+		return xConfigMap;
+	}
 }

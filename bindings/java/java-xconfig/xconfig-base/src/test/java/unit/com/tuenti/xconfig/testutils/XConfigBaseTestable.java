@@ -11,7 +11,10 @@ import com.tuenti.xconfig.type.XConfigValue;
 public class XConfigBaseTestable extends XConfigBase {
 	
 	private final Map<String, XConfigValue> values = new HashMap<>();
-	
+
+	public XConfigBaseTestable() {
+	}
+
 	public XConfigBaseTestable(String key, XConfigValue value) {
 		values.put(key, value);
 	}
@@ -20,6 +23,11 @@ public class XConfigBaseTestable extends XConfigBase {
 		for (int i=0; i<keyValues.length-1; i+=2) {
 			values.put(keyValues[i], new XConfigString(keyValues[i+1]));
 		}
+	}
+
+	public XConfigBaseTestable addKey(String key, XConfigValue value) {
+		values.put(key, value);
+		return this;
 	}
 
 	@Override
