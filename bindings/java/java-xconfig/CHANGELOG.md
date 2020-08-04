@@ -1,6 +1,6 @@
 # Java XConfig Changelog
 
-### Next
+### 1.4.2
  - [FRWK-532](https://jira.tid.es/browse/FRWK-532) Fixed BreedXConfig mutating the cached map when merging breeds.
 
 ### 1.4.1
