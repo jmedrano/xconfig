@@ -1,14 +1,8 @@
-/*
- * XConfigList.java
- *
- * Copyright (C) 2014 Tuenti Technologies S.L.
- *
- * This file can only be stored on servers belonging to Tuenti Technologies S.L.
- */
 package com.tuenti.xconfig.type;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,16 +18,37 @@ import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
  */
 public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 
-	private List<XConfigValue> values;
+	private final List<XConfigValue> values;
+	private List<XConfigValue> unmodifiableView;
+	private int cachedHash;
 
+	/**
+	 * Creates a empty XConfigList
+	 */
 	public XConfigList() {
-		this.values = new ArrayList<>();
+		this.values = Collections.emptyList();
 	}
 
+	/**
+	 * Creates a XConfigList backed by a copy of the provided {@code list}.
+	 */
 	public XConfigList(List<XConfigValue> list) {
-		this.values = new ArrayList<>();
-		this.values.addAll(list);
+		this.values = new ArrayList<>(list);
 	}
+
+	/**
+	 * Creates a XConfigList using the same instance of the {@code backingList} as the source of values.
+	 * Use {@link #XConfigList(List)} if you want it to use a copy.
+	 */
+	public static XConfigList wrapping(List<XConfigValue> backingList) {
+		return new XConfigList(backingList, null);
+	}
+
+	private XConfigList(List<XConfigValue> backingList, @SuppressWarnings("unused") PrivateMarker marker) {
+		this.values = backingList;
+	}
+
+	private static class PrivateMarker {}
 
 	/*
 	 * XConfigValue methods
@@ -85,14 +100,6 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 	}
 
 	/*
-	 * Own methods
-	 */
-
-	public void add(XConfigValue value) {
-		this.values.add(value);
-	}
-
-	/*
 	 * Delegated methods to List
 	 */
 
@@ -107,24 +114,12 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 		return values.get(index);
 	}
 
-	public int indexOf(Object o) {
+	public int indexOf(XConfigValue o) {
 		return values.indexOf(o);
 	}
 
-	public int lastIndexOf(Object o) {
+	public int lastIndexOf(XConfigValue o) {
 		return values.lastIndexOf(o);
-	}
-
-	public ListIterator<XConfigValue> listIterator() {
-		return values.listIterator();
-	}
-
-	public ListIterator<XConfigValue> listIterator(int index) {
-		return values.listIterator(index);
-	}
-
-	public List<XConfigValue> subList(int fromIndex, int toIndex) {
-		return values.subList(fromIndex, toIndex);
 	}
 
 	public int size() {
@@ -135,7 +130,7 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 		return values.isEmpty();
 	}
 
-	public boolean contains(Object o) {
+	public boolean contains(XConfigValue o) {
 		return values.contains(o);
 	}
 
@@ -150,23 +145,17 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 
 		XConfigList that = (XConfigList) o;
 
-		if (!values.equals(that.values)) return false;
-
-		return true;
+		return values.equals(that.values);
 	}
 
 	@Override
 	public int hashCode() {
-		return values.hashCode();
-	}
-
-	/*
-	 * Iterator interface methods
-	 */
-
-	@Override
-	public Iterator<XConfigValue> iterator() {
-		return values.iterator();
+		int hash = cachedHash;
+		if (hash == 0) {
+			hash = values.hashCode();
+			cachedHash = hash;
+		}
+		return hash;
 	}
 
 	@Override
@@ -180,5 +169,35 @@ public class XConfigList implements XConfigValue, Iterable<XConfigValue> {
 
 	public Stream<XConfigValue> stream() {
 		return values.stream();
+	}
+
+	/*
+	 * Following methods return a unmodifiable view
+	 */
+
+	@Override
+	public Iterator<XConfigValue> iterator() {
+		return unmodifiableView().iterator();
+	}
+
+	public ListIterator<XConfigValue> listIterator() {
+		return unmodifiableView().listIterator();
+	}
+
+	public ListIterator<XConfigValue> listIterator(int index) {
+		return unmodifiableView().listIterator(index);
+	}
+
+	public List<XConfigValue> subList(int fromIndex, int toIndex) {
+		return unmodifiableView().subList(fromIndex, toIndex);
+	}
+
+	private List<XConfigValue> unmodifiableView() {
+		List<XConfigValue> view = unmodifiableView;
+		if (view == null) {
+			view = Collections.unmodifiableList(values);
+			unmodifiableView = view;
+		}
+		return view;
 	}
 }

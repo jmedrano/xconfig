@@ -1,5 +1,9 @@
 # Java XConfig Changelog
 
+### Next
+ - [FRWK-532](https://jira.tid.es/browse/FRWK-532) XConfig values are immutable now.
+ - [FRWK-532](https://jira.tid.es/browse/FRWK-532) Cached method and field ids in xconfig-native cpp code.
+
 ### 1.4.2
  - [FRWK-532](https://jira.tid.es/browse/FRWK-532) Fixed BreedXConfig mutating the cached map when merging breeds.
 

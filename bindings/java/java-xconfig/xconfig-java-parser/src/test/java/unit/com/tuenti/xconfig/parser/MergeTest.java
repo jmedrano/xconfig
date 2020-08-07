@@ -1,5 +1,6 @@
 package com.tuenti.xconfig.parser;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -8,7 +9,6 @@ import java.io.FileNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.tuenti.xconfig.parser.ConfigParser;
 import com.tuenti.xconfig.type.XConfigInteger;
 import com.tuenti.xconfig.type.XConfigList;
 import com.tuenti.xconfig.type.XConfigString;
@@ -25,8 +25,9 @@ public class MergeTest {
 	public void testMerge() throws FileNotFoundException {
 		configParser.addFile(new File("src/test/resources/merge1/dbConf.yaml"));
 		configParser.addFile(new File("src/test/resources/merge2/dbConf.yaml"));
-		XConfigList expectedList = new XConfigList();
-		expectedList.add(new XConfigInteger(1));
+		XConfigList expectedList = new XConfigList(asList(
+				new XConfigInteger(1)
+		));
 
 		assertEquals(new XConfigInteger(1), configParser.getElement("dbConfig/scalarEntry"));
 		assertEquals(new XConfigString("val1"), configParser.getElement("dbConfig/mapEntry/key1"));

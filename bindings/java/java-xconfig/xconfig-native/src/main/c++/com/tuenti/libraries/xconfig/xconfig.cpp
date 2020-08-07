@@ -2,7 +2,7 @@
 #include <xconfig/xconfig.h>
 #include <boost/algorithm/string.hpp>
 #include "com_tuenti_xconfig_XConfigNative.h"
-#include "handle.h"
+#include "cache_holders.h"
 #include <limits>
 
 using xconfig::XConfig;
@@ -14,24 +14,84 @@ using xconfig::UnixConnection;
 using xconfig::XConfigValueType;
 using std::string;
 using std::vector;
-using std::map;
 
 static UnixConnectionPool* xconfig_pool;
+// Class cache
+// com/tuenti/xconfig/type/XConfigNull
+static XConfigClassHolder* xconfig_null_holder;
+// com/tuenti/xconfig/type/XConfigBoolean
+static XConfigClassHolder* xconfig_boolean_holder;
+// com/tuenti/xconfig/type/XConfigInteger
+static XConfigClassHolder* xconfig_integer_holder;
+// com/tuenti/xconfig/type/XConfigLong
+static XConfigClassHolder* xconfig_long_holder;
+// com/tuenti/xconfig/type/XConfigFloat
+static XConfigClassHolder* xconfig_float_holder;
+// com/tuenti/xconfig/type/XConfigString
+static XConfigClassHolder* xconfig_string_holder;
+// com/tuenti/xconfig/type/XConfigList
+static XConfigClassHolder* xconfig_list_holder;
+// com/tuenti/xconfig/type/XConfigMap
+static XConfigClassHolder* xconfig_map_holder;
+// java/util/ArrayList
+static CollectionHolder* arraylist_holder;
+// java/util/HashMap
+static CollectionHolder* hashmap_holder;
+// native XConfig instance handle holder
+static FieldHolder* handle_holder;
 
-/*
- * Library constructtor
+#define JNI_VERSION JNI_VERSION_1_8
+
+/**
+ * Called when the library is first loaded by a classloader
  */
-__attribute__((constructor))
-static void init() {
-  xconfig_pool = new UnixConnectionPool;
+jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+    xconfig_pool = new UnixConnectionPool;
+
+    JNIEnv* env;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION) != JNI_OK) {
+        return JNI_ERR;
+    }
+
+    PRELOAD_CLASS(xconfig_null_holder, env, "com/tuenti/xconfig/type/XConfigNull", "()V");
+    PRELOAD_CLASS(xconfig_boolean_holder, env, "com/tuenti/xconfig/type/XConfigBoolean", "(Z)V");
+    PRELOAD_CLASS(xconfig_integer_holder, env, "com/tuenti/xconfig/type/XConfigInteger", "(I)V");
+    PRELOAD_CLASS(xconfig_long_holder, env, "com/tuenti/xconfig/type/XConfigLong", "(J)V");
+    PRELOAD_CLASS(xconfig_float_holder, env, "com/tuenti/xconfig/type/XConfigFloat", "(F)V");
+    PRELOAD_CLASS(xconfig_string_holder, env, "com/tuenti/xconfig/type/XConfigString", "(Ljava/lang/String;)V");
+
+    PRELOAD_COLLECTION(arraylist_holder, env, "java/util/ArrayList", "(I)V", "add", "(Ljava/lang/Object;)Z");
+    PRELOAD_CLASS_FACTORY(xconfig_list_holder, env, "com/tuenti/xconfig/type/XConfigList", "wrapping", "java/util/List");
+    PRELOAD_COLLECTION(hashmap_holder, env, "java/util/HashMap", "(I)V", "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+    PRELOAD_CLASS_FACTORY(xconfig_map_holder, env, "com/tuenti/xconfig/type/XConfigMap", "wrapping", "java/util/Map");
+
+    PRELOAD_FIELD(handle_holder, env, "com/tuenti/xconfig/XConfigNative", "nativeHandle", "J");
+
+    return JNI_VERSION;
 }
 
 /**
- * Library destructor
+ * Called when all classes linked to this library are GCed
  */
-__attribute__((destructor))
-static void fini() {
-  delete xconfig_pool;
+void JNI_OnUnload(JavaVM *vm, void *reserved) {
+    delete xconfig_pool;
+
+    JNIEnv* env;
+    vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION);
+
+    FREE_HOLDER(xconfig_null_holder, env);
+    FREE_HOLDER(xconfig_boolean_holder, env);
+    FREE_HOLDER(xconfig_integer_holder, env);
+    FREE_HOLDER(xconfig_long_holder, env);
+    FREE_HOLDER(xconfig_float_holder, env);
+    FREE_HOLDER(xconfig_string_holder, env);
+
+    FREE_HOLDER(arraylist_holder, env);
+    FREE_HOLDER(xconfig_list_holder, env);
+    FREE_HOLDER(hashmap_holder, env);
+    FREE_HOLDER(xconfig_map_holder, env);
+
+    FREE_HOLDER(handle_holder, env);
 }
 
 /**
@@ -57,38 +117,6 @@ vector<string> getXConfigVectorFromString(const string& str) {
 }
 
 /**
- * Generic method to create basic boxed type in java and overloaded without constructor params.
- */
-template <typename T>
-jobject createNewJobject(JNIEnv * environment, const string& javaClass, const string& constructorSignature, T value) {
-  jclass cls;
-  jmethodID methodId;
-  cls = environment->FindClass(javaClass.c_str());
-  if (cls != 0) {
-    methodId = environment->GetMethodID(cls, "<init>", constructorSignature.c_str());
-    if (methodId != 0) {
-      if (constructorSignature == "()V") {
-        return environment->NewObject(cls, methodId);
-      } else {
-        return environment->NewObject(cls, methodId, value);
-      }
-    }
-  }
-  return NULL;
-}
-jobject createNewJobjectWithEmptyConstructor(JNIEnv * environment, const string& javaClass) {
-  jclass cls;
-  jmethodID methodId;
-  cls = environment->FindClass(javaClass.c_str());
-  if (cls != 0) {
-    methodId = environment->GetMethodID(cls, "<init>", "()V");
-    if (methodId != 0) {
-       return environment->NewObject(cls, methodId);
-    }
-  }
-  return NULL;
-}
-/**
  * Auxiliar method to throw exceptions in java side given the exception class path.
  */
 void throwJavaException(JNIEnv *environment, const string& exceptionPath, const string& message) {
@@ -107,61 +135,77 @@ void throwJavaException(JNIEnv *environment, const string& exceptionPath) {
  */
 jobject getJobjectFromXConfigNode(JNIEnv * environment, XConfigNode node) {
   XConfigValueType type = node.getType();
-  jclass cls;
-  jmethodID methodId;
-  jobject newObject;
-  jstring stringValue;
-  int64_t intValue;
   switch (type) {
     case XConfigValueType::TYPE_INTEGER:
-      intValue = node.getInt();
-      if (intValue < std::numeric_limits<int>::min() || intValue > std::numeric_limits<int>::max()) {
-        return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigLong", "(J)V", intValue);
-      } else {
-        return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigInteger", "(I)V", intValue);
+      {
+        int64_t intValue = node.getInt();
+        if (intValue < std::numeric_limits<int>::min() || intValue > std::numeric_limits<int>::max()) {
+          return NEW_INSTANCE(xconfig_long_holder, environment, intValue);
+        } else {
+          return NEW_INSTANCE(xconfig_integer_holder, environment, intValue);
+        }
       }
     case XConfigValueType::TYPE_BOOLEAN:
-      return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigBoolean", "(Z)V", node.getBool());
+      return NEW_INSTANCE(xconfig_boolean_holder, environment, node.getBool());
     case XConfigValueType::TYPE_FLOAT:
-      return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigFloat", "(F)V", node.getFloat());
+      return NEW_INSTANCE(xconfig_float_holder, environment, node.getFloat());
     case XConfigValueType::TYPE_STRING:
-      stringValue = getJstringFromString(environment, node.getString());
-      return createNewJobject(environment, "com/tuenti/xconfig/type/XConfigString", "(Ljava/lang/String;)V", stringValue);
+      {
+        jstring stringValue = getJstringFromString(environment, node.getString());
+        return NEW_INSTANCE(xconfig_string_holder, environment, stringValue);
+      }
     case XConfigValueType::TYPE_SEQUENCE:
-      newObject = createNewJobjectWithEmptyConstructor(environment, "com/tuenti/xconfig/type/XConfigList");
-      cls = environment->FindClass("com/tuenti/xconfig/type/XConfigList");
-      if (newObject != NULL) {
+      {
         vector<XConfigNode> children = node.getChildren();
-        for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
-          jobject newChild = getJobjectFromXConfigNode(environment, *it);
-          methodId = environment->GetMethodID(cls, "add", "(Lcom/tuenti/xconfig/type/XConfigValue;)V");
-          if (methodId != 0) {
-            environment->CallVoidMethod(newObject, methodId, newChild);
+        jobject collection = NEW_INSTANCE(arraylist_holder, environment, children.size());
+        if (collection != NULL) {
+          for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
+            jobject element = getJobjectFromXConfigNode(environment, *it);
+            if (element == NULL) {
+                return NULL;
+            }
+            LIST_ADD(arraylist_holder, environment, collection, element);
+            environment->DeleteLocalRef(element);
           }
+          return BUILD_INSTANCE(xconfig_list_holder, environment, collection);
         }
+        return NULL;
       }
-      return newObject;
     case XConfigValueType::TYPE_MAP:
-      newObject = createNewJobjectWithEmptyConstructor(environment, "com/tuenti/xconfig/type/XConfigMap");
-      cls = environment->FindClass("com/tuenti/xconfig/type/XConfigMap");
-      if (newObject != NULL) {
+      {
         vector<XConfigNode> children = node.getChildren();
-        for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
-          jobject newChild = getJobjectFromXConfigNode(environment, *it);
-          string name = it->getName();
-          methodId = environment->GetMethodID(cls, "add", "(Ljava/lang/String;Lcom/tuenti/xconfig/type/XConfigValue;)V");
-          if (methodId != 0) {
-            environment->CallVoidMethod(newObject, methodId, getJstringFromString(environment, name), newChild);
+        jobject collection = NEW_INSTANCE(hashmap_holder, environment, children.size());
+        if (collection != NULL) {
+          for (vector<XConfigNode>::const_iterator it = children.begin(); it != children.end(); ++it) {
+            jstring key = getJstringFromString(environment, it->getName());
+            jobject element = getJobjectFromXConfigNode(environment, *it);
+            if (element == NULL) {
+                return NULL;
+            }
+            MAP_PUT(hashmap_holder, environment, collection, key, element);
+            environment->DeleteLocalRef(key);
+            environment->DeleteLocalRef(element);
           }
+          return BUILD_INSTANCE(xconfig_map_holder, environment, collection);
         }
+        return NULL;
       }
-      return newObject;
     case XConfigValueType::TYPE_NULL:
-      return createNewJobjectWithEmptyConstructor(environment, "com/tuenti/xconfig/type/XConfigNull");
+      return NEW_INSTANCE(xconfig_null_holder, environment);
     default:
       throwJavaException(environment, "com/tuenti/xconfig/exception/XConfigUnsupportedNodeTypeException");
     }
     return NULL;
+}
+
+static inline XConfig* getXConfig(JNIEnv* env, jobject object) {
+    jlong raw_handle = GET_LONG_FIELD(handle_holder, env, object);
+    return reinterpret_cast<XConfig*>(raw_handle);
+}
+
+static inline void saveXConfig(JNIEnv* env, jobject object, XConfig* instance) {
+    jlong raw_handle = reinterpret_cast<jlong>(instance);
+    SET_LONG_FIELD(handle_holder, env, object, raw_handle);
 }
 
 /**
@@ -174,7 +218,7 @@ JNIEXPORT void JNICALL Java_com_tuenti_xconfig_XConfigNative_init
   try {
     XConfig *instance = new XConfig(xconfig_pool->getConnection(pathStr, socketStr), (bool) autoReload);
     saveXConfig(environment, object, instance);
-  } catch (XConfigNotConnected &e) {
+  } catch (const XConfigNotConnected &e) {
       throwJavaException(environment, "com/tuenti/xconfig/exception/XConfigConnectionFailedException");
   }
 }
@@ -207,10 +251,10 @@ JNIEXPORT jobject JNICALL Java_com_tuenti_xconfig_XConfigNative_getValue
     XConfigNode node = instance->getNode(keyVector);
     // Generate object depending on value's type
     return getJobjectFromXConfigNode(environment, node);
-  } catch (XConfigNotFound e) {
+  } catch (const XConfigNotFound &e) {
     throwJavaException(environment, "com/tuenti/xconfig/exception/XConfigKeyNotFoundException", key);
     return NULL; // Return to get the Java exception processed
-  } catch (XConfigNotConnected e) {
+  } catch (const XConfigNotConnected &e) {
     throwJavaException(environment, "com/tuenti/xconfig/exception/XConfigNotConnectedException");
     return NULL; // Return to get the Java exception processed
   }
@@ -224,7 +268,7 @@ JNIEXPORT jlong JNICALL Java_com_tuenti_xconfig_XConfigNative_getLastModificatio
   try {
     struct timespec tm = instance->getMtime(keyVector);
     return tm.tv_sec * 1000LL + tm.tv_nsec / 1000000;
-  } catch (XConfigNotFound e) {
+  } catch (const XConfigNotFound &e) {
     throwJavaException(environment, "com/tuenti/xconfig/exception/XConfigKeyNotFoundException", key);
     return 0; // Return to get the Java exception processed
   }

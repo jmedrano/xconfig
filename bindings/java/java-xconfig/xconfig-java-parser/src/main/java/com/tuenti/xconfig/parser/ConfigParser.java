@@ -1,18 +1,14 @@
-/*
- * Copyright (C) 2015 Tuenti Technologies S.L.
- * This file can only be stored on servers belonging to Tuenti Technologies S.L.
- */
-
 package com.tuenti.xconfig.parser;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -29,9 +25,9 @@ import com.tuenti.xconfig.type.XConfigString;
 import com.tuenti.xconfig.type.XConfigValue;
 
 public class ConfigParser {
-	private long configHash = 0;
+	private final Yaml yaml = new Yaml();
 
-	private Yaml yaml = new Yaml();
+	private long configHash = 0;
 	private XConfigMap config = new XConfigMap();
 
 	public long getConfigHash() {
@@ -44,7 +40,7 @@ public class ConfigParser {
 		try {
 			XConfigValue xMap = convertToXConfig(load);
 			XConfigMap otherMap = xMap.getAsMap();
-			config.overrideWith(otherMap);
+			config = config.mergeWith(otherMap);
 			// in XConfig native this behaves like a hash and not a timestamp
 			configHash = (configHash * 31) + file.lastModified();
 		} catch (XConfigWrongTypeCastingException e) {
@@ -66,7 +62,7 @@ public class ConfigParser {
 		try {
 			XConfigValue xMap = convertToXConfig(javaObject);
 			XConfigMap otherMap = xMap.getAsMap();
-			config.overrideWith(otherMap);
+			config = config.mergeWith(otherMap);
 			
 		} catch (XConfigWrongTypeCastingException e) {
 			throw new RuntimeException("Yaml has an incorrect fomat");
@@ -76,10 +72,8 @@ public class ConfigParser {
 	public XConfigValue getElement(String path) throws XConfigKeyNotFoundException {
 		try {
 			return getElement(config, path);
-		} catch (XConfigKeyNotFoundException e) {
+		} catch (XConfigKeyNotFoundException | XConfigWrongTypeCastingException e) {
 			// re-throw with full path
-			throw new XConfigKeyNotFoundException(path);
-		} catch (XConfigWrongTypeCastingException e) {
 			throw new XConfigKeyNotFoundException(path);
 		}
 	}
@@ -142,26 +136,24 @@ public class ConfigParser {
 
 		if (element instanceof List<?>) {
 			List<?> list = (List<?>) element;
-			XConfigList xConfigList = new XConfigList();
+			List<XConfigValue> backingList = new ArrayList<>(list.size());
 			for (Object object : list) {
-				xConfigList.add(convertToXConfig(object));
+				backingList.add(convertToXConfig(object));
 			}
-			return xConfigList;
+			return XConfigList.wrapping(backingList);
 		}
 
 		if (element instanceof Map<?, ?>) {
-			@SuppressWarnings("unchecked")
-			Map<Object, Object> map = (Map<Object, Object>) element;
-			Set<Entry<Object, Object>> entries = map.entrySet();
-			XConfigMap xConfigMap = new XConfigMap();
-			for (Entry<Object, Object> entry : entries) {
-				String key = entry.getKey().toString();
-				Object value = entry.getValue();
-				XConfigValue xValue = convertToXConfig(value);
-				xConfigMap.add(key, xValue);
+			Map<?, ?> map = (Map<?, ?>) element;
+			Map<String, XConfigValue> backingMap = new HashMap<>(map.size());
+			for (Entry<?, ?> entry : map.entrySet()) {
+				String key = String.valueOf(entry.getKey());
+				XConfigValue value = convertToXConfig(entry.getValue());
+				backingMap.put(key, value);
 			}
-			return xConfigMap;
+			return XConfigMap.wrapping(backingMap);
 		}
+
 		throw new RuntimeException("Unexpected value " + element + " of type " + element.getClass());
 	}
 }

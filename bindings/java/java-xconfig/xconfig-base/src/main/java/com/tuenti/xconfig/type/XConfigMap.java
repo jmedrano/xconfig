@@ -8,6 +8,7 @@
 package com.tuenti.xconfig.type;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,15 +22,37 @@ import com.tuenti.xconfig.exception.XConfigWrongTypeCastingException;
  */
 public class XConfigMap implements XConfigValue {
 
-	private Map<String, XConfigValue> values = null;
+	private final Map<String, XConfigValue> values;
+	private Map<String, XConfigValue> unmodifiableView;
+	private int cachedHash;
 
+	/**
+	 * Creates a empty XConfigMap
+	 */
 	public XConfigMap() {
-		this.values = new HashMap<String, XConfigValue>();
+		this.values = Collections.emptyMap();
 	}
 
+	/**
+	 * Creates a XConfigMap backed by a copy of the provided {@code map}.
+	 */
 	public XConfigMap(Map<String, XConfigValue> map) {
-		this.values = new HashMap<String, XConfigValue>(map);
+		this.values = new HashMap<>(map);
 	}
+
+	/**
+	 * Creates a XConfigMap using the same instance of the {@code backingMap} as the source of values.
+	 * Use {@link #XConfigMap(Map)} if you want it to use a copy.
+	 */
+	public static XConfigMap wrapping(Map<String, XConfigValue> backingMap) {
+		return new XConfigMap(backingMap, null);
+	}
+
+	private XConfigMap(Map<String, XConfigValue> backingMap, @SuppressWarnings("unused") PrivateMarker marker) {
+		this.values = backingMap;
+	}
+
+	private static class PrivateMarker {}
 
 	/*
 	 * XConfigValue methods
@@ -81,13 +104,6 @@ public class XConfigMap implements XConfigValue {
 	}
 
 	/*
-	 * Own methods
-	 */
-	public void add(String key, XConfigValue value) {
-		values.put(key, value);
-	}
-
-	/*
 	 * Delegated methods to Map
 	 */
 
@@ -114,18 +130,6 @@ public class XConfigMap implements XConfigValue {
 		return values.get(key);
 	}
 
-	public Set<String> keySet() {
-		return values.keySet();
-	}
-
-	public Collection<XConfigValue> values() {
-		return values.values();
-	}
-
-	public Set<Map.Entry<String,XConfigValue>> entrySet() {
-		return values.entrySet();
-	}
-
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
@@ -133,19 +137,22 @@ public class XConfigMap implements XConfigValue {
 
 		XConfigMap that = (XConfigMap) o;
 
-		if (!values.equals(that.values)) return false;
-
-		return true;
+		return values.equals(that.values);
 	}
 
 	@Override
 	public int hashCode() {
-		return values.hashCode();
+		int hash = cachedHash;
+		if (hash == 0) {
+			hash = values.hashCode();
+			cachedHash = hash;
+		}
+		return hash;
 	}
 
 	@Override
 	public Map<String, Object> getAsJavaObject() {
-		Map<String, Object> javaValues = new HashMap<String, Object>();
+		Map<String, Object> javaValues = new HashMap<>();
 		for (Entry<String, XConfigValue> entry : values.entrySet()) {
 			javaValues.put(entry.getKey(), entry.getValue().getAsJavaObject());
 		}
@@ -210,30 +217,6 @@ public class XConfigMap implements XConfigValue {
 			return defaultValue;
 		}
 	}
-	
-	/**
-	 * Merges the entries in otherMap into this map, prioritizing the entries in otherMap in case of conflict.
-	 */
-	public void overrideWith(XConfigMap otherMap) {
-		Set<Entry<String, XConfigValue>> entrySet = otherMap.entrySet();
-		for (Entry<String, XConfigValue> entry : entrySet) {
-			XConfigValue value = entry.getValue();
-
-			String key = entry.getKey();
-			XConfigMap thisValue = null;
-			XConfigMap otherValueMap = null;
-			try {
-				thisValue = this.get(key).getAsMap();
-				otherValueMap = value.getAsMap();
-			} catch (XConfigWrongTypeCastingException | XConfigKeyNotFoundException e) {
-			}
-			if (thisValue != null && otherValueMap != null) {
-				thisValue.overrideWith(otherValueMap);
-			} else {
-				this.add(key, value);
-			}
-		}
-	}
 
 	/**
 	 * Combines this map and {@code otherMap} into a new map.
@@ -253,9 +236,31 @@ public class XConfigMap implements XConfigValue {
 			resultMap.put(key, value);
 		}
 
-		// Avoids another copy of the map.
-		XConfigMap xConfigMap = new XConfigMap();
-		xConfigMap.values = resultMap;
-		return xConfigMap;
+		return wrapping(resultMap);
+	}
+
+	/*
+	 * Following methods return a unmodifiable view
+	 */
+
+	public Set<String> keySet() {
+		return unmodifiableView().keySet();
+	}
+
+	public Collection<XConfigValue> values() {
+		return unmodifiableView().values();
+	}
+
+	public Set<Map.Entry<String,XConfigValue>> entrySet() {
+		return unmodifiableView().entrySet();
+	}
+
+	private Map<String, XConfigValue> unmodifiableView() {
+		Map<String, XConfigValue> view = unmodifiableView;
+		if (view == null) {
+			view = Collections.unmodifiableMap(values);
+			unmodifiableView = view;
+		}
+		return view;
 	}
 }

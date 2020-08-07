@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>com.tuenti</groupId>
 		<artifactId>xconfig</artifactId>
-		<version>1.4.3-SNAPSHOT</version>
+		<version>1.5.0-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
