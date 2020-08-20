@@ -1,0 +1,32 @@
+version: 2
+
+defaults:
+  platform: docker
+  plugins:
+    mail:
+      enabled: True
+      recipients: []
+      release_recipients: []
+
+workflows:
+  release:
+    stages: [docker_pull, prepare, compile, test, docker_down]
+  build:
+    stages: [docker_pull, prepare, compile,       docker_down]
+  test:
+    stages: [docker_pull,                   test, docker_down]
+
+stages:
+  prepare:
+    - 'docker-compose run --rm distclean'
+
+  compile:
+    - 'docker-compose run --rm distclean'
+    - 'docker-compose run --rm build'
+
+  test:
+    - 'docker-compose run --rm test'
+
+  docker_pull: ["docker-compose pull --ignore-pull-failures"]
+  docker_down: ["docker-compose down"]
+

@@ -15,6 +15,7 @@ bindings/java/java-xconfig/debian/files
 bindings/java/java-xconfig/*build-deps*.deb
 bindings/python/dist/
 bindings/python/xconfig.egg-info/
+!bindings/erlang/c_src/Makefile
 debian/*.debhelper.log
 debian/*.substvars
 debian/*.debhelper

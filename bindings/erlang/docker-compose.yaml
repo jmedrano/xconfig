@@ -1,0 +1,75 @@
+version: '2'
+
+services:
+  builder:
+    image: "docker.tuenti.io/service-inf/erlang22-builder-buster:22.3.4.7-tuenti1"
+    volumes:
+      - "./:/source"
+    working_dir: "/source/"
+
+  build:
+    extends:
+      service: builder
+    command:
+      - rebar3
+      - compile
+  clean:
+    extends:
+      service: builder
+    command:
+      - rebar3
+      - clean
+  test:
+    extends:
+      service: builder
+    command:
+      - rebar3
+      - ct
+  dialyze:
+    extends:
+      service: builder
+    command:
+      - rebar3
+      - dialyzer
+  distclean:
+    extends:
+      service: builder
+    command: 'sh -c "rebar3 clean && rm -rf _build"'
+
+  # Same targets using an old Erlang version, to make it easier to test it on older OTP
+
+  old_builder:
+    image: "docker.tuenti.io/service-inf/erlang20-builder-buster:20.3.8.26-tuenti1"
+    volumes:
+      - "./:/source"
+    working_dir: "/source/"
+
+  old_build:
+    extends:
+      service: old_builder
+    command:
+      - rebar3
+      - compile
+  old_clean:
+    extends:
+      service: old_builder
+    command:
+      - rebar3
+      - clean
+  old_test:
+    extends:
+      service: old_builder
+    command:
+      - rebar3
+      - ct
+  old_dialyze:
+    extends:
+      service: old_builder
+    command:
+      - rebar3
+      - dialyzer
+  old_distclean:
+    extends:
+      service: old_builder
+    command: 'sh -c "rebar3 clean && rm -rf _build"'
+

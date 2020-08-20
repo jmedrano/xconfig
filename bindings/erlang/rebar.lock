@@ -1,0 +1,4 @@
+[{<<"yamerl">>,
+  {git,"https://github.com/yakaz/yamerl.git",
+       {ref,"93ef3dcbc28c3e41f3d94d806e2e38896111e47d"}},
+  0}].

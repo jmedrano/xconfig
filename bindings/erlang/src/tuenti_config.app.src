@@ -1,0 +1,21 @@
+{application, tuenti_config,
+ [{description, "Tuenti configuration handler"},
+  {id, "tuenti_config"},
+  {vsn, "0.3.3"},
+  {registered, [tuenti_config_sup,
+                tuenti_config_srv]},
+  {applications, [kernel,
+                  stdlib,
+                  yamerl
+                 ]},
+  {included_applications, []},
+  {env, [
+    {xconfig_enabled, false},
+    % careful: some services heavily rely on it being undefined by default:
+    % {xconfig_config_path, ""}, 
+    {default_root, defaultRoot}, %% placeholder value, replace!
+    {exconfig_quiet, false},
+    {use_get_raw_for_simple_values, false}
+  ]},
+  {mod, {tuenti_config_app, []}},
+  {modules, []}]}.
