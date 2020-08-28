@@ -1,6 +1,6 @@
 # Java XConfig Changelog
 
-### Next
+### 1.5.0
  - [FRWK-532](https://jira.tid.es/browse/FRWK-532) XConfig values are immutable now.
  - [FRWK-532](https://jira.tid.es/browse/FRWK-532) Cached method and field ids in xconfig-native cpp code.
 
