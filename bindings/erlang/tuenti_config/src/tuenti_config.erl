@@ -32,6 +32,8 @@
 
          global_get_raw/1,
          global_get_raw/2,
+         global_get_raw_with_breeds/2,
+         global_get_raw_with_breeds/3,
          global_get_integer/1,
          global_get_integer/2,
          global_get_float/1,
@@ -102,6 +104,7 @@
 -type config_key() :: [atom()].
 -type simple_value() :: binary() | number() | boolean() | null.
 -type value() :: simple_value() | [value()] | #{atom() := value()}.
+-type breed(KeyElem) :: {BreedKey :: KeyElem, BreedValue :: KeyElem}.
 
 -type config_change() :: {changed, Key :: config_key(), OldValue :: value(),   NewValue :: value()}
                        | {deleted, Key :: config_key(), OldValue :: value(),   NewValue :: undefined}
@@ -117,7 +120,8 @@
               value/0,
               config_change/0,
               listener_mfa/0,
-              optional_result/0
+              optional_result/0,
+              breed/1
              ]).
 
 
@@ -297,6 +301,23 @@ global_get_raw(Key) ->
 global_get_raw(Key, Default) ->
     Key2 = to_config_key(Key),
     get_found_value(Key2, tuenti_config_ets:get_raw(Key2, Default)).
+
+
+%% @doc Gets a value from the global configuration without any type conversion,
+%% using breeds
+%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+-spec global_get_raw_with_breeds(Key :: atom() | config_key(), [breed(atom())]) -> value().
+global_get_raw_with_breeds(Key, Breeds) ->
+    Key2 = to_config_key(Key),
+    get_found_value(Key2, tuenti_config_ets:get_raw_with_breeds(Key2, Breeds)).
+
+
+%% @doc Gets a value from the global configuration without any type conversion,
+%% using breeds. A default value can be specified
+-spec global_get_raw_with_breeds(Key :: atom() | config_key(), [breed(atom())], Default :: any()) -> any().
+global_get_raw_with_breeds(Key, Breeds, Default) ->
+    Key2 = to_config_key(Key),
+    get_found_value(Key2, tuenti_config_ets:get_raw_with_breeds(Key2, Breeds, Default)).
 
 
 %% @doc Gets a value from the global configuration as an integer (if the conversion is possible)
@@ -587,11 +608,15 @@ set_feature_percent(Feature, Percent, Rotate, Seed) when is_atom(Feature),
 %%% ===========================================================================
 
 -spec get_tservice_config(Key :: atom() | list(atom()), list(term())) -> term().
-get_tservice_config(tservice_urls, [Service]) when is_binary(Service) ->
+get_tservice_config(Key, Params) ->
+    get_tservice_config(Key, Params, []).
+
+-spec get_tservice_config(Key :: atom() | list(atom()), list(term()), [breed(atom())]) -> term().
+get_tservice_config(tservice_urls, [Service], Breeds) when is_binary(Service) ->
     % This configuration key is deprecated
-    BinUrls = get_tservice_value_overrides([[serviceConfig, services, Service, service_location]], fun global_get_raw/1, []),
+    BinUrls = get_tservice_value_overrides([[serviceConfig, services, Service, service_location]], raw, Breeds, []),
     [binary_to_list(Url) || Url <- BinUrls];
-get_tservice_config(tservice_http_url, [Service | Rest]) when is_binary(Service) ->
+get_tservice_config(tservice_http_url, [Service | Rest], Breeds) when is_binary(Service) ->
     % Second parameter (optional, only if it exists) is ServiceVersion :: integer()
     ConfigPaths = [[serviceConfig, services, Service, http_location]],
     % If there is version in the request, we first need to check for that path
@@ -603,8 +628,8 @@ get_tservice_config(tservice_http_url, [Service | Rest]) when is_binary(Service)
                                  [[serviceConfig, services, [Service, <<".">>, BinVersion], http_location] | ConfigPaths]
                          end,
 
-    get_tservice_value_overrides(NewConfigPaths, fun global_get_binary/1, undefined);
-get_tservice_config(sample_rate, [Service | Rest]) when is_binary(Service) ->
+    get_tservice_value_overrides(NewConfigPaths, binary, Breeds, undefined);
+get_tservice_config(sample_rate, [Service | Rest], Breeds) when is_binary(Service) ->
     % Second parameter (optional, only if it exists) is ServiceVersion :: integer()
     ConfigPaths = [[serviceConfig, services, Service, service_sample_rate], [serviceConfig, default, service_sample_rate]],
     % If there is version in the request, we first need to check for that path
@@ -615,29 +640,29 @@ get_tservice_config(sample_rate, [Service | Rest]) when is_binary(Service) ->
                                  BinVersion = integer_to_binary(hd(Rest)),
                                  [[serviceConfig, services, [Service, <<".">>, BinVersion], service_sample_rate] | ConfigPaths]
                          end,
-    get_tservice_value_overrides(NewConfigPaths, fun global_get_float/1, 0.0);
-get_tservice_config(statsd_hosts, _) ->
-    Hosts = tuenti_config:global_get_raw([statsConfig, statsd, hosts], []),
+    get_tservice_value_overrides(NewConfigPaths, float, Breeds, 0.0);
+get_tservice_config(statsd_hosts, _, _Breeds) ->
+    Hosts = global_get_raw([statsConfig, statsd, hosts], []),
     case Hosts of
         [] ->
             exit(no_statsd_hosts_configured);
         _ ->
             lists:map(fun(#{host := Hostname, port := Port}) -> {Hostname, Port} end, Hosts)
     end;
-get_tservice_config(cache_mode, [Interface, ServiceVersion, CacheName]) ->
-    get_service_cache_value(Interface, ServiceVersion, CacheName, mode, fun global_get_binary/1, false, <<"enabled">>);
-get_tservice_config(cache_ttl, [Interface, ServiceVersion, CacheName]) ->
-    get_service_cache_value(Interface, ServiceVersion, CacheName, ttl, fun global_get_integer/1, false, undefined);
-get_tservice_config(cache_version, [Interface, ServiceVersion, CacheName]) ->
-    get_service_cache_value(Interface, ServiceVersion, CacheName, version, fun global_get_integer/1, true, undefined);
-get_tservice_config(memcache_servers, _) ->
+get_tservice_config(cache_mode, [Interface, ServiceVersion, CacheName], Breeds) ->
+    get_service_cache_value(Interface, ServiceVersion, CacheName, mode, false, binary, Breeds, <<"enabled">>);
+get_tservice_config(cache_ttl, [Interface, ServiceVersion, CacheName], Breeds) ->
+    get_service_cache_value(Interface, ServiceVersion, CacheName, ttl, false, integer, Breeds, undefined);
+get_tservice_config(cache_version, [Interface, ServiceVersion, CacheName], Breeds) ->
+    get_service_cache_value(Interface, ServiceVersion, CacheName, version, true, integer, Breeds, undefined);
+get_tservice_config(memcache_servers, _, _Breeds) ->
     GlobalFarmAtom = binary_to_atom(tuenti_config:global_get_binary([memcacheServers, global_farm]), latin1),
     Servers = tuenti_config:global_get_raw([memcacheServers, farm_hosts, GlobalFarmAtom]),
     [{binary_to_list(BinIpAddress), Port} || [BinIpAddress, _, Port |_ ] <- Servers];
-get_tservice_config(Key, _) when is_atom(Key) ->
-    get_raw([tserviceClient, Key]);
-get_tservice_config(Key, _) when is_list(Key) ->
-    get_raw([tserviceClient] ++ Key).
+get_tservice_config(Key, Params, Breeds) when is_atom(Key) ->
+    get_tservice_config([Key], Params, Breeds);
+get_tservice_config(Key, _, Breeds) when is_list(Key) ->
+    global_get_raw_with_breeds(expand_key([tserviceClient] ++ Key), Breeds).
 
 
 %%% ===========================================================================
@@ -759,10 +784,18 @@ error_type_conversion(Key, Type, Value) ->
 %% @doc Tries to convert a config value to the type specified. It the conversion is not
 %% possible an error will be raised
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec value_to_type(Key :: config_key(),
-                    Type :: integer | float | string | atom | binary | boolean | map,
-                    Value :: any(),
-                    IsUndefinedValid :: boolean()) -> number() | binary() | string() | map() | atom().
+-spec value_to_type(
+        Key :: config_key(),
+        Type :: integer | float | string | atom | binary | boolean | map,
+        Value :: any(),
+        IsUndefinedValid :: boolean()
+       ) -> number() | binary() | string() | map() | atom();
+       (
+        Key :: config_key(),
+        Type :: raw,
+        Value,
+        IsUndefinedValid :: boolean()
+       ) -> Value.
 value_to_type(_, _, undefined, true) ->
     undefined;
 value_to_type(_, integer, V, _) when is_integer(V) ->
@@ -818,6 +851,9 @@ value_to_type(_, boolean, V, _) when is_boolean(V) ->
 value_to_type(_, map, V, _) when is_map(V) ->
     V;
 
+value_to_type(_, raw, V, _) ->
+    V;
+
 value_to_type(Key, Type, V, _) ->
     error_type_conversion(Key, Type, V).
 
@@ -861,20 +897,22 @@ atomize_config_path([Elem | Rest], Acc) ->
 %% in order until one is found. If no configuration is found the default value is returned
 -spec get_tservice_value_overrides(
         ConfigPaths :: list(list(binary() | atom() | iolist())),
-        GetFunction :: fun((list() | atom()) -> term()),
+        GetType :: raw | binary | float | integer,
+        Breeds :: [breed(atom())],
         DefaultValue :: term()) -> term().
-get_tservice_value_overrides([], _GetFunction, DefaultValue) ->
+get_tservice_value_overrides([], _GetType, _Breeds, DefaultValue) ->
     DefaultValue;
-get_tservice_value_overrides([Path | Rest], GetFunction, DefaultValue) ->
+get_tservice_value_overrides([Path | Rest], GetType, Breeds, DefaultValue) ->
     case atomize_config_path(Path) of
         undefined ->
-            get_tservice_value_overrides(Rest, GetFunction, DefaultValue);
+            get_tservice_value_overrides(Rest, GetType, Breeds, DefaultValue);
         AtomPath ->
             try
-                GetFunction(AtomPath)
+                Key = to_config_key(AtomPath),
+                convert_value(Key, GetType, tuenti_config_ets:get_raw_with_breeds(Key, Breeds), false)
             catch
                 error:{undefined_config, _} ->
-                    get_tservice_value_overrides(Rest, GetFunction, DefaultValue)
+                    get_tservice_value_overrides(Rest, GetType, Breeds, DefaultValue)
             end
     end.
 
@@ -893,10 +931,11 @@ get_tservice_value_overrides([Path | Rest], GetFunction, DefaultValue) ->
         ServiceVersion :: integer(),
         CacheName :: binary(),
         ValueNameAtom :: atom(),
-        GetFunction :: fun((list() | atom()) -> term()),
         SkipServiceGlobalConfig :: boolean(),
+        GetType :: raw | binary | float | integer,
+        Breeds :: [breed(atom())],
         DefaultValue :: term()) -> term().
-get_service_cache_value(Interface, ServiceVersion, CacheName, ValueNameAtom, GetFunction, SkipServiceGlobalConfig, DefaultValue) ->
+get_service_cache_value(Interface, ServiceVersion, CacheName, ValueNameAtom, SkipServiceGlobalConfig, GetType, Breeds, DefaultValue) ->
     BinServiceVersion = integer_to_binary(ServiceVersion),
     LocalVersionPath = [serviceConfig, services, [Interface, <<".">>, BinServiceVersion], caches, CacheName, ValueNameAtom],
     LocalPath = [serviceConfig, services, Interface, caches, CacheName, ValueNameAtom],
@@ -910,4 +949,5 @@ get_service_cache_value(Interface, ServiceVersion, CacheName, ValueNameAtom, Get
                           [LocalVersionPath, LocalPath, ServiceGlobalPath, GlobalPath]
                   end,
 
-    get_tservice_value_overrides(ConfigPaths, GetFunction, DefaultValue).
+    get_tservice_value_overrides(ConfigPaths, GetType, Breeds, DefaultValue).
+

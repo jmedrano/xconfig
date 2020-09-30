@@ -15,6 +15,7 @@
 %%% API
 -export([
          register_listener/2,
+         register_listener/3,
          unregister_listener/1,
          set/2,
          set_full_config/1,
@@ -30,7 +31,7 @@
 
 -type listener_mfa() :: tuenti_config:listener_mfa().
 -type listener_target() :: {reference(), listener_mfa()}.
--type listeners() :: #{tuenti_config:config_key() := #{
+-type listeners() :: #{{tuenti_config:config_key(), [tuenti_config:breed(atom())]} := #{
                                                         value := tuenti_config_ets:result(tuenti_config:value()),
                                                         targets := nonempty_list(listener_target())
                                                        }}.
@@ -60,9 +61,14 @@
 %% Note that the Key parameter will be a full global one
 -spec register_listener(tuenti_config:config_key(), listener_mfa())
         -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result(), SrvPid :: pid()}.
-register_listener(Key, {Module, Function, _ExtraArgs} = ListenerTarget)
+register_listener(Key, ListenerTarget) ->
+    register_listener(Key, [], ListenerTarget).
+
+-spec register_listener(tuenti_config:config_key(), [tuenti_config:breed(atom())], listener_mfa())
+        -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result(), SrvPid :: pid()}.
+register_listener(Key, Breeds, {Module, Function, _ExtraArgs} = ListenerTarget)
   when is_list(Key), is_atom(Module), is_atom(Function) ->
-    gen_server:call(?PROCESS_NAME, {register, Key, ListenerTarget}).
+    gen_server:call(?PROCESS_NAME, {register, {Key, Breeds}, ListenerTarget}).
 
 
 %% @doc Unregister a listener using the reference() obtained when calling register_listener
@@ -131,17 +137,17 @@ init([]) ->
 %%%-----------------------------------------------------------------------------
 %%% BEHAVIOUR HANDLES
 %%%-----------------------------------------------------------------------------
-handle_call({register, Key, ListenerMFA}, _From, #?ST{listeners = Listeners, listener_refs = ListenerRefs} = State) ->
+handle_call({register, KeyBreeds, ListenerMFA}, _From, #?ST{listeners = Listeners, listener_refs = ListenerRefs} = State) ->
     Ref = make_ref(),
     {CurrentValue, NewListenerData} = case Listeners of
-                                          #{Key := ListenerData} ->
+                                          #{KeyBreeds := ListenerData} ->
                                               add_target({Ref, ListenerMFA}, ListenerData);
                                           _ ->
-                                              new_target({Ref, ListenerMFA}, Key)
+                                              new_target({Ref, ListenerMFA}, KeyBreeds)
                                        end,
     NewState = State#?ST{
-                listeners = Listeners#{Key => NewListenerData},
-                listener_refs = ListenerRefs#{Ref => Key}
+                listeners = Listeners#{KeyBreeds => NewListenerData},
+                listener_refs = ListenerRefs#{Ref => KeyBreeds}
             },
     {reply, {ok, Ref, CurrentValue, self()}, NewState};
 
@@ -198,10 +204,10 @@ handle_info(_, State) ->
 notify_changes(#?ST{listeners = Listeners} = State) ->
     NewListeners =
         maps:fold(
-            fun(Key, #{value := OldValue, targets := Targets} = ListenerData, Acc) ->
-                case tuenti_config_ets:get_raw(Key) of
+            fun({Key, Breeds} = KeyBreeds, #{value := OldValue, targets := Targets} = ListenerData, Acc) ->
+                case tuenti_config_ets:get_raw_with_breeds(Key, Breeds) of
                     OldValue ->
-                        Acc#{Key => ListenerData};
+                        Acc#{KeyBreeds => ListenerData};
                     NewValue ->
                         Change = calculate_change(Key, OldValue, NewValue),
                         lists:foreach(
@@ -210,7 +216,7 @@ notify_changes(#?ST{listeners = Listeners} = State) ->
                             end,
                             Targets
                         ),
-                        Acc#{Key => ListenerData#{value => NewValue}}
+                        Acc#{KeyBreeds => ListenerData#{value => NewValue}}
                 end
             end,
             #{},
@@ -234,6 +240,7 @@ add_target(NewTarget, #{value := CurrentValue, targets := Targets} = ListenerDat
     {CurrentValue, NewListenerData}.
 
 
-new_target(NewTarget, Key) ->
-    CurrentValue = tuenti_config_ets:get_raw(Key),
+new_target(NewTarget, {Key, Breeds}) ->
+    CurrentValue = tuenti_config_ets:get_raw_with_breeds(Key, Breeds),
     {CurrentValue, #{value => CurrentValue, targets => [NewTarget]}}.
+

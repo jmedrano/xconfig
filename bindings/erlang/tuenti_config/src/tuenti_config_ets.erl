@@ -3,6 +3,8 @@
 -export([init/0,
          get_raw/1,
          get_raw/2,
+         get_raw_with_breeds/2,
+         get_raw_with_breeds/3,
          get_config_simple_value/1,
          get_config_simple_value/2,
          set_config/2,
@@ -26,7 +28,9 @@
          update_step4_create_backup_temp/0,
          update_step5_copy_backup_to_backup_temp/0,
          update_step6_delete_old_main_table/0,
-         update_step7_rename_backup_temp_to_main_table/0
+         update_step7_rename_backup_temp_to_main_table/0,
+
+         get_from_full_config/2
     ]).
 -endif.
 
@@ -35,6 +39,10 @@
 -type full_config() :: #{atom() := tuenti_config:value()}.
 -type found_result(Type) :: {found, Type}.
 -type result(Type) :: not_found | found_result(Type).
+
+-type breed(KeyElem) :: tuenti_config:breed(KeyElem).
+-type breed_root(KeyElem) :: {KeyElem, breed, BreedKey :: KeyElem, BreedValue :: KeyElem}.
+-type breeded_key() :: tuenti_config:config_key() | [breed_root(atom()) | tuenti_config:config_key()].
 
 -export_type([result/1, full_config/0]).
 
@@ -86,30 +94,36 @@ get_config_simple_value(Key, Default) ->
 
 -spec get_raw(Key :: tuenti_config:config_key()) -> result(tuenti_config:value()).
 get_raw(Key) ->
-    get_from_full_config_with_cache(Key).
-
+    get_raw_with_breeds(Key, []).
 
 -spec get_raw(Key :: tuenti_config:config_key(), Default :: any()) -> found_result(any()).
 get_raw(Key, Default) ->
-    case get_from_full_config_with_cache(Key) of
+    get_raw_with_breeds(Key, [], Default).
+
+-spec get_raw_with_breeds(Key :: tuenti_config:config_key(), [breed(atom())]) -> result(tuenti_config:value()).
+get_raw_with_breeds(Key, Breeds) ->
+    get_from_full_config_with_cache(Key, Breeds).
+
+-spec get_raw_with_breeds(Key :: tuenti_config:config_key(), [breed(atom())], Default :: any()) -> found_result(any()).
+get_raw_with_breeds(Key, Breeds, Default) ->
+    case get_from_full_config_with_cache(Key, Breeds) of
         {found, _} = Result ->
             Result;
         _ ->
             {found, Default}
     end.
 
-
--spec get_from_full_config_with_cache(Key :: tuenti_config:config_key()) -> result(tuenti_config:value()).
-get_from_full_config_with_cache(Key) ->
+-spec get_from_full_config_with_cache(Key :: tuenti_config:config_key(), [breed(atom())]) -> result(tuenti_config:value()).
+get_from_full_config_with_cache(Key, Breeds) ->
     try
         ConfigVersionCache = config_version(?CONFIG_TABLE),
-        CacheLookupKey = key_for_cache(ConfigVersionCache, from_full_config, Key),
+        CacheLookupKey = key_for_cache(ConfigVersionCache, {from_full_config, Breeds}, Key),
         ets:lookup_element(?CONFIG_TABLE_CACHE, CacheLookupKey, ?VALUE_POS)
     catch
         error:badarg ->
             try
-                {ConfigVersion, Result} = get_from_full_config_internal_with_version(Key),
-                NewCacheKey = key_for_cache(ConfigVersion, from_full_config, Key),
+                {ConfigVersion, Result} = get_from_full_config_with_breeds(Key, Breeds),
+                NewCacheKey = key_for_cache(ConfigVersion, {from_full_config, Breeds}, Key),
                 ets:insert(?CONFIG_TABLE_CACHE, {NewCacheKey, Result}),
                 Result
             catch
@@ -173,6 +187,136 @@ flush_cache() ->
     ok.
 
 %%% ===========================================================================
+%%% Internal Functions: Breeds
+%%% ===========================================================================
+
+get_from_full_config_with_breeds(Key, Breeds) when is_list(Breeds) ->
+    try
+        breeds_get_with_version(0, not_found, Key, lists:reverse(Breeds))
+    catch
+        throw:version_mismatch ->
+              get_from_full_config_with_breeds(Key, Breeds)
+    end;
+get_from_full_config_with_breeds(Key, Something) ->
+    get_from_full_config_with_breeds(Key, [Something]).
+
+-spec breed_root(KeyElem, atom(), atom()) -> breed_root(KeyElem) when KeyElem :: atom().
+breed_root(Root, BreedKey, BreedValue) when is_atom(BreedKey), is_atom(BreedValue) ->
+    {Root, breed, BreedKey, BreedValue}.
+
+-spec breeds_get_with_version(
+        AccVersion :: integer(),
+        AccValue :: result(tuenti_config:map_value()),
+        Key :: tuenti_config:config_key(),
+        Breeds :: [breed(atom())]
+       ) -> {integer(), result(tuenti_config:value())}.
+breeds_get_with_version(_AccVersion, not_found, Key, []) ->
+    % Nothing in the acc, return whatever it finds
+    get_from_full_config_internal_with_version(Key);
+breeds_get_with_version(AccVersion, {found, AccMap} = AccValue, Key, []) ->
+    case get_from_full_config_internal_with_version(Key) of
+        {_Version, not_found} -> % Nothing found, return whatever it had
+            {AccVersion, AccValue};
+        {AccVersion, {found, Value}} when is_map(Value) -> % Return both maps
+            {AccVersion, {found, deep_map_merge(Value, AccMap)}};
+        {AccVersion, _FoundNotMapValue} -> % Found not map value, return current map
+            {AccVersion, AccValue};
+        _ ->
+            throw(version_mismatch)
+    end;
+breeds_get_with_version(AccVersion, AccValue, [KeyRoot | KeyRest] = Key, [{BreedKey, BreedValue} | RestBreeds]) ->
+    case get_from_full_config_internal_with_version([breed_root(KeyRoot, BreedKey, BreedValue)| KeyRest]) of
+        {Version, Result} when AccValue == not_found -> % Nothing in the acc, continue with whatever it found
+            breeds_get_with_version(Version, Result, Key, RestBreeds);
+        {_Version, not_found} ->
+            % It's unknown if some intermediate level modified the tree, need to
+            % traverse it
+            case get_from_full_config_internal_with_version([breed_root(KeyRoot, BreedKey, BreedValue)]) of
+                {AccVersion, not_found} ->
+                    % Breed does not exist, ignore it
+                    breeds_get_with_version(AccVersion, AccValue, Key, RestBreeds);
+                {AccVersion, {found, BreedTree}} ->
+                    case traverse(KeyRest, BreedTree) of
+                        {[_|_], NotMap} when not is_map(NotMap) -> % Found not map value, return current map
+                            {AccVersion, AccValue};
+                        _ -> % Only maps in the path, just ignore them
+                            breeds_get_with_version(AccVersion, AccValue, Key, RestBreeds)
+                    end;
+                _ ->
+                    throw(version_mismatch)
+            end;
+        {AccVersion, {found, Value}} when is_map(Value) -> % Continue by merging both maps
+            {found, AccMap} = AccValue,
+            breeds_get_with_version(AccVersion, {found, deep_map_merge(Value, AccMap)}, Key, RestBreeds);
+        {AccVersion, _FoundNotMapValue} -> % Found not map value, return current map
+            {AccVersion, AccValue};
+        _ ->
+            throw(version_mismatch)
+    end;
+breeds_get_with_version(AccVersion, AccValue, Key, [_InvalidBreed | RestBreeds]) ->
+    breeds_get_with_version(AccVersion, AccValue, Key, RestBreeds).
+
+traverse([], MultiLevelTree) ->
+    {[], MultiLevelTree};
+traverse([KeyRoot | KeyRest] = Key, MultiLevelTree) ->
+    case MultiLevelTree of
+        #{KeyRoot := NextMultiLevelTree} ->
+            traverse(KeyRest, NextMultiLevelTree);
+        _ ->
+            {Key, MultiLevelTree}
+    end.
+
+%% This is a mismatch between xconfig merge algorithm and breeds merge
+%% algorithm.
+%% Although the design was for both algorithms to have the same result,
+%% at the moment of integrating Erlang with breeds, other languages
+%% have the slightly different breeds merge behaviour already.
+%%
+%% It's been decided that Erlang should rather be consistent with the other
+%% languages than match the xconfig merge behaviour exactly.
+%%
+%% The issue has its roots in the fact that in order to improve efficiency, the
+%% breeds list is traversed in inverse order, from highest priority to lowest
+%% priority, merging when required and with an early return if it's not
+%% possible to merge anything else.
+%% The problem triggers with a map with an overwritten subkey, because with
+%% the breeds merge algorithm it's not recorded anywhere that some subkey was
+%% overwritten. XConfig merge would overwrite the key and that's it, but
+%% breeds merge doesn't, just ignores it.
+deep_map_merge(M1, M2) when is_map(M1), is_map(M2) ->
+    maps:fold(fun(K, V2, Acc) ->
+                      case Acc of
+                          #{K := V1} ->
+                              Acc#{K => deep_map_merge(V1, V2)};
+                          _ ->
+                              Acc#{K => V2}
+                      end
+              end, M1, M2);
+deep_map_merge(_, Override) ->
+    Override.
+
+% @doc Any [X_breeds, BreedKey, BreedValue | Rest] key is transformed into
+% [{X, breed, BreedKey, BreedValue} | Rest]
+-spec transform_breeds(map()) -> map().
+transform_breeds(Config) ->
+    maps:fold(fun(Key, Value, Acc) ->
+                      try
+                          BreedRootBin = atom_to_binary(Key, utf8),
+                          {match, [BreedTargetBin]} = re:run(BreedRootBin, "^(.+)_breeds", [{capture, all_but_first, binary}]),
+                          BreedTarget = binary_to_existing_atom(BreedTargetBin, utf8),
+
+                          maps:fold(fun(BreedKeyAtom, Value1, Acc1) ->
+                                            maps:fold(fun(BreedValueAtom, BreedMap, Acc2) ->
+                                                              Acc2#{breed_root(BreedTarget, BreedKeyAtom, BreedValueAtom) => BreedMap}
+                                                      end, Acc1, Value1)
+                                    end, Acc, Value)
+
+                      catch
+                          _:_ -> Acc#{Key => Value}
+                      end
+              end, #{}, Config).
+
+%%% ===========================================================================
 %%% Internal Functions
 %%% ===========================================================================
 
@@ -187,29 +331,37 @@ get_current_full_config() ->
 
 
 %% @throws error:badarg if the ?CONFIG_TABLE and ?CONFIG_TABLE_BACKUP are unavailable
--spec get_from_full_config_internal_with_version(Key :: tuenti_config:config_key()) -> {Version :: integer(), result(tuenti_config:value())}.
+-spec get_from_full_config_internal_with_version(Key :: breeded_key()) -> {Version :: integer(), result(tuenti_config:value())}.
+-ifdef(TEST).
 get_from_full_config_internal_with_version(Key) ->
     try
-        ConfigVersion = config_version(?CONFIG_TABLE),
-        %% The version could change here
-        {ConfigVersion, get_from_full_config(?CONFIG_TABLE, Key)}
+        ?MODULE:get_from_full_config(?CONFIG_TABLE, Key)
     catch
         error:badarg ->
-            ConfigVersionBackup = config_version(?CONFIG_TABLE_BACKUP),
-            %% The version could change here
-            {ConfigVersionBackup, get_from_full_config(?CONFIG_TABLE_BACKUP, Key)}
+            ?MODULE:get_from_full_config(?CONFIG_TABLE_BACKUP, Key)
     end.
+-else.
+get_from_full_config_internal_with_version(Key) ->
+    try
+        get_from_full_config(?CONFIG_TABLE, Key)
+    catch
+        error:badarg ->
+            get_from_full_config(?CONFIG_TABLE_BACKUP, Key)
+    end.
+-endif.
 
--spec get_from_full_config(TableId :: ets:tab(), Key :: tuenti_config:config_key()) -> result(tuenti_config:value()).
+-spec get_from_full_config(TableId :: ets:tab(), Key :: breeded_key()) -> {Version :: integer(), result(tuenti_config:value())}.
 get_from_full_config(TableId, Key) ->
     % Convert the key to a matchspec key
     % Example: [a, b, c] -> #{a => #{b => #{c => '$1'}}}
     KeySpec = lists:foldr(fun(KeyElem, Acc) -> #{KeyElem => Acc} end, '$1', Key),
-    case ets:select(TableId, [{{full_config, KeySpec}, [], ['$1']}], 1) of
-        {[Result], _} ->
-            {found, Result};
-        _ ->
-            not_found
+    ConfigValueMS = {{full_config, KeySpec}, [], [{{value, '$1'}}]},
+    ConfigVersionMS = {{{metadata, config_version}, '$1'}, [], [{{version, '$1'}}]},
+    {Result, _} = ets:select(TableId, [ConfigValueMS, ConfigVersionMS], 2),
+    {version, Version} = proplists:lookup(version, Result),
+    case proplists:lookup(value, Result) of
+        none -> {Version, not_found};
+        {value, Value} -> {Version, {found, Value}}
     end.
 
 
@@ -294,10 +446,11 @@ set_full_config(FullNewConfig, ConfigVersion) ->
 %%% to ensure 'get' functions are working between each of these steps.
 -spec update(FullNewConfig :: full_config() | undefined, ConfigVersion :: integer()) -> ok.
 update(FullNewConfig, ConfigVersion) ->
-    FlattenedNewConfig = convert(FullNewConfig),
+    ProcessedFullNewConfig = transform_breeds(FullNewConfig),
+    FlattenedNewConfig = convert(ProcessedFullNewConfig),
 
     update_step0_create_temporary_table(),
-    update_step1_populate_temp_table(FullNewConfig, FlattenedNewConfig, ConfigVersion),
+    update_step1_populate_temp_table(ProcessedFullNewConfig, FlattenedNewConfig, ConfigVersion),
     update_step2_delete_backup_table(),
     update_step3_rename_temp_to_backup_table(),
     update_step4_create_backup_temp(),
@@ -435,3 +588,4 @@ add_element(undefined, Element) ->
     Element;
 add_element(Key, Element) ->
     {Key, Element}.
+

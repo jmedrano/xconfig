@@ -1,7 +1,7 @@
 {application, tuenti_config,
  [{description, "Tuenti configuration handler"},
   {id, "tuenti_config"},
-  {vsn, "0.3.3"},
+  {vsn, "0.3.5"},
   {registered, [tuenti_config_sup,
                 tuenti_config_srv]},
   {applications, [kernel,
