@@ -77,7 +77,10 @@
 
 
 %% API for TService
--export([get_tservice_config/2]).
+-export([
+         get_tservice_config/2,
+         get_tservice_config/3
+        ]).
 
 
 %% API for configuration
