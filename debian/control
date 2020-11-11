@@ -2,7 +2,7 @@ Source: xconfig
 Section: misc
 Priority: extra
 Maintainer: Jaime Medrano <jmedrano@tuenti.com>
-Build-Depends: debhelper (>= 8.0.0), build-essential, qt4-qmake, pkg-config, libqt4-dev (>= 4.6.0), libdaemon-dev, liblog4cxx-dev|liblog4cxx10-dev (>= 0.10.0), g++ (>= 4.5), libyaml-dev, libcmph-dev, libboost-program-options-dev (>=1.49)|libboost-program-options1.49-dev, libtbb-dev, libboost-thread-dev (>=1.49)|libboost-thread1.49-dev
+Build-Depends: debhelper (>= 8.0.0), build-essential, qt4-qmake, pkg-config, libqt4-dev (>= 4.6.0), libdaemon-dev, liblog4cxx-dev|liblog4cxx10-dev (>= 0.10.0), g++ (>= 4.5), libyaml-dev, libcmph-dev, libboost-program-options-dev (>=1.49)|libboost-program-options1.49-dev, libtbb-dev, libboost-thread-dev (>=1.49)|libboost-thread1.49-dev, php-dev
 Standards-Version: 3.9.2
 Homepage: http://www.tuenti.com/
 
