@@ -132,6 +132,7 @@ get(_Config) ->
     ?assertThrow({undefined_config, SpamExpandedKey}, tuenti_config:get_raw(spam)),
     ?assertMatch(45, tuenti_config:get_integer(integer)),
     ?assertMatch("spam", tuenti_config:get_string(string)),
+    ?assertMatch("spam", tuenti_config:get_string(tuenti_config:transient_raw_config_key([<<"string">>]))),
     ?assertMatch([1, 2, 3], tuenti_config:get_raw(list)),
     ?assertMatch(<<"bacon">>, tuenti_config:get_binary(binary)),
     ?assertMatch(false, tuenti_config:get_bool(atom)),
@@ -150,6 +151,8 @@ get(_Config) ->
 
 get_with_default(_Config) ->
     ?assertMatch(42, tuenti_config:get_raw(spam, 42)),
+    ?assertMatch(42, tuenti_config:get_raw(tuenti_config:transient_raw_config_key([<<"spam">>]), 42)),
+    ?assertMatch(42, tuenti_config:get_raw(tuenti_config:transient_raw_config_key([non_atom_binary()]), 42)),
     ?assertMatch(45, tuenti_config:get_integer(integer, 18)),
     ?assertMatch("spam", tuenti_config:get_string(string, "foo")),
     ?assertMatch([1, 2, 3], tuenti_config:get_raw(list, [])),
@@ -293,6 +296,10 @@ register_listener_simple_values(Config) ->
     flush_notifications(),
     ?assertMatch({ok, _, {found, 3}}, tuenti_config:register_listener(spam, {?MODULE, update_callback, self()})),
     ?assertMatch({ok, _, not_found}, tuenti_config:register_listener(bacon, {?MODULE, update_callback, self()})),
+    ?assertMatch({ok, _, not_found}, tuenti_config:register_listener(bacon, {?MODULE, update_callback, self()})),
+    ?assertMatch({ok, _, not_found}, tuenti_config:register_listener(tuenti_config:transient_raw_config_key([<<"bacon">>]), {?MODULE, update_callback, self()})),
+    % ^ Notice that Bacon registers only twice because the keys are different (binary
+    % vs atom)
     write_terms(ConfigDir, ["spam: 18"]),
     tuenti_config:reload(),
     SpamExpandedKey = tuenti_config:expand_key(spam),
@@ -302,12 +309,26 @@ register_listener_simple_values(Config) ->
     tuenti_config:reload(),
     ?assertRecv({deleted, SpamExpandedKey, 18, undefined}, ?TIMEOUT),
     ?assertRecv({added, BaconExpandedKey, undefined, 32}, ?TIMEOUT),
+    ?assertRecv({added, BaconExpandedKey, undefined, 32}, ?TIMEOUT), % Bacon triggers twice
     write_terms(ConfigDir, ["bacon: 32", "spam: 33"]),
     tuenti_config:reload(),
     ?assertRecv({added, SpamExpandedKey, undefined, 33}, ?TIMEOUT),
     write_terms(ConfigDir, ["spam: 33"]),
     tuenti_config:reload(),
     ?assertRecv({deleted, BaconExpandedKey, 32, undefined}, ?TIMEOUT),
+    ?assertRecv({deleted, BaconExpandedKey, 32, undefined}, ?TIMEOUT), % Bacon triggers twice
+
+    NonAtomBinary = non_atom_binary(),
+    OpaqueBinaryConfigKey = tuenti_config:transient_raw_config_key([NonAtomBinary]),
+    ?assertMatch({ok, _, not_found}, tuenti_config:register_listener(OpaqueBinaryConfigKey, {?MODULE, update_callback, self()})),
+    write_terms(ConfigDir, [binary_to_list(NonAtomBinary)++": 32"]),
+    tuenti_config:reload(),
+    ?assertRecv({deleted, SpamExpandedKey, 33, undefined}, ?TIMEOUT),
+    NowExistingBinary = binary_to_existing_atom(NonAtomBinary, utf8),
+    ?assertRecv({added, [_, NowExistingBinary], undefined, 32}, ?TIMEOUT),
+
+    % No other updates are left
+    ?assertNotRecvAnything(?TIMEOUT),
     ok.
 
 
@@ -318,6 +339,7 @@ unregister_listener(Config) ->
     tuenti_config:reload(),
     flush_notifications(),
     {ok, ListenerRef, {found, 3}} = tuenti_config:register_listener(spam, {?MODULE, update_callback, self()}),
+    {ok, ListenerRef, {found, 3}} = tuenti_config:register_listener(spam, {?MODULE, update_callback, self()}), % double register is ignored
     write_terms(ConfigDir, ["spam: 18"]),
     tuenti_config:reload(),
     SpamExpandedKey = tuenti_config:expand_key(spam),
@@ -797,11 +819,18 @@ config_terms() ->
 update_callback({_Op, _Key, _OldValue, _NewValue} = Change, Pid) ->
     Pid ! Change.
 
-%update_callback([], _Pid) ->
-%    ok;
-%update_callback([{Op, Key, Value} | Rest], Pid) ->
-%    update_callback(Op, Key, Value, Pid),
-%    update_callback(Rest, Pid).
+
+non_atom_binary() ->
+    non_atom_binary(100).
+
+non_atom_binary(0) ->
+    error("Cannot generate binary");
+non_atom_binary(N) ->
+    RandomBin = list_to_binary([ ($a - 1) + rand:uniform($z - $a + 1) || _ <- lists:seq(1,8) ]),
+    try binary_to_existing_atom(RandomBin, utf8) of
+        _ -> non_atom_binary(N - 1)
+    catch _:_ -> RandomBin
+    end.
 
 
 flush_notifications() ->

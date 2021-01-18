@@ -39,10 +39,9 @@
 -type full_config() :: #{atom() := tuenti_config:value()}.
 -type found_result(Type) :: {found, Type}.
 -type result(Type) :: not_found | found_result(Type).
-
--type breed(KeyElem) :: tuenti_config:breed(KeyElem).
--type breed_root(KeyElem) :: {KeyElem, breed, BreedKey :: KeyElem, BreedValue :: KeyElem}.
--type breeded_key() :: tuenti_config:config_key() | [breed_root(atom()) | tuenti_config:config_key()].
+-type config_key() :: tuenti_config:config_key(atom()).
+-type breed() :: tuenti_config:breed(atom()).
+-type breed_root() :: {KeyRoot :: atom(), breed, BreedKey :: atom(), BreedValue :: atom()}.
 
 -export_type([result/1, full_config/0]).
 
@@ -72,7 +71,7 @@ init() ->
     ok.
 
 
--spec get_config_simple_value(Key :: tuenti_config:config_key()) -> result(tuenti_config:simple_value()).
+-spec get_config_simple_value(Key :: config_key()) -> result(tuenti_config:simple_value()).
 get_config_simple_value(Key) ->
     case application:get_env(tuenti_config, use_get_raw_for_simple_values) of
         {ok, true} ->
@@ -82,7 +81,7 @@ get_config_simple_value(Key) ->
     end.
 
 
--spec get_config_simple_value(Key :: tuenti_config:config_key(), Default :: any()) -> found_result(any()).
+-spec get_config_simple_value(Key :: config_key(), Default :: any()) -> found_result(any()).
 get_config_simple_value(Key, Default) ->
     case get_config_simple_value(Key) of
         not_found ->
@@ -92,19 +91,19 @@ get_config_simple_value(Key, Default) ->
     end.
 
 
--spec get_raw(Key :: tuenti_config:config_key()) -> result(tuenti_config:value()).
+-spec get_raw(Key :: config_key()) -> result(tuenti_config:value()).
 get_raw(Key) ->
     get_raw_with_breeds(Key, []).
 
--spec get_raw(Key :: tuenti_config:config_key(), Default :: any()) -> found_result(any()).
+-spec get_raw(Key :: config_key(), Default :: any()) -> found_result(any()).
 get_raw(Key, Default) ->
     get_raw_with_breeds(Key, [], Default).
 
--spec get_raw_with_breeds(Key :: tuenti_config:config_key(), [breed(atom())]) -> result(tuenti_config:value()).
+-spec get_raw_with_breeds(Key :: config_key(), [breed()]) -> result(tuenti_config:value()).
 get_raw_with_breeds(Key, Breeds) ->
     get_from_full_config_with_cache(Key, Breeds).
 
--spec get_raw_with_breeds(Key :: tuenti_config:config_key(), [breed(atom())], Default :: any()) -> found_result(any()).
+-spec get_raw_with_breeds(Key :: config_key(), [breed()], Default :: any()) -> found_result(any()).
 get_raw_with_breeds(Key, Breeds, Default) ->
     case get_from_full_config_with_cache(Key, Breeds) of
         {found, _} = Result ->
@@ -113,7 +112,7 @@ get_raw_with_breeds(Key, Breeds, Default) ->
             {found, Default}
     end.
 
--spec get_from_full_config_with_cache(Key :: tuenti_config:config_key(), [breed(atom())]) -> result(tuenti_config:value()).
+-spec get_from_full_config_with_cache(Key :: config_key(), [breed()]) -> result(tuenti_config:value()).
 get_from_full_config_with_cache(Key, Breeds) ->
     try
         ConfigVersionCache = config_version(?CONFIG_TABLE),
@@ -134,7 +133,7 @@ get_from_full_config_with_cache(Key, Breeds) ->
     end.
 
 
--spec delete_key(Key :: tuenti_config:config_key()) -> true.
+-spec delete_key(Key :: config_key()) -> true.
 delete_key(Key) ->
     % Get the full config map
     NewFullConfig = delete_key_internal(Key, get_current_full_config()),
@@ -200,15 +199,15 @@ get_from_full_config_with_breeds(Key, Breeds) when is_list(Breeds) ->
 get_from_full_config_with_breeds(Key, Something) ->
     get_from_full_config_with_breeds(Key, [Something]).
 
--spec breed_root(KeyElem, atom(), atom()) -> breed_root(KeyElem) when KeyElem :: atom().
+-spec breed_root(atom(), atom(), atom()) -> breed_root().
 breed_root(Root, BreedKey, BreedValue) when is_atom(BreedKey), is_atom(BreedValue) ->
     {Root, breed, BreedKey, BreedValue}.
 
 -spec breeds_get_with_version(
         AccVersion :: integer(),
         AccValue :: result(tuenti_config:map_value()),
-        Key :: tuenti_config:config_key(),
-        Breeds :: [breed(atom())]
+        Key :: config_key(),
+        Breeds :: [breed()]
        ) -> {integer(), result(tuenti_config:value())}.
 breeds_get_with_version(_AccVersion, not_found, Key, []) ->
     % Nothing in the acc, return whatever it finds
@@ -331,6 +330,7 @@ get_current_full_config() ->
 
 
 %% @throws error:badarg if the ?CONFIG_TABLE and ?CONFIG_TABLE_BACKUP are unavailable
+-type breeded_key() :: tuenti_config:config_key(breed_root() | config_key()). % breed_root is optional and only expected as the first element in the list
 -spec get_from_full_config_internal_with_version(Key :: breeded_key()) -> {Version :: integer(), result(tuenti_config:value())}.
 -ifdef(TEST).
 get_from_full_config_internal_with_version(Key) ->
@@ -376,12 +376,12 @@ key_for_cache(ConfigVersion, Category, Key) ->
 %% The "not_found" value will be returned when the value doesn't exist in the
 %% table or due to a race condition (with very low probability) if there are
 %% very fast and consecutive updates and it doesn't find a valid ETS table
--spec safe_lookup(tuenti_config:config_key()) -> result(tuenti_config:value()).
+-spec safe_lookup(config_key()) -> result(tuenti_config:value()).
 safe_lookup(Key) ->
     safe_lookup_internal([?CONFIG_TABLE, ?CONFIG_TABLE_BACKUP], Key).
 
 
--spec safe_lookup_internal([ets:tab()], tuenti_config:config_key()) -> result(tuenti_config:value()).
+-spec safe_lookup_internal([ets:tab()], config_key()) -> result(tuenti_config:value()).
 safe_lookup_internal([], _) ->
     not_found;
 safe_lookup_internal([Table | RestTable], Key) ->
@@ -397,14 +397,14 @@ safe_lookup_internal([Table | RestTable], Key) ->
     end.
 
 
--spec set_config(tuenti_config:config_key(), tuenti_config:value()) -> true.
+-spec set_config(config_key(), tuenti_config:value()) -> true.
 set_config(Key, Value) when is_list(Key) ->
     FullConfig = get_current_full_config(),
     set_full_config(set_config_internal(Key, Value, FullConfig), erlang:unique_integer()),
     true.
 
 
--spec set_config_internal(tuenti_config:config_key(), tuenti_config:value(), full_config()) -> full_config().
+-spec set_config_internal(config_key(), tuenti_config:value(), full_config()) -> full_config().
 set_config_internal([], Value, _) when is_map(Value) ->
     % This case is only used when setting the root node (the full config). We force the root value to
     % be a map
@@ -424,7 +424,7 @@ set_config_internal([Key | KeyRest], Value, Config) when is_map(Config) ->
     end.
 
 
--spec delete_key_internal(KeyPart :: tuenti_config:config_key(), PartialConfig :: tuenti_config:value()) -> tuenti_config:value().
+-spec delete_key_internal(KeyPart :: config_key(), PartialConfig :: tuenti_config:value()) -> tuenti_config:value().
 delete_key_internal([KeyPart], PartialConfig) when is_map(PartialConfig) ->
     maps:remove(KeyPart, PartialConfig);
 delete_key_internal([KeyPart | KeyRest], PartialConfig) ->

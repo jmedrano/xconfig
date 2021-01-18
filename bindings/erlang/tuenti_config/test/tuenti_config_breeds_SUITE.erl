@@ -19,9 +19,6 @@
 
 -define(TIMEOUT, 1000).
 
-% compatible for linux & osx
--define(TMPDIRCMD, "mktemp -d 2>/dev/null || mktemp -d -t 'mytmp'").
-
 %% MUST BE THE SAME AS DEFAULT VALUE IN .APP.SRC
 -define(DEFAULT_ROOT, defaultRoot).
 -define(DEFAULT_ROOT_BREEDS, defaultRoot_breeds).
@@ -36,6 +33,8 @@ all() ->
      get_one_breed,
      get_two_breeds,
      register_with_breeds,
+     get_breeds_binary,
+     register_with_breeds_binary,
      version_mismatch
     ].
 
@@ -54,23 +53,23 @@ init_per_testcase(version_mismatch, Conf) ->
     meck:expect(tuenti_config_ets, get_from_full_config, WaitToContinue),
     init_per_testcase(undefined, Conf);
 init_per_testcase(_TestCase, Conf) ->
-    ConfDir = store_terms(),
+    PrivDir = ?config(priv_dir, Conf),
+    store_terms(PrivDir),
     application:load(tuenti_config),
     application:set_env(tuenti_config, xconfig_enabled, false),
-    application:set_env(tuenti_config, xconfig_config_path, ConfDir),
+    application:set_env(tuenti_config, xconfig_config_path, PrivDir),
     {ok, _} = application:ensure_all_started(tuenti_config),
     tuenti_config:flush_cache(),
-    [{conf_dir, ConfDir} |Conf].
+    Conf.
 
 
 end_per_testcase(version_mismatch, Conf) ->
     ok = meck:unload(tuenti_config_ets),
     end_per_testcase(undefined, Conf);
-end_per_testcase(_, Config) ->
+end_per_testcase(_, _Config) ->
     application:stop(tuenti_config),
     application:unload(tuenti_config),
     application:unset_env(tuenti_config, xconfig_enabled),
-    remove_directory(proplists:get_value(conf_dir, Config)),
     case flush_notifications() of
         [] -> ok;
         Messages -> ct:pal("Messages still in inbox: ~p", [Messages])
@@ -111,6 +110,10 @@ get_one_breed(_Config) ->
     ?assertMatch(#{other := <<"whatever">>}, get_breeded([map], OneBreedFR)),
     ?assertMatch(#{map := #{other := <<"whatever">>}}, get_breeded([], OneBreedFR)),
     ?assertThrow({undefined_config, VeggieExpandedKey}, get_breeded([vegetable], OneBreedFR)),
+
+    % TService
+    ?assertMatch(undefined, tuenti_config:get_tservice_config(tservice_http_url, [<<"Service">>, 0, <<"Method">>], [])),
+    ?assertMatch(<<"http://service">>, tuenti_config:get_tservice_config(tservice_http_url, [<<"Service">>, 0, <<"Method">>], [{virtualEnv, tron}])),
 
     ok.
 
@@ -173,14 +176,14 @@ get_two_breeds(_Config) ->
 
 register_with_breeds(Config) ->
     Key = tuenti_config:expand_key(map),
-    ConfigDir = proplists:get_value(conf_dir, Config),
+    ConfigDir = ?config(priv_dir, Config),
     Callback = {?MODULE, update_callback, self()},
 
     % Original values
-    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}, _}, tuenti_config_srv:register_listener(Key, Callback)),
-    ?assertMatch({ok, _, {found, #{other := 1}}, _}, tuenti_config_srv:register_listener(Key, [{key_country, 'ES'}], Callback)),
-    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}, _}, tuenti_config_srv:register_listener(Key, [{key_country, 'JP'}], Callback)),
-    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}, _}, tuenti_config_srv:register_listener(Key, [{key_country, 'FR'}], Callback)),
+    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}}, tuenti_config:global_register_listener(Key, Callback)),
+    ?assertMatch({ok, _, {found, #{other := 1}}}, tuenti_config:global_register_listener(Key, [{key_country, 'ES'}], Callback)),
+    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}}, tuenti_config:global_register_listener(Key, [{key_country, 'JP'}], Callback)),
+    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}}, tuenti_config:global_register_listener(Key, [{key_country, 'FR'}], Callback)),
 
     % A change in the base that is not reflected in the breeded config does not
     % send a notification
@@ -215,6 +218,83 @@ register_with_breeds(Config) ->
     ok.
 
 
+get_breeds_binary(_Config) ->
+    % Existing breed is read
+    TwoBreedsResult1 = get_breeded([], tuenti_config:transient_raw_breeds([{<<"key_country">>, <<"ES">>}, {key_vegetable, potato}])),
+    ?assertMatch(#{map := #{other := 3, inner_country := <<"ES">>, inner_vegetable := <<"yummy_potato">>}}, TwoBreedsResult1),
+
+    % The breed is missing (atom does not exist)
+    MissingBinary = non_atom_binary(),
+    [begin
+         OneBreedFR = tuenti_config:transient_raw_breeds([{Key, Value}]),
+         ?assertMatch(#{other := <<"whatever">>}, get_breeded([map], OneBreedFR)),
+         ?assertMatch(#{map := #{other := <<"whatever">>}}, get_breeded([], OneBreedFR)),
+         VeggieExpandedKey = tuenti_config:expand_key(vegetable),
+         ?assertThrow({undefined_config, VeggieExpandedKey}, get_breeded([vegetable], OneBreedFR))
+     end || Key <- [key_country, MissingBinary], Value <- ['FR', MissingBinary], is_binary(Key) or is_binary(Value)],
+
+    % Tservice works too
+    RawBreeds = tuenti_config:transient_raw_breeds([{<<"virtualEnv">>, <<"tron">>}]),
+    ?assertMatch(<<"http://service">>, tuenti_config:get_tservice_config(tservice_http_url, [<<"Service">>, 0, <<"Method">>], RawBreeds)),
+
+    ok.
+
+
+register_with_breeds_binary(Config) ->
+    Key = tuenti_config:expand_key(map),
+    ConfigDir = ?config(priv_dir, Config),
+    Callback = {?MODULE, update_callback, self()},
+
+    MissingBinaryBreedKey = non_atom_binary(),
+    MissingBinaryBreedVal = non_atom_binary(),
+    BreedGenerator = fun(Position, Extra) ->
+                             AllBreeds = case Position of
+                                             head ->
+                                                 Extra ++ [{MissingBinaryBreedKey, MissingBinaryBreedVal}];
+                                             tail ->
+                                                 [{MissingBinaryBreedKey, MissingBinaryBreedVal}] ++ Extra;
+                                             middle ->
+                                                 [{MissingBinaryBreedKey, MissingBinaryBreedVal}] ++ Extra ++ [{non_atom_binary(), non_atom_binary()}]
+                                         end,
+                             tuenti_config:transient_raw_breeds(AllBreeds)
+                     end,
+
+    % Original values
+    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}}, tuenti_config:global_register_listener(Key, Callback)),
+    ?assertMatch({ok, _, {found, #{other := 1}}}, tuenti_config:global_register_listener(Key, BreedGenerator(tail, [{key_country, 'ES'}]), Callback)),
+    ?assertMatch({ok, _, {found, #{other := <<"whatever">>, inner_country := <<"JP">>}}}, tuenti_config:global_register_listener(Key, BreedGenerator(head, [{key_country, 'JP'}]), Callback)),
+    ?assertMatch({ok, _, {found, #{other := <<"whatever">>}}}, tuenti_config:global_register_listener(Key, BreedGenerator(middle, [{key_country, 'FR'}]), Callback)),
+
+    % One of the binaries appears
+    NewBreeds = [
+                 "key_country:",
+                 "  ES:",
+                 "    map:",
+                 "      inner_country: ES",
+                 "      other: 1",
+                 "  JP:",
+                 "    map:",
+                 "      other: 5",
+                 "  FR:",
+                 "    map:",
+                 "      other: 6",
+                 binary_to_list(MissingBinaryBreedKey)++":",
+                 "  "++binary_to_list(MissingBinaryBreedVal)++":",
+                 "    map:",
+                 "      other: 2"
+                ],
+    lines_to_config(ConfigDir, ?DEFAULT_ROOT_BREEDS, NewBreeds),
+    tuenti_config:reload(),
+
+    % ES breed overwrites the binary one with the default, so no change here
+    ?assertRecv({changed, Key, #{other := <<"whatever">>}, #{other := 6}}, ?TIMEOUT), % FR values breed overwrite binary breed's ones
+    ?assertRecv({changed, Key, #{other := <<"whatever">>, inner_country := <<"JP">>}, #{other := 2}}, ?TIMEOUT), % JP values are overwritten with the binary ones
+
+    % No other updates are left
+    ?assertNotRecvAnything(?TIMEOUT),
+    ok.
+
+
 version_mismatch(Config) ->
     process_flag(trap_exit, true),
     Worker = spawn_link(fun() -> exit(get_breeded([map], [{key_country, 'ES'}])) end),
@@ -230,7 +310,7 @@ version_mismatch(Config) ->
     % waiting to fetch the base config to merge. Let's change the
     % base just before the worker obtains it
 
-    ConfigDir = proplists:get_value(conf_dir, Config),
+    ConfigDir = ?config(priv_dir, Config),
     lines_to_config(ConfigDir, ?DEFAULT_ROOT, ["map:", "  random: 42"]),
     tuenti_config:reload(),
 
@@ -250,10 +330,10 @@ version_mismatch(Config) ->
 
     % And Worker continues and exits with the value:
     ?assertRecv({'EXIT', Worker, #{inner_country := <<"ES">>, other := 1, random := 42}}, ?TIMEOUT),
+    process_flag(trap_exit, false),
 
     % No other updates are left
     ?assertNotRecvAnything(?TIMEOUT),
-    process_flag(trap_exit, false),
     ok.
 
 
@@ -267,19 +347,17 @@ update_callback({_Op, _Key, _OldValue, _NewValue} = Change, Pid) ->
 get_breeded(Key, Breeds) ->
     tuenti_config:global_get_raw_with_breeds([?DEFAULT_ROOT] ++ Key, Breeds).
 
-store_terms() ->
-    Directory = string:strip(os:cmd(?TMPDIRCMD), both, $\n),
+store_terms(Directory) ->
     lines_to_config(Directory, ?DEFAULT_ROOT, config_terms()),
     lines_to_config(Directory, ?DEFAULT_ROOT_BREEDS, breed_terms()),
-    Directory.
+    lines_to_config(Directory, serviceConfig_breeds, service_config_breed_terms()),
+    ok.
 
 lines_to_config(Directory, Prefix, Lines) ->
     PrefixString = atom_to_list(Prefix),
     Config = PrefixString ++ ":\n" ++ lists:reverse(lists:foldl(fun(Term, Acc) -> [io_lib:fwrite("  ~s~n", [Term]) |Acc] end, [], Lines)),
     ok = file:write_file(filename:join(Directory, PrefixString ++ ".yaml"), Config).
 
-remove_directory(Directory) ->
-    os:cmd("rm -rf " ++ Directory).
 
 config_terms() ->
     [
@@ -315,6 +393,29 @@ breed_terms() ->
      "      other: 3"
     ].
 
+service_config_breed_terms() ->
+    [
+     "virtualEnv:",
+     "  tron:",
+     "    services:",
+     "      Service:",
+     "        http_location: \"http://service\""
+    ].
+
+
+non_atom_binary() ->
+    non_atom_binary(100).
+
+non_atom_binary(0) ->
+    error("Cannot generate binary");
+non_atom_binary(N) ->
+    RandomBin = list_to_binary([ ($a - 1) + rand:uniform($z - $a + 1) || _ <- lists:seq(1,8) ]),
+    try binary_to_existing_atom(RandomBin, utf8) of
+        _ -> non_atom_binary(N - 1)
+    catch _:_ -> RandomBin
+    end.
+
+
 flush_notifications() ->
     lists:reverse(flush_notifications([])).
 
@@ -322,3 +423,4 @@ flush_notifications(Acc) ->
     receive M -> flush_notifications([M | Acc])
     after 0 -> Acc
     end.
+

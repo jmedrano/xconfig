@@ -13,6 +13,8 @@
 %%% API
 -export([
          expand_key/1,
+         transient_raw_config_key/1,
+         transient_raw_breeds/1,
 
          get_raw/1,
          get_raw/2,
@@ -53,9 +55,13 @@
 %% Listener API
 -export([
          register_listener/2,
+         register_listener/3,
          global_register_listener/2,
+         global_register_listener/3,
          register_listener_monitor/2,
+         register_listener_monitor/3,
          global_register_listener_monitor/2,
+         global_register_listener_monitor/3,
          unregister_listener/1,
          monitor/0
         ]).
@@ -104,10 +110,17 @@
 %%% Types
 %%% ===========================================================================
 
--type config_key() :: [atom()].
+-type key_element() :: atom().
+-type config_key(KeyElem) :: [KeyElem].
+-type config_key() :: config_key(key_element()).
+-type raw_config_key() :: config_key(key_element() | binary() | list()).
+-opaque transient_raw_config_key() :: {check_existence, raw_config_key()}.
+-type breed(KeyElem) :: {BreedKey :: KeyElem, BreedValue :: KeyElem}.
+-type breed() :: breed(key_element()).
+-type raw_breed() :: breed(key_element() | binary() | list()).
+-opaque transient_raw_breeds() :: {check_existence, [raw_breed()]}.
 -type simple_value() :: binary() | number() | boolean() | null.
 -type value() :: simple_value() | [value()] | #{atom() := value()}.
--type breed(KeyElem) :: {BreedKey :: KeyElem, BreedValue :: KeyElem}.
 
 -type config_change() :: {changed, Key :: config_key(), OldValue :: value(),   NewValue :: value()}
                        | {deleted, Key :: config_key(), OldValue :: value(),   NewValue :: undefined}
@@ -118,13 +131,19 @@
 -type optional_result() :: tuenti_config_ets:result(value()).
 
 -export_type([
+              config_key/1,
               config_key/0,
+              raw_config_key/0,
+              transient_raw_config_key/0,
               simple_value/0,
               value/0,
               config_change/0,
               listener_mfa/0,
               optional_result/0,
-              breed/1
+              breed/1,
+              breed/0,
+              raw_breed/0,
+              transient_raw_breeds/0
              ]).
 
 
@@ -156,34 +175,48 @@ stop() ->
 %%% ===========================================================================
 
 %% @doc Converts a local key to a global one (adds the default root)
--spec expand_key(Key :: atom() | config_key()) -> config_key().
+-spec expand_key(Key :: key_element() | config_key()) -> config_key();
+                (RawKey :: transient_raw_config_key()) -> transient_raw_config_key().
 expand_key(Key) when is_atom(Key) ->
     {ok, Prefix} = application:get_env(tuenti_config, default_root),
     [Prefix, Key];
 
 expand_key(Key) when is_list(Key) ->
     {ok, Prefix} = application:get_env(tuenti_config, default_root),
-    [Prefix] ++ Key.
+    [Prefix | Key];
+
+expand_key({check_existence, Key}) ->
+    {check_existence, expand_key(Key)}.
+
+
+%% @doc Obtains an opaque raw key to use in the rest of the functions, only
+%% needed for keys with binary elements.
+-spec transient_raw_config_key(raw_config_key()) -> transient_raw_config_key().
+transient_raw_config_key(RawKey) ->
+    {check_existence, RawKey}.
+-spec transient_raw_breeds([raw_breed()]) -> transient_raw_breeds().
+transient_raw_breeds(RawBreeds) ->
+    {check_existence, RawBreeds}.
 
 
 %% @doc Gets a value from the local configuration without any type conversion
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
--spec get_raw(Key :: atom() | config_key()) -> value().
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
+-spec get_raw(Key :: key_element() | config_key() | transient_raw_config_key()) -> value().
 get_raw(Key) ->
     global_get_raw(expand_key(Key)).
 
 
 %% @doc Gets a value from the local configuration without any type conversion.
 %% A default value can be specified.
--spec get_raw(Key :: atom() | config_key(), Default :: any()) -> any().
+-spec get_raw(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: any()) -> any().
 get_raw(Key, Default) ->
     global_get_raw(expand_key(Key), Default).
 
 
 %% @doc Gets a value from the local configuration as an integer (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_integer(Key :: atom() | config_key()) -> integer().
+-spec get_integer(Key :: key_element() | config_key() | transient_raw_config_key()) -> integer().
 get_integer(Key) ->
     global_get_integer(expand_key(Key)).
 
@@ -191,16 +224,16 @@ get_integer(Key) ->
 %% @doc Gets a value from the local configuration as an integer (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_integer(Key :: atom() | config_key(), Default :: integer()) -> integer();
-                 (Key :: atom() | config_key(), undefined) -> integer() | undefined.
+-spec get_integer(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: integer()) -> integer();
+                 (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> integer() | undefined.
 get_integer(Key, Default) when Default =:= undefined orelse is_integer(Default) ->
     global_get_integer(expand_key(Key), Default).
 
 
 %% @doc Gets a value from the local configuration as a float (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_float(Key :: atom() | config_key()) -> float().
+-spec get_float(Key :: key_element() | config_key() | transient_raw_config_key()) -> float().
 get_float(Key) ->
     global_get_float(expand_key(Key)).
 
@@ -208,16 +241,16 @@ get_float(Key) ->
 %% @doc Gets a value from the local configuration as a float (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_float(Key :: atom() | config_key(), Default :: number()) -> float();
-               (Key :: atom() | config_key(), undefined) -> float() | undefined.
+-spec get_float(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: number()) -> float();
+               (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> float() | undefined.
 get_float(Key, Default) when Default =:= undefined orelse is_number(Default) ->
     global_get_float(expand_key(Key), Default).
 
 
 %% @doc Gets a value from the local configuration as a string (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_string(Key :: atom() | config_key()) -> string().
+-spec get_string(Key :: key_element() | config_key() | transient_raw_config_key()) -> string().
 get_string(Key) ->
     global_get_string(expand_key(Key)).
 
@@ -225,16 +258,16 @@ get_string(Key) ->
 %% @doc Gets a value from the local configuration as a string (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_string(Key :: atom() | config_key(), Default :: string()) -> string();
-                (Key :: atom() | config_key(), undefined) -> string() | undefined.
+-spec get_string(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: string()) -> string();
+                (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> string() | undefined.
 get_string(Key, Default) when is_list(Default) orelse Default == undefined ->
     global_get_string(expand_key(Key), Default).
 
 
 %% @doc Gets a value from the local configuration as a binary (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_binary(Key :: atom() | config_key()) -> binary().
+-spec get_binary(Key :: key_element() | config_key() | transient_raw_config_key()) -> binary().
 get_binary(Key) ->
     global_get_binary(expand_key(Key)).
 
@@ -242,16 +275,16 @@ get_binary(Key) ->
 %% @doc Gets a value from the local configuration as a binary (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_binary(Key :: atom() | config_key(), Default :: binary()) -> binary();
-                (Key :: atom() | config_key(), undefined) -> binary() | undefined.
+-spec get_binary(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: binary()) -> binary();
+                (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> binary() | undefined.
 get_binary(Key, Default) when is_binary(Default) orelse Default == undefined ->
     global_get_binary(expand_key(Key), Default).
 
 
 %% @doc Gets a value from the local configuration as a boolean (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_bool(Key :: atom() | config_key()) -> boolean().
+-spec get_bool(Key :: key_element() | config_key() | transient_raw_config_key()) -> boolean().
 get_bool(Key) ->
     global_get_bool(expand_key(Key)).
 
@@ -259,8 +292,8 @@ get_bool(Key) ->
 %% @doc Gets a value from the local configuration as a boolean (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_bool(Key :: atom() | config_key(), Default :: boolean()) -> boolean();
-              (Key :: atom() | config_key(), undefined) -> boolean() | undefined.
+-spec get_bool(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: boolean()) -> boolean();
+              (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> boolean() | undefined.
 get_bool(Key, Default) when is_boolean(Default) orelse Default == undefined ->
     global_get_bool(expand_key(Key), Default).
 
@@ -268,15 +301,15 @@ get_bool(Key, Default) when is_boolean(Default) orelse Default == undefined ->
 %% @doc Gets a value from the local configuration as an MFA tuple (if the conversion is possible)
 %% WARNING: Due to YAML limitations the Args element only can contain lists and binaries. No atoms.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_mfa(Key :: atom() | config_key()) -> {atom(), atom(), [value]} | undefined.
+-spec get_mfa(Key :: key_element() | config_key() | transient_raw_config_key()) -> {atom(), atom(), [value]} | undefined.
 get_mfa(Key) ->
     global_get_mfa(expand_key(Key)).
 
 
 %% @doc Gets a map from the local configuration.
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_map(Key :: atom() | config_key()) -> #{atom() := value()}.
+-spec get_map(Key :: key_element() | config_key() | transient_raw_config_key()) -> #{atom() := value()}.
 get_map(Key) ->
     global_get_map(expand_key(Key)).
 
@@ -284,15 +317,15 @@ get_map(Key) ->
 %% @doc Gets a map from the local configuration.
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec get_map(Key :: atom() | config_key(), Default :: map()) -> map();
-             (Key :: atom() | config_key(), undefined) -> map() | undefined.
+-spec get_map(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: map()) -> map();
+             (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> map() | undefined.
 get_map(Key, Default) when is_map(Default) orelse Default == undefined ->
     global_get_map(expand_key(Key), Default).
 
 
 %% @doc Gets a value from the global configuration without any type conversion
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
--spec global_get_raw(Key :: atom() | config_key()) -> value().
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
+-spec global_get_raw(Key :: key_element() | config_key() | transient_raw_config_key()) -> value().
 global_get_raw(Key) ->
     Key2 = to_config_key(Key),
     get_found_value(Key2, tuenti_config_ets:get_raw(Key2)).
@@ -300,154 +333,160 @@ global_get_raw(Key) ->
 
 %% @doc Gets a value from the global configuration without any type conversion
 %% A default value can be specified
--spec global_get_raw(Key :: atom() | config_key(), Default :: any()) -> any().
+-spec global_get_raw(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: any()) -> any().
 global_get_raw(Key, Default) ->
-    Key2 = to_config_key(Key),
-    get_found_value(Key2, tuenti_config_ets:get_raw(Key2, Default)).
+    try to_config_key(Key) of
+        Key2 ->
+            get_found_value(Key2, tuenti_config_ets:get_raw(Key2, Default))
+    catch
+        throw:{undefined_config, _} -> Default
+    end.
 
 
-%% @doc Gets a value from the global configuration without any type conversion,
-%% using breeds
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
--spec global_get_raw_with_breeds(Key :: atom() | config_key(), [breed(atom())]) -> value().
+%% @doc Gets a value from the global configuration without any type conversion, using breeds
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
+-spec global_get_raw_with_breeds(Key :: key_element() | config_key() | transient_raw_config_key(), [breed()] | transient_raw_breeds()) -> value().
 global_get_raw_with_breeds(Key, Breeds) ->
     Key2 = to_config_key(Key),
-    get_found_value(Key2, tuenti_config_ets:get_raw_with_breeds(Key2, Breeds)).
+    Breeds2 = to_config_breeds(Breeds),
+    get_found_value(Key2, tuenti_config_ets:get_raw_with_breeds(Key2, Breeds2)).
 
 
 %% @doc Gets a value from the global configuration without any type conversion,
 %% using breeds. A default value can be specified
--spec global_get_raw_with_breeds(Key :: atom() | config_key(), [breed(atom())], Default :: any()) -> any().
+-spec global_get_raw_with_breeds(Key :: key_element() | config_key() | transient_raw_config_key(), [breed()] | transient_raw_breeds(), Default :: any()) -> any().
 global_get_raw_with_breeds(Key, Breeds, Default) ->
-    Key2 = to_config_key(Key),
-    get_found_value(Key2, tuenti_config_ets:get_raw_with_breeds(Key2, Breeds, Default)).
+    try {to_config_key(Key), to_config_breeds(Breeds)} of
+        {Key2, Breeds2} ->
+            get_found_value(Key2, tuenti_config_ets:get_raw_with_breeds(Key2, Breeds2, Default))
+    catch
+        throw:{undefined_config, _} -> Default
+    end.
 
 
 %% @doc Gets a value from the global configuration as an integer (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_integer(Key :: atom() | config_key()) -> integer().
+-spec global_get_integer(Key :: key_element() | config_key() | transient_raw_config_key()) -> integer().
 global_get_integer(Key) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, integer, tuenti_config_ets:get_config_simple_value(Key2), false).
+    convert_simple_value(Key, integer).
 
 
 %% @doc Gets a value from the global configuration as an integer (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_integer(Key :: atom() | config_key(), Default :: integer()) -> integer();
-                        (Key :: atom() | config_key(), undefined) -> integer() | undefined.
+-spec global_get_integer(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: integer()) -> integer();
+                        (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> integer() | undefined.
 global_get_integer(Key, Default) when Default =:= undefined orelse is_integer(Default) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, integer, tuenti_config_ets:get_config_simple_value(Key2, Default), true).
+    convert_simple_value(Key, integer, Default).
 
 
 %% @doc Gets a value from the global configuration as a float (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_float(Key :: atom() | config_key()) -> float().
+-spec global_get_float(Key :: key_element() | config_key() | transient_raw_config_key()) -> float().
 global_get_float(Key) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, float, tuenti_config_ets:get_config_simple_value(Key2), false).
+    convert_simple_value(Key, float).
 
 
 %% @doc Gets a value from the global configuration as a float (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_float(Key :: atom() | config_key(), Default :: number()) -> float();
-                      (Key :: atom() | config_key(), undefined) -> float() | undefined.
+-spec global_get_float(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: number()) -> float();
+                      (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> float() | undefined.
 global_get_float(Key, Default) when Default =:= undefined orelse is_number(Default) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, float, tuenti_config_ets:get_config_simple_value(Key2, Default), true).
+    convert_simple_value(Key, float, Default).
 
 
 %% @doc Gets a value from the global configuration as a string (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_string(Key :: atom() | config_key()) -> string().
+-spec global_get_string(Key :: key_element() | config_key() | transient_raw_config_key()) -> string().
 global_get_string(Key) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, string, tuenti_config_ets:get_config_simple_value(Key2), false).
+    convert_simple_value(Key, string).
 
 
 %% @doc Gets a value from the global configuration as a string (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_string(Key :: atom() | config_key(), Default :: string()) -> string();
-                       (Key :: atom() | config_key(), undefined) -> string() | undefined.
+-spec global_get_string(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: string()) -> string();
+                       (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> string() | undefined.
 global_get_string(Key, Default) when is_list(Default) orelse Default == undefined ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, string, tuenti_config_ets:get_config_simple_value(Key2, Default), true).
+    convert_simple_value(Key, string, Default).
 
 
 %% @doc Gets a value from the global configuration as a binary (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_binary(Key :: atom() | config_key()) -> binary().
+-spec global_get_binary(Key :: key_element() | config_key() | transient_raw_config_key()) -> binary().
 global_get_binary(Key) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, binary, tuenti_config_ets:get_config_simple_value(Key2), false).
+    convert_simple_value(Key, binary).
 
 
 %% @doc Gets a value from the global configuration as a binary (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_binary(Key :: atom() | config_key(), Default :: binary()) -> binary();
-                       (Key :: atom() | config_key(), undefined) -> binary() | undefined.
+-spec global_get_binary(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: binary()) -> binary();
+                       (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> binary() | undefined.
 global_get_binary(Key, Default) when is_binary(Default) orelse Default == undefined ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, binary, tuenti_config_ets:get_config_simple_value(Key2, Default), true).
+    convert_simple_value(Key, binary, Default).
 
 
 %% @doc Gets a value from the global configuration as a boolean (if the conversion is possible)
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_bool(Key :: atom() | config_key()) -> boolean().
+-spec global_get_bool(Key :: key_element() | config_key() | transient_raw_config_key()) -> boolean().
 global_get_bool(Key) ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, boolean, tuenti_config_ets:get_config_simple_value(Key2), false).
+    convert_simple_value(Key, boolean).
 
 
 %% @doc Gets a value from the global configuration as a boolean (if the conversion is possible)
 %% A default value can be specified
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_bool(Key :: atom() | config_key(), Default :: boolean()) -> boolean();
-                     (Key :: atom() | config_key(), undefined) -> boolean() | undefined.
+-spec global_get_bool(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: boolean()) -> boolean();
+                     (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> boolean() | undefined.
 global_get_bool(Key, Default) when is_boolean(Default) orelse Default == undefined ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, boolean, tuenti_config_ets:get_config_simple_value(Key2, Default), true).
+    convert_simple_value(Key, boolean, Default).
 
 
 %% @doc Gets a value from the global configuration as an MFA tuple (if the conversion is possible)
 %% WARNING: Due to YAML limitations the Args element only can contain tuenti_config:value() values.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_mfa(Key :: atom() | config_key()) -> {atom(), atom(), [tuenti_config:value()]} | undefined.
+-spec global_get_mfa(Key :: key_element() | config_key() | transient_raw_config_key()) -> {atom(), atom(), [tuenti_config:value()]} | undefined.
 global_get_mfa(Key) ->
-    Key2 = to_config_key(Key),
-    case tuenti_config_ets:get_raw(Key2) of
-        {found, [Module, Function, Args]} when is_list(Args) ->
-            {value_to_type(Key2, atom, Module, true), value_to_type(Key2, atom, Function, true), Args};
-        _ ->
-            undefined
+    try to_config_key(Key) of
+        Key2 ->
+            case tuenti_config_ets:get_raw(Key2) of
+                {found, [Module, Function, Args]} when is_list(Args) ->
+                    {value_to_type(Key2, atom, Module, true), value_to_type(Key2, atom, Function, true), Args};
+                _ ->
+                    undefined
+            end
+    catch
+        throw:{undefined_config, _} -> undefined
     end.
 
 
 %% @doc Get a map from the global configuration.
-%% @throws throw:{undefined_config, Key :: config_key()} when requesting an unknown configuration key.
+%% @throws throw:{undefined_config, Key :: config_key() | raw_config_key()} when requesting an unknown configuration key.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_map(Key :: atom() | config_key()) -> #{atom() := tuenti_config:value()}.
+-spec global_get_map(Key :: key_element() | config_key() | transient_raw_config_key()) -> #{atom() := tuenti_config:value()}.
 global_get_map(Key) ->
     Key2 = to_config_key(Key),
-    convert_value(Key2, map, tuenti_config_ets:get_raw(Key2), false).
+    value_to_type(Key2, map, get_found_value(Key2, tuenti_config_ets:get_raw(Key2)), false).
 
 
 %% @doc Get a map from the global configuration.
 %% @throws error:{invalid_config_type_conversion, {Key :: config_key(), Type :: atom(), Value :: value()}}.
--spec global_get_map(Key :: atom() | config_key(), Default :: map()) -> map();
-                    (Key :: atom() | config_key(), undefined) -> map() | undefined.
+-spec global_get_map(Key :: key_element() | config_key() | transient_raw_config_key(), Default :: map()) -> map();
+                    (Key :: key_element() | config_key() | transient_raw_config_key(), undefined) -> map() | undefined.
 global_get_map(Key, Default) when is_map(Default) orelse Default == undefined ->
-    Key2 = to_config_key(Key),
-    convert_value(Key2, map, tuenti_config_ets:get_raw(Key2, Default), true).
+    try to_config_key(Key) of
+        Key2 ->
+            value_to_type(Key2, map, get_found_value(Key2, tuenti_config_ets:get_raw(Key2, Default)), true)
+    catch
+        throw:{undefined_config, _} -> Default
+    end.
 
 
 %%% ===========================================================================
@@ -467,18 +506,28 @@ global_get_map(Key, Default) when is_map(Default) orelse Default == undefined ->
 %% Module:Function(Change :: tuenti_config:config_change(), ExtraArgs :: term()).
 %%
 %% Note that the Key parameter will be a full global one
--spec register_listener(Key :: atom() | config_key(), ListenerMFA :: listener_mfa())
+-spec register_listener(Key :: key_element() | config_key() | raw_config_key(), ListenerMFA :: listener_mfa())
         -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result()}.
 register_listener(Key, ListenerMFA) ->
     global_register_listener(expand_key(Key), ListenerMFA).
 
+-spec register_listener(Key :: key_element() | config_key() | raw_config_key(), Breeds :: [breed() | raw_breed()], ListenerMFA :: listener_mfa())
+        -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result()}.
+register_listener(Key, Breeds, ListenerMFA) ->
+    global_register_listener(expand_key(Key), Breeds, ListenerMFA).
+
 
 %% @doc This is the same as register_listener but using a global key
 %% @see register_listener
--spec global_register_listener(Key :: atom() | config_key(), ListenerMFA :: listener_mfa())
+-spec global_register_listener(Key :: key_element() | config_key() | transient_raw_config_key(), ListenerMFA :: listener_mfa())
         -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result()}.
 global_register_listener(Key, ListenerMFA) ->
-    {ok, ListenerRef, CurrentValue, _} = tuenti_config_srv:register_listener(to_config_key(Key), ListenerMFA),
+    global_register_listener(Key, [], ListenerMFA).
+
+-spec global_register_listener(Key :: key_element() | config_key() | transient_raw_config_key(), Breeds :: [breed()] | transient_raw_breeds(), ListenerMFA :: listener_mfa())
+        -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result()}.
+global_register_listener(Key, Breeds, ListenerMFA) ->
+    {ok, ListenerRef, CurrentValue, _} = tuenti_config_srv:register_listener(listener_extract_opaque(Key), listener_extract_opaque(Breeds), ListenerMFA),
     {ok, ListenerRef, CurrentValue}.
 
 
@@ -487,13 +536,21 @@ global_register_listener(Key, ListenerMFA) ->
 register_listener_monitor(Key, ListenerMFA) ->
     global_register_listener_monitor(expand_key(Key), ListenerMFA).
 
+register_listener_monitor(Key, Breeds, ListenerMFA) ->
+    global_register_listener_monitor(expand_key(Key), Breeds, ListenerMFA).
+
 
 %% @doc This is the same as register_listener_monitor but using a global key
 %% @see register_listener_monitor
--spec global_register_listener_monitor(Key :: atom() | config_key(), ListenerMFA :: listener_mfa())
+-spec global_register_listener_monitor(Key :: key_element() | config_key() | transient_raw_config_key(), ListenerMFA :: listener_mfa())
         -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result(), MonitorRef :: reference()}.
 global_register_listener_monitor(Key, ListenerMFA) ->
-    {ok, ListenerRef, CurrentValue, SrvPid} = tuenti_config_srv:register_listener(to_config_key(Key), ListenerMFA),
+    global_register_listener_monitor(Key, [], ListenerMFA).
+
+-spec global_register_listener_monitor(Key :: key_element() | config_key() | transient_raw_config_key(), Breeds :: [breed()] | transient_raw_config_key(), ListenerMFA :: listener_mfa())
+        -> {ok, ListenerRef :: reference(), CurrentValue :: tuenti_config:optional_result(), MonitorRef :: reference()}.
+global_register_listener_monitor(Key, Breeds, ListenerMFA) ->
+    {ok, ListenerRef, CurrentValue, SrvPid} = tuenti_config_srv:register_listener(listener_extract_opaque(Key), listener_extract_opaque(Breeds), ListenerMFA),
     MonitorRef = monitor(process, SrvPid),
     {ok, ListenerRef, CurrentValue, MonitorRef}.
 
@@ -610,11 +667,11 @@ set_feature_percent(Feature, Percent, Rotate, Seed) when is_atom(Feature),
 %%% TService API
 %%% ===========================================================================
 
--spec get_tservice_config(Key :: atom() | list(atom()), list(term())) -> term().
+-spec get_tservice_config(Key :: key_element() | config_key(), list(term())) -> term().
 get_tservice_config(Key, Params) ->
     get_tservice_config(Key, Params, []).
 
--spec get_tservice_config(Key :: atom() | list(atom()), list(term()), [breed(atom())]) -> term().
+-spec get_tservice_config(Key :: key_element() | config_key(), list(term()), [breed()] | transient_raw_breeds()) -> term().
 get_tservice_config(tservice_urls, [Service], Breeds) when is_binary(Service) ->
     % This configuration key is deprecated
     BinUrls = get_tservice_value_overrides([[serviceConfig, services, Service, service_location]], raw, Breeds, []),
@@ -707,7 +764,7 @@ flush_cache() ->
 %% @doc Delete a key and all its children from the configuration
 %% DEBUG/TEST USE ONLY. Race conditions with background updates may happen
 %% This will trigger listener callbacks synchronously. Don't call this in a listener callback
--spec delete_key(Key :: atom() | config_key()) -> ok.
+-spec delete_key(Key :: key_element() | config_key() | transient_raw_config_key()) -> ok.
 delete_key(Key) ->
     global_delete_key(expand_key(Key)).
 
@@ -723,15 +780,20 @@ delete_all() ->
 %% @doc Delete a global key from the configuration
 %% DEBUG/TEST USE ONLY. Race conditions with background updates may happen
 %% This will trigger listener callbacks synchronously. Don't call this in a listener callback
--spec global_delete_key(Key :: atom() | config_key()) -> ok.
+-spec global_delete_key(Key :: key_element() | config_key() | transient_raw_config_key()) -> ok.
 global_delete_key(Key) ->
-    tuenti_config_srv:delete_key(to_config_key(Key)).
+    try to_config_key(Key) of
+        Key2 ->
+            tuenti_config_srv:delete_key(Key2)
+    catch
+        throw:{undefined_config, _} -> ok
+    end.
 
 
 %% @doc Sets the configuration value for the specified key.
 %% DEBUG/TEST USE ONLY. Race conditions with background updates may happen
 %% This will trigger listener callbacks synchronously. Don't call this in a listener callback
--spec set(Key :: atom() | config_key(), Value :: value()) -> ok.
+-spec set(Key :: key_element() | config_key(), Value :: value()) -> ok.
 set(Key, Value) ->
   global_set(expand_key(Key), Value).
 
@@ -739,7 +801,7 @@ set(Key, Value) ->
 %% @doc Sets the configuration value for the specified key.
 %% DEBUG/TEST USE ONLY. Race conditions with background updates may happen
 %% This will trigger listener callbacks synchronously. Don't call this in a listener callback
--spec global_set(Key :: atom() | config_key(), Value :: value()) -> ok.
+-spec global_set(Key :: key_element() | config_key(), Value :: value()) -> ok. % no raw config key allowed here
 global_set(Key, Value) ->
   tuenti_config_srv:set(to_config_key(Key), Value).
 
@@ -760,23 +822,60 @@ reload() ->
 %%% Internal Functions
 %%% ===========================================================================
 
--spec to_config_key(atom() | list()) -> config_key().
+-spec to_config_key(key_element() | config_key() | transient_raw_config_key()) -> config_key().
 to_config_key(Atom) when is_atom(Atom) ->
     [Atom];
 to_config_key(List) when is_list(List) ->
-    List.
+    List;
+to_config_key({check_existence, RawKey}) ->
+    case atomize_config_path(RawKey) of
+        undefined -> throw({undefined_config, RawKey});
+        AtomKey -> AtomKey
+    end.
+
+
+-spec to_config_breeds([breed()] | transient_raw_breeds()) -> [breed()].
+to_config_breeds(List) when is_list(List) ->
+    List;
+to_config_breeds({check_existence, RawBreeds}) ->
+    lists:filtermap(fun({BreedKey, BreedVal}) ->
+                            {BreedKeyIsAtom, BreedKeyAtom} = tuenti_config_srv:config_element_to_atom(BreedKey),
+                            {BreedValIsAtom, BreedValAtom} = tuenti_config_srv:config_element_to_atom(BreedVal),
+                            if not (BreedValIsAtom and BreedKeyIsAtom) -> false;
+                               true -> {true, {BreedKeyAtom, BreedValAtom}}
+                            end
+                    end, RawBreeds).
+
+
+%% @doc Extracts the raw config_key or breeds (it may include binaries that may
+%% be atoms in the future), returning whether or not to expect them
+-spec listener_extract_opaque({check_existence, Raw}) -> {true, Raw} when Raw :: raw_config_key() | raw_breed();
+                             (config_key() | key_element() | [breed()]) -> {false, config_key() | [breed()]}.
+listener_extract_opaque(Atom) when is_atom(Atom) -> {false, [Atom]};
+listener_extract_opaque(List) when is_list(List) -> {false, List};
+listener_extract_opaque({check_existence, Raw}) -> {true, Raw}.
+
 
 %% @doc Tries to get the value from a tuenti_config_ets:result(). If it's not possible an exception is raised
 %% @throws throw:{undefined_config, Key :: config_key()}
--spec get_found_value(Key :: config_key(), tuenti_config_ets:result(term())) -> term().
+-spec get_found_value(Key :: config_key(), tuenti_config_ets:result(Value :: term())) -> Value :: term().
 get_found_value(Key, not_found) ->
     throw({undefined_config, Key});
 get_found_value(_, {found, Value}) ->
     Value.
 
 
-convert_value(Key, Type, FoundValue, IsUndefinedValid) ->
-    value_to_type(Key, Type, get_found_value(Key, FoundValue), IsUndefinedValid).
+convert_simple_value(Key, Type, Default) ->
+    try to_config_key(Key) of
+        Key2 ->
+            value_to_type(Key2, Type, get_found_value(Key2, tuenti_config_ets:get_config_simple_value(Key2, Default)), true)
+    catch
+        throw:{undefined_config, _} -> Default
+    end.
+
+convert_simple_value(Key, Type) ->
+    Key2 = to_config_key(Key),
+    value_to_type(Key2, Type, get_found_value(Key2, tuenti_config_ets:get_config_simple_value(Key2)), false).
 
 
 -spec error_type_conversion(config_key(), atom(), tuenti_config:value()) -> no_return().
@@ -862,33 +961,17 @@ value_to_type(Key, Type, V, _) ->
 
 
 %% @doc
-%% Try to convert something into an existing atom. It doesn't throw exceptions
--spec safe_binary_to_existing_atom(binary() | iolist() | atom()) -> {ok, atom()} | undefined.
-safe_binary_to_existing_atom(Binary) when is_binary(Binary) ->
-    try
-        Atom = binary_to_existing_atom(Binary, latin1),
-        {ok, Atom}
-    catch
-        error:badarg -> undefined
-    end;
-safe_binary_to_existing_atom(IoList) when is_list(IoList) ->
-    safe_binary_to_existing_atom(iolist_to_binary(IoList));
-safe_binary_to_existing_atom(Atom) when is_atom(Atom) ->
-    {ok, Atom}.
-
-
-%% @doc
 %% Converts all elements in a list to already existing atoms. If it's not possible it will
 %% return undefined
--spec atomize_config_path(list(binary() | atom() | iolist())) -> list(atom()) | undefined.
+-spec atomize_config_path([binary() | atom() | iolist()]) -> config_key() | undefined.
 atomize_config_path(Path) ->
     atomize_config_path(Path, []).
 
 atomize_config_path([], Acc) ->
     lists:reverse(Acc);
 atomize_config_path([Elem | Rest], Acc) ->
-    case safe_binary_to_existing_atom(Elem) of
-        {ok, Atom} ->
+    case tuenti_config_srv:config_element_to_atom(Elem) of
+        {true, Atom} ->
             atomize_config_path(Rest, [Atom | Acc]);
         _ ->
             undefined
@@ -901,22 +984,18 @@ atomize_config_path([Elem | Rest], Acc) ->
 -spec get_tservice_value_overrides(
         ConfigPaths :: list(list(binary() | atom() | iolist())),
         GetType :: raw | binary | float | integer,
-        Breeds :: [breed(atom())],
+        Breeds :: [breed()] | transient_raw_breeds(),
         DefaultValue :: term()) -> term().
 get_tservice_value_overrides([], _GetType, _Breeds, DefaultValue) ->
     DefaultValue;
 get_tservice_value_overrides([Path | Rest], GetType, Breeds, DefaultValue) ->
-    case atomize_config_path(Path) of
-        undefined ->
-            get_tservice_value_overrides(Rest, GetType, Breeds, DefaultValue);
-        AtomPath ->
-            try
-                Key = to_config_key(AtomPath),
-                convert_value(Key, GetType, tuenti_config_ets:get_raw_with_breeds(Key, Breeds), false)
-            catch
-                error:{undefined_config, _} ->
-                    get_tservice_value_overrides(Rest, GetType, Breeds, DefaultValue)
-            end
+    try
+        Key = to_config_key(transient_raw_config_key(Path)),
+        Breeds2 = to_config_breeds(Breeds),
+        value_to_type(Key, GetType, get_found_value(Key, tuenti_config_ets:get_raw_with_breeds(Key, Breeds2)), false)
+    catch
+        throw:{undefined_config, _} ->
+            get_tservice_value_overrides(Rest, GetType, Breeds, DefaultValue)
     end.
 
 
@@ -936,7 +1015,7 @@ get_tservice_value_overrides([Path | Rest], GetType, Breeds, DefaultValue) ->
         ValueNameAtom :: atom(),
         SkipServiceGlobalConfig :: boolean(),
         GetType :: raw | binary | float | integer,
-        Breeds :: [breed(atom())],
+        Breeds :: [breed()] | transient_raw_breeds(),
         DefaultValue :: term()) -> term().
 get_service_cache_value(Interface, ServiceVersion, CacheName, ValueNameAtom, SkipServiceGlobalConfig, GetType, Breeds, DefaultValue) ->
     BinServiceVersion = integer_to_binary(ServiceVersion),
