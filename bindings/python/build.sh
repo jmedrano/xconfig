@@ -14,3 +14,10 @@ python3 setup.py sdist bdist_wheel
 #apt update
 #apt install python3.8
 #python3.8 setup.py sdist bdist_wheel
+
+# Instructions to get a wheel for pypy3
+# apt-get -y install pypy3-dev
+# pypy3 -m venv venv
+# source venv/bin/activate
+# pip install --upgrade setuptools wheel twine pip
+# python setup.py sdist bdist_wheel
