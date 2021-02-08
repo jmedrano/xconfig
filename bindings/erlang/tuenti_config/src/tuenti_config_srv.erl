@@ -34,7 +34,7 @@
 -type ets_listener_key() :: {tuenti_config:config_key(), [tuenti_config:breed()]}.
 -type raw_listener_key() :: {tuenti_config:raw_config_key(), [tuenti_config:raw_breed()]}.
 -record(listener_data, {
-          effective_key = [] :: [tuenti_config:config_key() | tuenti_config:raw_config_key()],
+          effective_key = [] :: tuenti_config:config_key() | tuenti_config:raw_config_key(),
           effective_breeds = [] :: [tuenti_config:breed() | tuenti_config:raw_breed()],
           value = not_found :: tuenti_config_ets:result(tuenti_config:value()),
           targets :: #{listener_mfa() := reference()},
