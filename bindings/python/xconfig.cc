@@ -40,21 +40,37 @@ static PyObject* getValue(const XConfigNode node) {
             return Py_BuildValue("s", node.getString().c_str());
         case xconfig::TYPE_SEQUENCE: {
             PyObject *list = PyList_New(0);
+            if (list == NULL) return NULL;
             std::vector<XConfigNode> children = node.getChildren();
             for (XConfigNode child : node.getChildren()) {
                 PyObject* childValue = getValue(child);
-                PyList_Append(list, childValue);
-                Py_DECREF(childValue);
+                int res = -1;
+                if (childValue != NULL) {
+                    res = PyList_Append(list, childValue);
+                    Py_DECREF(childValue);
+                }
+                if (res != 0) {
+                    Py_DECREF(list);
+                    return NULL;
+                }
             }
             return list;
         }
         case xconfig::TYPE_MAP: {
             PyObject *dict = PyDict_New();
+            if (dict == NULL) return NULL;
             std::vector<XConfigNode> children = node.getChildren();
             for (XConfigNode child : node.getChildren()) {
                 PyObject* childValue = getValue(child);
-                PyDict_SetItemString(dict, child.getName().c_str(), childValue);
-                Py_DECREF(childValue);
+                int res = -1;
+                if (childValue != NULL) {
+                    res = PyDict_SetItemString(dict, child.getName().c_str(), childValue);
+                    Py_DECREF(childValue);
+                }
+                if (res != 0) {
+                    Py_DECREF(dict);
+                    return NULL;
+                }
             }
             return dict;
         }
