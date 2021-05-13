@@ -26,7 +26,7 @@ struct XConfigObject {
  * @param node the node
  * @return the parsed value
  */
-static PyObject* getValue(const XConfigNode node) {
+static PyObject* getValue(XConfigObject *self, const XConfigNode node) {
     switch (node.getType()) {
         case xconfig::TYPE_NULL:
             return Py_BuildValue("z", NULL);
@@ -43,7 +43,7 @@ static PyObject* getValue(const XConfigNode node) {
             if (list == NULL) return NULL;
             std::vector<XConfigNode> children = node.getChildren();
             for (XConfigNode child : node.getChildren()) {
-                PyObject* childValue = getValue(child);
+                PyObject* childValue = getValue(self, child);
                 int res = -1;
                 if (childValue != NULL) {
                     res = PyList_Append(list, childValue);
@@ -61,7 +61,7 @@ static PyObject* getValue(const XConfigNode node) {
             if (dict == NULL) return NULL;
             std::vector<XConfigNode> children = node.getChildren();
             for (XConfigNode child : node.getChildren()) {
-                PyObject* childValue = getValue(child);
+                PyObject* childValue = getValue(self, child);
                 int res = -1;
                 if (childValue != NULL) {
                     res = PyDict_SetItemString(dict, child.getName().c_str(), childValue);
@@ -75,7 +75,8 @@ static PyObject* getValue(const XConfigNode node) {
             return dict;
         }
         default:
-            PyErr_SetString(XConfigWrongTypeException, "Unsupported type for node");
+            string s = "Unsupported type for node: " + self->xc->getKey(node);
+            PyErr_SetString(XConfigWrongTypeException, s.c_str());
             return NULL;
     }
 }
@@ -171,7 +172,7 @@ static void XConfig_dealloc(XConfigObject* self)
 static PyObject* xconfig_getValue(XConfigObject *self, PyObject *args) {
     XConfigNode node;
     if (!getNodeFromArgs(self, args, node)) { return NULL; }
-    return getValue(node);
+    return getValue(self, node);
 }
 
 /**
