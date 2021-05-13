@@ -7,8 +7,21 @@ testConfig:
   sampleNull: null
   sampleBool: true
   sampleString: "test"
+  listWithNull: [1, 2, null, 4]
+  mapWithNull:
+    a: 1
+    b: null
+    c: 3
   sampleMap:
     a: 1
     b:
       - x: []
     c: "test"
+  deletedKey: "hi there"
+  partiallyDeletedKey:
+    a: 6
+    b: 8
+    c: 5
+  overridedKey:
+    a: 1
+    b: 2
