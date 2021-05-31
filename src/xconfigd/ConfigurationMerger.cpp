@@ -631,8 +631,12 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 	XConfigBucket* currentBucket = getBucket(blobId, nodeId);
 	const char *key = getKey(blobId, decodeNodeId(nodeId));
 	bool isMap = false;
-	TTRACE("dump destBuckets[%ld] [%s] inMap=%d", destBuckets.size(), key, inMap);
 
+	TTRACE("dump destBuckets[%ld] [%s] inMap=%d", destBuckets.size(), key, inMap);
+	if (currentBucket->type == xconfig::TYPE_DELETE){
+		return -1;
+	}
+	
 	destBuckets.push_back(*currentBucket);
 	XConfigBucket* destBucket = &destBuckets.back();
 	destKeys.push_back(const_cast<char*>(key));
@@ -652,22 +656,27 @@ int ConfigurationMerger::dumpNode(size_t nodeId, bool inMap)
 			size_t childId = currentBucket->value._vectorial.child;
 			size_t parentDestId = nodeId ? destBucket->value._vectorial.child - 1 : 0;
 			size_t n;
+			size_t deletedNodes = 0;
 			for (n = 0; n < currentBucket->value._vectorial.size && childId; n++) {
 				TTRACE("#%ld/%d ", n, currentBucket->value._vectorial.size);
 				XConfigBucket* childBucket = getBucket(blobId, childId);
 				int dumpedChildId = destBuckets.size();
-				dumpNode(composeNodeId(blobId, childId), isMap);
-				destBuckets[dumpedChildId].parent = parentDestId;
-				TTRACE("parentDestId=%ld", parentDestId);
+				if (dumpNode(composeNodeId(blobId, childId), isMap) < 0) {
+					deletedNodes++;
+				} else {
+					destBuckets[dumpedChildId].parent = parentDestId;
+					TTRACE("parentDestId=%ld", parentDestId);
+				}
+
 				childId = childBucket->next;
 			}
 
+			n -= deletedNodes;
 			TTRACE("end vect %ld", nodeId ? parentDestId - 1 : 0);
 
 			// recalculate afer insertions on the vector
 			destBucket = &destBuckets[parentDestId ? parentDestId - 1 : 0];
 			if (n != destBucket->value._vectorial.size) {
-				TWARN("wrong size, fixing to %ld", n);
 				destBucket->value._vectorial.size = n;
 			}
 			break;

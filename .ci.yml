@@ -29,11 +29,11 @@ workflows:
 
   # Meant to be executed with cigen
   build_buster:
-    stages: [clean, build_buster]
+    stages: [install_deps, clean, build_buster]
   release_python:
-    stages: [clean, build_buster, release_python]
+    stages: [install_deps, clean, build_buster, release_python]
   clean:
-    stages: [clean]
+    stages: [install_deps, clean]
 
 stages:
   docker_up: ["docker-compose pull", "docker-compose up -d"]
@@ -42,6 +42,10 @@ stages:
   deploy_java: ["docker-compose exec -T java-builder mvn -B deploy -f ${java_binding_path}"]
   deploy_java_utils: ["docker-compose exec -T java-builder mvn -B deploy -f bindings/java/java-xconfig-utils/"]
 
+  install_deps: 
+    - 'docker-compose up -d buster-builder'
+    - 'docker-compose exec -T buster-builder bash -c "cd /source && ./get_deps"'
+
   install_extra_packages:
     - 'docker-compose exec -T java-builder apt-get update'
     - 'docker-compose exec -T java-builder apt-get install -y gcc g++ xconfigd libxconfig-dev'
@@ -49,13 +53,12 @@ stages:
 
   build_buster:
     - 'docker-compose up -d buster-builder'
-    - 'docker-compose exec buster-builder /source/add_php74_repo'
-    - 'docker-compose exec buster-builder bash -c "cd /source && ./generate_package && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
-    - 'docker-compose exec buster-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
+    - 'docker-compose exec -T buster-builder /source/add_php74_repo'
+    - 'docker-compose exec -T buster-builder bash -c "cd /source && ./build_packages && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
+    - 'docker-compose exec -T buster-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
 
   release_python:
-    - 'docker-compose exec buster-builder bash -c "python3 -m twine upload --repository nexus /source/packages/*.whl"'
+    - 'docker-compose exec -T buster-builder bash -c "python3 -m twine upload --repository nexus /source/packages/*.whl"'
 
   clean:
-    - 'docker-compose up -d buster-builder'
-    - 'docker-compose exec buster-builder bash -c "cd /source; debuild -- clean; rm -rf packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info"'
+    - 'docker-compose exec -T buster-builder bash -c "cd /source; debuild -- clean; rm -rf packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info"'

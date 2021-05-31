@@ -1,5 +1,7 @@
 testConfig:
   deletedKey: !delete
+  nonExistentKey:
+    blaw: !delete
   overridedKey:
     b: 42
   sampleExpandString: !expandstring ['this is an expanded %1', [testConfig, sampleString]]

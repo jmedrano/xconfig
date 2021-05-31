@@ -1,3 +1,9 @@
+xconfig (1.0.7DISTRIBUTIONNAME) stable; urgency=low
+
+  * Fixed delete on overrides that doesn't modify the original tree
+
+ -- Adrián del Campo <adrian.del.campo.hernandez@telefonica.com>  Mon, 31 May 2021 09:35:00 +0200
+
 xconfig (1.0.6DISTRIBUTIONNAME) stable; urgency=low
 
   * Fix expandref of mapoverride

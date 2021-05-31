@@ -1,0 +1,23 @@
+base:override
+base/base.yaml
+---
+partiallyDeletedKey:
+  a: 1
+  b: 6
+  c: 5
+...
+override/override.yaml
+---
+totally_bad_key:
+  the_problem: !delete
+  no: problem
+...
+expected
+---
+totally_bad_key:
+  no: !!str problem
+partiallyDeletedKey:
+  a: !!int 1
+  b: !!int 6
+  c: !!int 5
+...

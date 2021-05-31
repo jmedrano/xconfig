@@ -9,7 +9,7 @@ module1 = Extension('xconfig',
                    )
 
 setup(name='xconfig',
-      version='1.0.6',
+      version='1.0.7',
       author="Infrastructure Team",
       author_email="novum-infrastructure@telefonica.com",
       description='XConfig extension',

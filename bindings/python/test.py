@@ -27,6 +27,8 @@ assert xc.exists(["testConfig", "missing"]) is False
 
 assert xc.exists(["testConfig", "deletedKey"]) is False
 assert xc.getValue(["testConfig", "overridedKey"]) == {"a": 1, "b": 42}
+assert xc.exists(["testConfig", "nonExistentKey"]) is True
+assert xc.getValue(["testConfig", "nonExistentKey"]) == {}
 
 #print(json.dumps(xc.getValue([""]), sort_keys=True, indent=4))
 #print(json.dumps(xc.getValue(["testConfig", "overridedKey"]), sort_keys=True, indent=4))

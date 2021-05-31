@@ -3,18 +3,14 @@
 set -o errexit nounset
 
 source /etc/os-release
-
 if [ "$ID" != "debian" ] ; then
     echo "Not supported operating system"
     exit 1;
 fi
-
 sed "s/DISTRIBUTIONNAME/~$VERSION_CODENAME/g" debian/changelog.template > debian/changelog
 
 wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 sh -c 'echo "deb https://packages.sury.org/php/ buster main" > /etc/apt/sources.list.d/php.list'
 
-apt-get update; apt-get install -y build-essential devscripts php-dev
+apt-get update; apt-get install -y build-essential devscripts php7.4-dev php7.4
 mk-build-deps -i -t "apt-get -y"
-rm ./*build-deps*.deb
-debuild -us -uc

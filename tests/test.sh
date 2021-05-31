@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export TEST_ENV="TEST_VALUE"
+set -eu
 
 function run_test {
 	ret=0
@@ -29,7 +30,7 @@ function run_test {
 	xconfig -p "$path" k "" > outcome
 	if ! diff -q expected outcome; then
 		echo "### mismatch on $1"
-		diff -u expected outcome
+		diff -u -U 100 expected outcome
 		ret=1
 	fi
 
@@ -41,6 +42,9 @@ function run_test {
 
 num_tests=0
 num_failed=0
+echo "LAUNCHING xconfigd"
+xconfigd &
+
 for testfile in *.test; do
 	if ! run_test $testfile < $testfile; then
 		num_failed=$((num_failed + 1))
@@ -49,3 +53,4 @@ for testfile in *.test; do
 done
 
 echo "Failed $num_failed of $num_tests tests"
+killall xconfigd
