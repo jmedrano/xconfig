@@ -294,8 +294,8 @@ deep_map_merge(M1, M2) when is_map(M1), is_map(M2) ->
 deep_map_merge(_, Override) ->
     Override.
 
-% @doc Any [X_breeds, BreedKey, BreedValue | Rest] key is transformed into
-% [{X, breed, BreedKey, BreedValue} | Rest]
+% @doc Any [X_breeds, BreedKey, BreedValue | Rest] adds
+% [{X, breed, BreedKey, BreedValue} | Rest] too
 -spec transform_breeds(map()) -> map().
 transform_breeds(Config) ->
     maps:fold(fun(Key, Value, Acc) ->
@@ -311,9 +311,9 @@ transform_breeds(Config) ->
                                     end, Acc, Value)
 
                       catch
-                          _:_ -> Acc#{Key => Value}
+                          _:_ -> Acc
                       end
-              end, #{}, Config).
+              end, Config, Config).
 
 %%% ===========================================================================
 %%% Internal Functions
