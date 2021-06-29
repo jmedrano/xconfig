@@ -17,8 +17,12 @@ ServerSocket::ServerSocket(const QString& name, QObject *parent) : QObject(paren
 
 ServerSocket::~ServerSocket()
 {
-	socket_lock->unlock();
+	if (socket_lock) {
+		socket_lock->unlock();
+	}
+
 	delete socketNotifier;
+	delete socket_lock;
 }
 
 bool ServerSocket::start()

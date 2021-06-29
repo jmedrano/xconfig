@@ -18,6 +18,9 @@ const char* XCONFIGD_CONFIG_FILE = "xconfigd.ini";
 T_QLOGGER_DEFINE_ROOT(XConfigDaemon);
 
 XConfigDaemon::XConfigDaemon(int& argc, char** argv) : TApplication(argc, argv), config_dir(QDir(PKGSYSCONFDIR)), server(0)
+	, softTimeoutMsecs(100)
+	, hardTimeoutMsecs(15000)
+	, lingerTimeoutMsecs(30000)
 {
 }
 

@@ -61,7 +61,7 @@ ConfigurationTreeManager::ConfigurationTreeManager(QString path, int softTimeout
 		int watcher = inotify_add_watch(iNotifyFd, dirByteArray.data(), IN_MODIFY | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE);
 
 		if (watcher < 0) {
-			TERROR("inotify_add_watch: %s", strerror(errno));
+			TWARN("inotify_add_watch: %s\nfile: %s", strerror(errno), dirByteArray.data());
 		}
 
 		TTRACE("inotify_add_watch %s", dirByteArray.data());
@@ -85,9 +85,20 @@ ConfigurationTreeManager::~ConfigurationTreeManager() {
 	TTRACE("~ConfigurationTreeManager");
 	iNotifier->deleteLater();
 	::close(iNotifyFd);
+	checkFuture.waitForFinished();
+	this->hardTimer->deleteLater();
+	this->softTimer->deleteLater();
+	this->lingerTimer->deleteLater();
+	
 	for (auto it = filesMap.begin(); it != filesMap.end(); ++it) {
 		delete *it;
 	}
+}
+
+void ConfigurationTreeManager::stopTimers() {
+	softTimer->stop();
+	hardTimer->stop();
+	lingerTimer->stop();
 }
 
 void ConfigurationTreeManager::onINotify() {

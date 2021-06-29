@@ -11,6 +11,7 @@ void ConfigurationPool::deleteLaterConfigurationTreeManager(ConfigurationTreeMan
 	auto path = tree->getPath();
 	TTRACE("deleteLaterConfigurationTreeManager: %s", qPrintable(path));
 	getInstance().map.erase(path.toStdString());
+	tree->stopTimers();
 	tree->deleteLater();
 }
 

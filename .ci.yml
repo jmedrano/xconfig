@@ -28,6 +28,8 @@ workflows:
     stages: [docker_up, deploy_java_utils, docker_down]
 
   # Meant to be executed with cigen
+  build_buster_debug:
+    stages: [install_deps, clean, build_buster_debug]
   build_buster:
     stages: [install_deps, clean, build_buster]
   release_python:
@@ -55,6 +57,12 @@ stages:
     - 'docker-compose up -d buster-builder'
     - 'docker-compose exec -T buster-builder /source/add_php74_repo'
     - 'docker-compose exec -T buster-builder bash -c "cd /source && ./build_packages && mkdir -p packages; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
+    - 'docker-compose exec -T buster-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
+
+  build_buster_debug:
+    - 'docker-compose up -d buster-builder'
+    - 'docker-compose exec -T buster-builder /source/add_php74_repo'
+    - 'docker-compose exec -T buster-builder bash -c "cd /source && ./build_packages_debug && mkdir -p packages_debug; cd ..; mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages_debug"'
     - 'docker-compose exec -T buster-builder bash -c "cd /source/bindings/python; ./build.sh; mv /source/bindings/python/dist/*whl /source/packages"'
 
   release_python:

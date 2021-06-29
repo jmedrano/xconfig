@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -o errexit nounset
+source /etc/os-release
+sed "s/DISTRIBUTIONNAME/~$VERSION_CODENAME/g" debian/changelog.template > debian/changelog
+
+rm ./*build-deps*.deb
+DEB_BUILD_OPTIONS='nostrip noopt debug' debuild -us -uc
+make install
+mkdir /var/xconfig/
+cd tests/
+./test.sh
+
+cd /source

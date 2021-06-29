@@ -42,7 +42,7 @@ public:
 		return boost::atomic_load(&tree);
 	}
 	void touch();
-
+	void stopTimers();
 	void openTree();
 
 Q_SIGNALS:
