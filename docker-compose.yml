@@ -8,7 +8,7 @@ services:
       - DEBIAN_FRONTEND=noninteractive
 
   buster-builder:
-    image: "docker.tuenti.io/debian:buster-tuenti3"
+    image: "docker.tuenti.io/debian:buster-tuenti6"
     command: "sleep infinity"
     volumes:
       - "./:/source"

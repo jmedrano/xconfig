@@ -510,13 +510,13 @@ int main(int argc, char** argv)
 			dumper.yamlStart();
 			dumper.yamlDump(root);
 			dumper.yamlEnd();
-		} catch (xconfig::XConfigNotFound e) {
+		} catch (const xconfig::XConfigNotFound& e) {
 			fprintf(stderr, "key '%s' not found\n", key.c_str());
 			return 2;
-		} catch (xconfig::XConfigNotConnected e) {
+		} catch (const xconfig::XConfigNotConnected& e) {
 			fprintf(stderr, "XConfig couldn't connect with the daemon\n");
 			return 3;
-		} catch (XConfigKeyDeleted e) {
+		} catch (const XConfigKeyDeleted& e) {
 			fprintf(stderr, "key '%s' was deleted\n", key.c_str());
                         return 4;
 		}

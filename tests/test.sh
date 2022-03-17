@@ -54,3 +54,6 @@ done
 
 echo "Failed $num_failed of $num_tests tests"
 killall xconfigd
+if [ $num_failed -gt 0 ]; then
+	exit 1
+fi

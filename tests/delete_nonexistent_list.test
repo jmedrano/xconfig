@@ -13,6 +13,6 @@ partiallyDeletedKey:
 ...
 expected
 ---
-partiallyDeletedKey: 
-  - {}
+partiallyDeletedKey:
+- {}
 ...

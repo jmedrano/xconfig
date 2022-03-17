@@ -94,7 +94,7 @@ static const uint64_t crc64_ecma_table[256] = {
   0xA707DB9ACF80C06DULL, 0x14299724CC279F02ULL, 0x5383EDCD67C06036ULL, 0xE0ADA17364673F59ULL,
 };
 
-inline uint64_t crc64_b(uint64_t crc, const char b) {
+static inline uint64_t crc64_b(uint64_t crc, const char b) {
   return crc64_ecma_table[(crc ^ b) & 0xff] ^ (crc >> 8);
 }
 
