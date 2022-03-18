@@ -9,6 +9,15 @@ if [ "$ID" != "debian" ] ; then
 fi
 sed "s/DISTRIBUTIONNAME/~$VERSION_CODENAME/g" debian/changelog.template > debian/changelog
 
+if ! command -v wget >/dev/null ; then
+    apt-get update; apt-get install -y wget
+fi
+
+# phpize needs sed available at /usr/bin/sed
+if [ ! -f /usr/bin/sed ]; then
+    ln -s /bin/sed /usr/bin/sed
+fi
+
 wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
 sh -c 'echo "deb https://packages.sury.org/php/ buster main" > /etc/apt/sources.list.d/php.list'
 

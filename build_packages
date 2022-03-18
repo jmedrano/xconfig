@@ -4,7 +4,7 @@ set -o errexit nounset
 source /etc/os-release
 sed "s/DISTRIBUTIONNAME/~$VERSION_CODENAME/g" debian/changelog.template > debian/changelog
 
-rm ./*build-deps*.deb
+rm ./*build-deps*.deb || true
 debuild -us -uc
 make install
 mkdir /var/xconfig/
