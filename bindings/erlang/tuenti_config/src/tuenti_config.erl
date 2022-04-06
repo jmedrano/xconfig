@@ -683,7 +683,7 @@ get_tservice_config(UrlKey, [Service | Rest], Breeds) when is_binary(Service), U
                    tservice_amqp_url -> amqp_location
                  end,
     % Second parameter (optional, only if it exists) is ServiceVersion :: integer()
-    ConfigPaths = [[serviceConfig, services, Service, http_location]],
+    ConfigPaths = [[serviceConfig, services, Service, ConfigNode]],
     % If there is version in the request, we first need to check for that path
     NewConfigPaths = case Rest of
                              [] ->
