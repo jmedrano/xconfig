@@ -676,7 +676,12 @@ get_tservice_config(tservice_urls, [Service], Breeds) when is_binary(Service) ->
     % This configuration key is deprecated
     BinUrls = get_tservice_value_overrides([[serviceConfig, services, Service, service_location]], raw, Breeds, []),
     [binary_to_list(Url) || Url <- BinUrls];
-get_tservice_config(tservice_http_url, [Service | Rest], Breeds) when is_binary(Service) ->
+get_tservice_config(UrlKey, [Service | Rest], Breeds) when is_binary(Service), UrlKey == tservice_http_url;
+                                                           is_binary(Service), UrlKey == tservice_amqp_url ->
+    ConfigNode = case UrlKey of
+                   tservice_http_url -> http_location;
+                   tservice_amqp_url -> amqp_location
+                 end,
     % Second parameter (optional, only if it exists) is ServiceVersion :: integer()
     ConfigPaths = [[serviceConfig, services, Service, http_location]],
     % If there is version in the request, we first need to check for that path
@@ -685,7 +690,7 @@ get_tservice_config(tservice_http_url, [Service | Rest], Breeds) when is_binary(
                                  ConfigPaths;
                              _ ->
                                  BinVersion = integer_to_binary(hd(Rest)),
-                                 [[serviceConfig, services, [Service, <<".">>, BinVersion], http_location] | ConfigPaths]
+                                 [[serviceConfig, services, [Service, <<".">>, BinVersion], ConfigNode] | ConfigPaths]
                          end,
 
     get_tservice_value_overrides(NewConfigPaths, binary, Breeds, undefined);
