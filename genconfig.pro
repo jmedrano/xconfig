@@ -1,7 +1,7 @@
 PACKAGE = xconfig
-VERSION = -1.0.0
+VERSION = -1.1.0
 
-CACHEFILE = $$quote($${IN_PWD}/.qmake.cache)
+CACHEFILE = $$quote($${PWD}/.qmake.cache)
 CACHEFILETMP = $$quote($${CACHEFILE}.tmp)
 
 defineReplace(quotepath) {
@@ -25,25 +25,25 @@ VARS = TOP_SRCDIR \
 	   PACKAGE \
 	   VERSION
 
-TOP_SRCDIR = $$quotepath($$IN_PWD)
-TOP_BUILDDIR = $$quotepath($$OUT_PWD)
+TOP_SRCDIR = $$quote($$PWD)
+TOP_BUILDDIR = $$quote($$OUT_PWD)
 
-BINDIR = $$quotepath(/bin)
-LIBDIR = $$quotepath(/lib)
-DATADIR = $$quotepath(/share)
-LOCALSTATEDIR = $$quotepath(/var)
-SYSCONFDIR = $$quotepath(/etc)
-PKGLIBDIR = $$quotepath(/lib/$$PACKAGE$$VERSION)
-PKGDATADIR = $$quotepath(/share/$$PACKAGE$$VERSION)
-PKGLOCALSTATEDIR = $$quotepath(/var/$$PACKAGE)
-PKGSYSCONFDIR = $$quotepath(/etc/$$PACKAGE)
+BINDIR = $$quote(/bin)
+LIBDIR = $$quote(/lib)
+DATADIR = $$quote(/share)
+LOCALSTATEDIR = $$quote(/var)
+SYSCONFDIR = $$quote(/etc)
+PKGLIBDIR = $$quote(/lib/$$PACKAGE$$VERSION)
+PKGDATADIR = $$quote(/share/$$PACKAGE$$VERSION)
+PKGLOCALSTATEDIR = $$quote(/var/$$PACKAGE)
+PKGSYSCONFDIR = $$quote(/etc/$$PACKAGE)
 
-PREFIX = $$quotepath($$PREFIX)
+PREFIX = $$quote($$PREFIX)
 
 system(rm -f \'$$CACHEFILETMP\')
 
 for(v, VARS):{
-	eval(VALUE = $$quote($$)$${v})
+	eval(VALUE = \$\$$${v})
 	system(echo '$$v = $$VALUE' >> \'$$CACHEFILETMP\')
 }
 

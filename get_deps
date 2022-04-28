@@ -19,7 +19,7 @@ if [ ! -f /usr/bin/sed ]; then
 fi
 
 wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
-sh -c 'echo "deb https://packages.sury.org/php/ buster main" > /etc/apt/sources.list.d/php.list'
+echo "deb https://packages.sury.org/php/ $VERSION_CODENAME main" > /etc/apt/sources.list.d/php.list
 
 apt-get update; apt-get install -y build-essential devscripts php7.4-dev php7.4
 mk-build-deps -i -t "apt-get -y"

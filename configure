@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 QMAKE=`which qmake`
 BUILDDIR=build
@@ -18,12 +18,19 @@ Main options:
 EOT
 }
 
-qmake_check_v4() {
+qmake_check() {
 	if [ -x "$1" ]; then
-		if echo `$1 -v 2>&1` | grep "Qt version 4\." >/dev/null 2>&1; then
+		EXPECTED_QT_VERSION=5
+		if [ -f /etc/os-release ]; then
+			source /etc/os-release
+			if [ "$ID" == "debian" -a "$VERSION_ID" == "10" ]; then
+				EXPECTED_QT_VERSION=4
+			fi
+		fi
+		if echo `$1 -v 2>&1` | grep "Qt version $EXPECTED_QT_VERSION\." >/dev/null 2>&1; then
 			return 0
 		else
-			echo "Warning: $1 not for Qt 4"
+			echo "Warning: $1 not for Qt $EXPECTED_QT_VERSION"
 		fi
 	fi
 	return 1
@@ -34,7 +41,7 @@ relpath=`(cd "$relpath"; /bin/pwd)`
 curpath=`/bin/pwd`
 substpath=${curpath#${relpath}}
 
-qmake_check_v4 "$QMAKE" || exit 1
+qmake_check "$QMAKE" || exit 1
 
 declare -a SAVED_ARGS=("$@")
 declare -a ARGS

@@ -144,7 +144,7 @@ class QtArgCmdLine
 		/*!
 			Split string into argument and his value.
 
-			Value can be QString::null if there is no '=' character
+			Value can be QString() if there is no '=' character
 			will be found.
 
 			\par toCheck - QString that should be splitted.
@@ -393,7 +393,7 @@ QtArgCmdLine::splitArgumentAndValue( const QString & toCheck,
 	else
 	{
 		argument = toCheck;
-		value = QString::null;
+		value = QString();
 	}
 }
 

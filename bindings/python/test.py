@@ -7,7 +7,7 @@ CONFIG_PATH_ROOT = os.getcwd() + "/config"
 CONFIG_PATHS = f"{CONFIG_PATH_ROOT}/base:{CONFIG_PATH_ROOT}/override"
 xc = xconfig.XConfig(CONFIG_PATHS)
 
-assert xc.getValue(["testConfig", "sampleInt"]) is 1
+assert xc.getValue(["testConfig", "sampleInt"]) == 1
 assert xc.getValue(["testConfig", "sampleBool"]) is True
 assert xc.getValue(["testConfig", "sampleNull"]) is None
 assert xc.getValue(["testConfig", "sampleString"]) == "test"

@@ -305,7 +305,7 @@ void ConfigurationTreeManager::onSoftCheck() {
 	TTRACE("onSoftCheck");
 	if (!checkFuture.isStarted() || checkFuture.isFinished()) {
 		auto referenceHolder = ConfigurationPool::getInstance().getConfigurationManager(path);
-		checkFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles.toList());
+		checkFuture = QtConcurrent::run(this, &ConfigurationTreeManager::loadFiles, referenceHolder, dirtyFiles.values());
 		dirtyFiles.clear();
 		softTimer->stop();
 	} else {

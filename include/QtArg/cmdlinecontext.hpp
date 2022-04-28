@@ -110,6 +110,6 @@ class QtArgCmdLineContext {
 		QStringList::Iterator m_current;
 }; // class QtArgCmdLineContext
 
-const QString QtArgCmdLineContext::m_null = QString::null;
+const QString QtArgCmdLineContext::m_null = QString();
 
 #endif // QTARG__CMDLINECONTEXT_HPP__INCLUDED

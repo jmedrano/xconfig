@@ -34,6 +34,7 @@
 #define QTARG__HELP_HPP__INCLUDED
 
 // Qt include.
+#include <QtGlobal>
 #include <QtCore/QTextStream>
 #include <QtCore/QMap>
 
@@ -45,6 +46,11 @@
 #include "xorarg.hpp"
 #include "multiarg.hpp"
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+#define QT_ENDL Qt::endl
+#else
+#define QT_ENDL endl
+#endif
 
 //
 // QtArgDefaultHelpPrinter
@@ -151,9 +157,9 @@ QtArgDefaultHelpPrinter::print() const
 {
 	QTextStream stream( stdout );
 
-	stream << m_programDescription << endl << endl;
+	stream << m_programDescription << QT_ENDL << QT_ENDL;
 	stream << QLatin1String( "USAGE: " ) << m_executableName
-		<< ' ' << m_usage << endl << endl;
+		<< ' ' << m_usage << QT_ENDL << QT_ENDL;
 	stream << m_help;
 }
 
@@ -626,7 +632,7 @@ QtArgHelp::printHelp( QtArgIface * arg )
 	QString usage = arg->getUsageString( m_names );
 	removeMarkersFromUsageString( usage );
 
-	out << endl << QLatin1String( "USAGE: " ) << usage << endl << endl
+	out << QT_ENDL << QLatin1String( "USAGE: " ) << usage << QT_ENDL << QT_ENDL
 		<< QLatin1String( "DESCRIPTION: " );
 
 	if( arg->longDescription().length() )
@@ -634,7 +640,7 @@ QtArgHelp::printHelp( QtArgIface * arg )
 	else
 		out << arg->description();
 
-	out << endl;
+	out << QT_ENDL;
 
 	throw QtArgHelpHasPrintedEx();
 }

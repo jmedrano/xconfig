@@ -229,7 +229,7 @@ class QtArgHelpHasPrintedEx
 {
 	public:
 		QtArgHelpHasPrintedEx()
-			:	QtArgBaseException( QString::null )
+			:	QtArgBaseException( QString() )
 		{}
 
 		virtual ~QtArgHelpHasPrintedEx() throw()

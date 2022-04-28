@@ -385,13 +385,13 @@ QtXorArg::check() const
 inline QString
 QtXorArg::description() const
 {
-	return QString::null;
+	return QString();
 }
 
 inline QString
 QtXorArg::longDescription() const
 {
-	return QString::null;
+	return QString();
 }
 
 inline QtArgIface *

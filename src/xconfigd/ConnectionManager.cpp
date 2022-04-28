@@ -213,7 +213,7 @@ void ConnectionManager::sendHi()
 	QByteArray handshake;
 
 	handshake.append("XConfigD VERSION ");
-	handshake.append(QString::number(VERSION));
+	handshake.append(QString::number(VERSION).toUtf8());
 	handshake.append(" CAPABILITIES (");
 	for (unsigned int i = 0; i < (sizeof(CAPABILITIES) / sizeof(CAPABILITIES[0])); i++) {
 		handshake.append(CAPABILITIES[i].name);
@@ -231,7 +231,7 @@ void ConnectionManager::sendPush(QString path, int fd)
 	TTRACE("send push");
 
 	push.append("PUSH ");
-	push.append(path);
+	push.append(path.toUtf8());
 	push.append("");
 
 	sendDatagram(push.data(), push.length(), fd);

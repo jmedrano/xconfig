@@ -1,0 +1,2 @@
+# XConfig uses /var/xconfig directory by default
+xconfigd: non-standard-dir-in-var var/xconfig/

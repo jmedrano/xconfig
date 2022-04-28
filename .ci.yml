@@ -29,24 +29,34 @@ workflows:
 
   # Meant to be executed with cigen
   build_buster_debug:
-    stages: [install_deps, clean, build_buster_debug]
+    stages: [docker_down, install_deps_buster, clean_buster, build_buster_debug]
   build_buster:
-    stages: [install_deps, clean, build_buster]
-  release_python:
-    stages: [install_deps, clean, build_buster, release_python]
+    stages: [docker_down, install_deps_buster, clean_buster, build_buster, docker_down]
+  build_bullseye_debug:
+    stages: [docker_down, install_deps_bullseye, clean_bullseye, build_bullseye_debug]
+  build_bullseye:
+    stages: [docker_down, install_deps_bullseye, clean_bullseye, build_bullseye]
+  release_python_buster:
+    stages: [docker_down, install_deps_buster, clean_buster, build_buster, release_python]
+  release_python_bullseye:
+    stages: [docker_down, install_deps_bullseye, clean_bullseye, build_bullseye, release_python]
   clean:
-    stages: [install_deps, clean]
+    stages: [install_deps_buster, clean_buster]
 
 stages:
   docker_up: ["docker-compose pull", "docker-compose up -d"]
-  docker_down: ["docker-compose down"]
+  docker_down: ["docker-compose down --remove-orphans"]
   verify_java: ["docker-compose exec -T java-builder mvn -B verify -f ${java_binding_path}"]
   deploy_java: ["docker-compose exec -T java-builder mvn -B deploy -f ${java_binding_path}"]
   deploy_java_utils: ["docker-compose exec -T java-builder mvn -B deploy -f bindings/java/java-xconfig-utils/"]
 
-  install_deps: 
+  install_deps_buster:
     - 'docker-compose up -d buster-builder'
     - 'docker-compose exec -T buster-builder bash -c "cd /source && ./get_deps"'
+
+  install_deps_bullseye:
+    - 'docker-compose up -d bullseye-builder'
+    - 'docker-compose exec -T bullseye-builder bash -c "cd /source && ./get_deps"'
 
   install_extra_packages:
     - 'docker-compose exec -T java-builder apt-get update'
@@ -65,8 +75,24 @@ stages:
     - 'docker-compose exec -T buster-builder bash -c "cd /source && ./build_packages_debug && mkdir -p packages_debug && cd .. && mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages_debug"'
     - 'docker-compose exec -T buster-builder bash -c "cd /source/bindings/python; ./build.sh && mv /source/bindings/python/dist/*whl /source/packages"'
 
+  build_bullseye:
+    - 'docker-compose up -d bullseye-builder'
+    - 'docker-compose exec -T bullseye-builder /source/add_php74_repo'
+    - 'docker-compose exec -T bullseye-builder bash -c "cd /source && ./build_packages && mkdir -p packages && cd .. && mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages"'
+    - 'docker-compose exec -T bullseye-builder bash -c "cd /source/bindings/python; ./build.sh && mv /source/bindings/python/dist/*whl /source/packages"'
+
+  build_bullseye_debug:
+    - 'docker-compose up -d bullseye-builder'
+    - 'docker-compose exec -T bullseye-builder /source/add_php74_repo'
+    - 'docker-compose exec -T bullseye-builder bash -c "cd /source && ./build_packages_debug && mkdir -p packages_debug && cd .. && mv *.deb *.dsc *.tar.xz *.build *.buildinfo *.changes /source/packages_debug"'
+    - 'docker-compose exec -T bullseye-builder bash -c "cd /source/bindings/python; ./build.sh && mv /source/bindings/python/dist/*whl /source/packages"'
+
   release_python:
     - 'docker-compose exec -T buster-builder bash -c "python3 -m twine upload --repository nexus /source/packages/*.whl"'
 
-  clean:
-    - 'docker-compose exec -T buster-builder bash -c "cd /source; debuild -- clean; rm -rf packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info"'
+  clean_buster:
+    - 'docker-compose exec -T buster-builder bash -c "cd /source; debuild -- clean; find /source/src \\( -name "Makefile" -o -name "*.o" -o -name "moc_*" \\) -delete; rm -rf conf/Makefile packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info debian/php7.4-xconfig src/php-xconfig/{build,configure,configure.ac,config.m4,config.h.in,autom4te.cache,run-tests.php,xconfig.cpp}"'
+
+  clean_bullseye:
+    - 'docker-compose exec -T bullseye-builder bash -c "cd /source; debuild -- clean; find /source/src \\( -name "Makefile" -o -name "*.o" -o -name "moc_*" \\) -delete; rm -rf conf/Makefile packages target Makefile config.h debian/changelog bindings/python/dist/ bindings/python/xconfig.egg-info debian/php7.4-xconfig src/php-xconfig/{build,configure,configure.ac,config.m4,config.h.in,autom4te.cache,run-tests.php,xconfig.cpp}"'
+

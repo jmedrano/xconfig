@@ -3,7 +3,7 @@ TARGET = xconfigd
 
 include($$TOP_SRCDIR/xconfig.pri)
 
-QT += network
+QT += network concurrent
 PKGCONFIG += libdaemon liblog4cxx tbb
 LIBS += -Wl,--add-needed -L$$TOP_BUILDDIR/target/$$LIBDIR -lxconfig -lyaml -lcmph
 
